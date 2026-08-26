@@ -7,8 +7,8 @@
 
 ## 在线演示（GitHub Pages）
 
-- 全七部报告：<https://CochraneK.github.io/mingchao-knowledge-graph/>
-- 壹部专版：<https://CochraneK.github.io/mingchao-knowledge-graph/report_p1.html>
+- 全七部报告：<https://CochraneK.github.io/mingchao-knowledge-graph/web/>
+- 壹部专版：<https://CochraneK.github.io/mingchao-knowledge-graph/web/report_p1.html>
 
 > 报告页面通过 CDN 加载 Leaflet 地图库与 OpenStreetMap 瓦片，需联网查看地图部分；其余内容（角色卡、时间线、章节打卡）已内联，离线可用。
 
