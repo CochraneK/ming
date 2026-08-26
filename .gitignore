@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+.DS_Store
+*.tmp
+# 原著与含正文的中间产物不入库
+明朝那些事儿.txt
+data/chapters.json
+_publish/

@@ -1,0 +1,578 @@
+[
+  {
+    "name": "朱元璋",
+    "group": "帝系",
+    "birth": 1328,
+    "death": 1398,
+    "note": "开国皇帝，洪武大帝",
+    "approx": false
+  },
+  {
+    "name": "朱标",
+    "group": "帝系",
+    "birth": 1355,
+    "death": 1392,
+    "note": "懿文太子，早逝未即位",
+    "approx": false
+  },
+  {
+    "name": "朱允炆",
+    "group": "帝系",
+    "birth": 1377,
+    "death": 1402,
+    "note": "建文帝，宫火后下落成谜",
+    "approx": false
+  },
+  {
+    "name": "朱棣",
+    "group": "帝系",
+    "birth": 1360,
+    "death": 1424,
+    "note": "永乐帝，靖难起家，五征漠北",
+    "approx": false
+  },
+  {
+    "name": "朱高炽",
+    "group": "帝系",
+    "birth": 1378,
+    "death": 1425,
+    "note": "洪熙帝，在位十月",
+    "approx": false
+  },
+  {
+    "name": "朱瞻基",
+    "group": "帝系",
+    "birth": 1399,
+    "death": 1435,
+    "note": "宣德帝，仁宣之治",
+    "approx": false
+  },
+  {
+    "name": "朱祁镇",
+    "group": "帝系",
+    "birth": 1427,
+    "death": 1464,
+    "note": "正统、天顺两朝，土木之变被俘",
+    "approx": false
+  },
+  {
+    "name": "朱祁钰",
+    "group": "帝系",
+    "birth": 1428,
+    "death": 1457,
+    "note": "景泰帝，北京保卫战期间即位",
+    "approx": false
+  },
+  {
+    "name": "朱见深",
+    "group": "帝系",
+    "birth": 1447,
+    "death": 1487,
+    "note": "成化帝",
+    "approx": false
+  },
+  {
+    "name": "朱祐樘",
+    "group": "帝系",
+    "birth": 1470,
+    "death": 1505,
+    "note": "弘治帝，弘治中兴",
+    "approx": false
+  },
+  {
+    "name": "朱厚照",
+    "group": "帝系",
+    "birth": 1491,
+    "death": 1521,
+    "note": "正德帝，应州自封大将军",
+    "approx": false
+  },
+  {
+    "name": "朱厚熜",
+    "group": "帝系",
+    "birth": 1507,
+    "death": 1567,
+    "note": "嘉靖帝，大礼议入继",
+    "approx": false
+  },
+  {
+    "name": "朱载坖",
+    "group": "帝系",
+    "birth": 1537,
+    "death": 1572,
+    "note": "隆庆帝，开关互市",
+    "approx": false
+  },
+  {
+    "name": "朱翊钧",
+    "group": "帝系",
+    "birth": 1563,
+    "death": 1620,
+    "note": "万历帝，三大征与长期怠政",
+    "approx": false
+  },
+  {
+    "name": "朱常洛",
+    "group": "帝系",
+    "birth": 1582,
+    "death": 1620,
+    "note": "泰昌帝，在位一月，红丸案",
+    "approx": false
+  },
+  {
+    "name": "朱由校",
+    "group": "帝系",
+    "birth": 1605,
+    "death": 1627,
+    "note": "天启帝，魏忠贤专权",
+    "approx": false
+  },
+  {
+    "name": "朱由检",
+    "group": "帝系",
+    "birth": 1611,
+    "death": 1644,
+    "note": "崇祯帝，煤山自尽",
+    "approx": false
+  },
+  {
+    "name": "徐达",
+    "group": "开国功臣",
+    "birth": 1332,
+    "death": 1385,
+    "note": "中山王，北伐灭元",
+    "approx": false
+  },
+  {
+    "name": "常遇春",
+    "group": "开国功臣",
+    "birth": 1330,
+    "death": 1369,
+    "note": "开平王，北征暴卒",
+    "approx": false
+  },
+  {
+    "name": "刘基",
+    "group": "开国功臣",
+    "birth": 1311,
+    "death": 1375,
+    "note": "刘伯温，浙东谋主",
+    "approx": false
+  },
+  {
+    "name": "李善长",
+    "group": "开国功臣",
+    "birth": 1314,
+    "death": 1390,
+    "note": "韩国公，胡惟庸案被杀",
+    "approx": false
+  },
+  {
+    "name": "宋濂",
+    "group": "开国功臣",
+    "birth": 1310,
+    "death": 1381,
+    "note": "开国文臣之首，主修《元史》",
+    "approx": false
+  },
+  {
+    "name": "方孝孺",
+    "group": "开国功臣",
+    "birth": 1357,
+    "death": 1402,
+    "note": "建文忠臣，诛十族",
+    "approx": false
+  },
+  {
+    "name": "姚广孝",
+    "group": "永乐群英",
+    "birth": 1335,
+    "death": 1418,
+    "note": "道衍和尚，靖难谋主",
+    "approx": false
+  },
+  {
+    "name": "郑和",
+    "group": "永乐群英",
+    "birth": 1371,
+    "death": 1433,
+    "note": "三保太监，七下西洋",
+    "approx": false
+  },
+  {
+    "name": "解缙",
+    "group": "永乐群英",
+    "birth": 1369,
+    "death": 1415,
+    "note": "《永乐大典》总裁，雪地冻死",
+    "approx": false
+  },
+  {
+    "name": "朱高煦",
+    "group": "永乐群英",
+    "birth": 1380,
+    "death": 1426,
+    "note": "汉王，宣德初叛乱被杀",
+    "approx": false
+  },
+  {
+    "name": "杨士奇",
+    "group": "永乐群英",
+    "birth": 1366,
+    "death": 1444,
+    "note": "三杨之首，历四朝内阁",
+    "approx": false
+  },
+  {
+    "name": "杨荣",
+    "group": "永乐群英",
+    "birth": 1372,
+    "death": 1440,
+    "note": "内阁谋断，随五征北",
+    "approx": false
+  },
+  {
+    "name": "杨溥",
+    "group": "永乐群英",
+    "birth": 1375,
+    "death": 1446,
+    "note": "三杨之一，诏狱十年",
+    "approx": false
+  },
+  {
+    "name": "夏原吉",
+    "group": "永乐群英",
+    "birth": 1366,
+    "death": 1430,
+    "note": "户部尚书，理财名臣",
+    "approx": false
+  },
+  {
+    "name": "于谦",
+    "group": "内阁文臣",
+    "birth": 1398,
+    "death": 1457,
+    "note": "北京保卫战，夺门后被杀",
+    "approx": false
+  },
+  {
+    "name": "李贤",
+    "group": "内阁文臣",
+    "birth": 1409,
+    "death": 1467,
+    "note": "天顺首辅，引荐人才",
+    "approx": false
+  },
+  {
+    "name": "徐有贞",
+    "group": "内阁文臣",
+    "birth": 1407,
+    "death": 1472,
+    "note": "徐珵改名，夺门首谋",
+    "approx": false
+  },
+  {
+    "name": "王阳明",
+    "group": "内阁文臣",
+    "birth": 1472,
+    "death": 1529,
+    "note": "王守仁，心学宗师，平宸濠",
+    "approx": false
+  },
+  {
+    "name": "严嵩",
+    "group": "内阁文臣",
+    "birth": 1480,
+    "death": 1567,
+    "note": "嘉靖首辅二十年",
+    "approx": false
+  },
+  {
+    "name": "夏言",
+    "group": "内阁文臣",
+    "birth": 1482,
+    "death": 1548,
+    "note": "内阁首辅，弃市",
+    "approx": false
+  },
+  {
+    "name": "徐阶",
+    "group": "内阁文臣",
+    "birth": 1503,
+    "death": 1583,
+    "note": "扳倒严嵩，隆庆首辅",
+    "approx": false
+  },
+  {
+    "name": "海瑞",
+    "group": "内阁文臣",
+    "birth": 1514,
+    "death": 1587,
+    "note": "海刚峰，备棺上疏",
+    "approx": false
+  },
+  {
+    "name": "张居正",
+    "group": "内阁文臣",
+    "birth": 1525,
+    "death": 1582,
+    "note": "万历首辅，一条鞭法",
+    "approx": false
+  },
+  {
+    "name": "申时行",
+    "group": "内阁文臣",
+    "birth": 1535,
+    "death": 1614,
+    "note": "万历首辅，和事宰相",
+    "approx": false
+  },
+  {
+    "name": "孙承宗",
+    "group": "内阁文臣",
+    "birth": 1563,
+    "death": 1638,
+    "note": "关锦防线设计者，高阳殉国",
+    "approx": false
+  },
+  {
+    "name": "温体仁",
+    "group": "内阁文臣",
+    "birth": 1573,
+    "death": 1638,
+    "note": "崇祯朝首辅，以刻薄固宠",
+    "approx": false
+  },
+  {
+    "name": "周延儒",
+    "group": "内阁文臣",
+    "birth": 1593,
+    "death": 1644,
+    "note": "两度入阁，赐死",
+    "approx": false
+  },
+  {
+    "name": "胡宗宪",
+    "group": "武将勋臣",
+    "birth": 1512,
+    "death": 1565,
+    "note": "浙直总督，抗倭全局",
+    "approx": false
+  },
+  {
+    "name": "俞大猷",
+    "group": "武将勋臣",
+    "birth": 1503,
+    "death": 1579,
+    "note": "抗倭名将，俞龙戚虎",
+    "approx": false
+  },
+  {
+    "name": "戚继光",
+    "group": "武将勋臣",
+    "birth": 1528,
+    "death": 1588,
+    "note": "戚家军，蓟镇练兵",
+    "approx": false
+  },
+  {
+    "name": "李成梁",
+    "group": "武将勋臣",
+    "birth": 1526,
+    "death": 1615,
+    "note": "辽东总兵，辽东铁骑",
+    "approx": false
+  },
+  {
+    "name": "李如松",
+    "group": "武将勋臣",
+    "birth": 1549,
+    "death": 1598,
+    "note": "抗日援朝提督，阵亡辽东",
+    "approx": false
+  },
+  {
+    "name": "熊廷弼",
+    "group": "武将勋臣",
+    "birth": 1569,
+    "death": 1625,
+    "note": "辽东经略，传首九边",
+    "approx": false
+  },
+  {
+    "name": "毛文龙",
+    "group": "武将勋臣",
+    "birth": 1576,
+    "death": 1629,
+    "note": "东江镇总兵，被袁崇焕所杀",
+    "approx": false
+  },
+  {
+    "name": "袁崇焕",
+    "group": "武将勋臣",
+    "birth": 1584,
+    "death": 1630,
+    "note": "宁远大捷，凌迟于市",
+    "approx": false
+  },
+  {
+    "name": "卢象昇",
+    "group": "武将勋臣",
+    "birth": 1600,
+    "death": 1639,
+    "note": "巨鹿殉国，天雄军",
+    "approx": false
+  },
+  {
+    "name": "孙传庭",
+    "group": "武将勋臣",
+    "birth": 1593,
+    "death": 1643,
+    "note": "潼关战死，明亡前夜",
+    "approx": false
+  },
+  {
+    "name": "杨嗣昌",
+    "group": "武将勋臣",
+    "birth": 1588,
+    "death": 1641,
+    "note": "四正六隅十面张网，病亡",
+    "approx": false
+  },
+  {
+    "name": "洪承畴",
+    "group": "武将勋臣",
+    "birth": 1593,
+    "death": 1665,
+    "note": "松山降清，贰臣之首",
+    "approx": false
+  },
+  {
+    "name": "左良玉",
+    "group": "武将勋臣",
+    "birth": 1599,
+    "death": 1645,
+    "note": "拥兵自重，病死九江",
+    "approx": false
+  },
+  {
+    "name": "吴三桂",
+    "group": "武将勋臣",
+    "birth": 1612,
+    "death": 1678,
+    "note": "山海关总兵，引清入关",
+    "approx": false
+  },
+  {
+    "name": "刘瑾",
+    "group": "宦官佞幸",
+    "birth": 1451,
+    "death": 1510,
+    "note": "正德权阉，凌迟",
+    "approx": false
+  },
+  {
+    "name": "魏忠贤",
+    "group": "宦官佞幸",
+    "birth": 1568,
+    "death": 1627,
+    "note": "天启九千岁，阜城自缢",
+    "approx": false
+  },
+  {
+    "name": "客氏",
+    "group": "宦官佞幸",
+    "birth": 1588,
+    "death": 1627,
+    "note": "天启乳母，与魏忠贤对食",
+    "approx": true
+  },
+  {
+    "name": "陈友谅",
+    "group": "对手与民变",
+    "birth": 1320,
+    "death": 1363,
+    "note": "大汉政权，鄱阳湖战死",
+    "approx": false
+  },
+  {
+    "name": "张士诚",
+    "group": "对手与民变",
+    "birth": 1321,
+    "death": 1367,
+    "note": "东吴政权，自缢金陵",
+    "approx": false
+  },
+  {
+    "name": "也先",
+    "group": "对手与民变",
+    "birth": 1407,
+    "death": 1454,
+    "note": "瓦剌太师，土木之变",
+    "approx": false
+  },
+  {
+    "name": "努尔哈赤",
+    "group": "对手与民变",
+    "birth": 1559,
+    "death": 1626,
+    "note": "后金创立者，宁远中炮",
+    "approx": false
+  },
+  {
+    "name": "皇太极",
+    "group": "对手与民变",
+    "birth": 1592,
+    "death": 1643,
+    "note": "清太宗，松锦之战",
+    "approx": false
+  },
+  {
+    "name": "多尔衮",
+    "group": "对手与民变",
+    "birth": 1612,
+    "death": 1650,
+    "note": "清摄政王，入关定鼎",
+    "approx": false
+  },
+  {
+    "name": "丰臣秀吉",
+    "group": "对手与民变",
+    "birth": 1537,
+    "death": 1598,
+    "note": "日本关白，侵朝战争",
+    "approx": false
+  },
+  {
+    "name": "李自成",
+    "group": "对手与民变",
+    "birth": 1606,
+    "death": 1645,
+    "note": "闯王，甲申入北京",
+    "approx": false
+  },
+  {
+    "name": "张献忠",
+    "group": "对手与民变",
+    "birth": 1606,
+    "death": 1647,
+    "note": "大西政权，谷城伪降",
+    "approx": false
+  },
+  {
+    "name": "唐寅",
+    "group": "文苑行者",
+    "birth": 1470,
+    "death": 1524,
+    "note": "唐伯虎，科场案后绝意仕途",
+    "approx": false
+  },
+  {
+    "name": "徐霞客",
+    "group": "文苑行者",
+    "birth": 1587,
+    "death": 1641,
+    "note": "布衣行者，《徐霞客游记》",
+    "approx": false
+  }
+]

@@ -1,0 +1,3022 @@
+[
+  {
+    "ancient": "南京",
+    "modern_address": "江苏南京（应天/集庆故地）",
+    "lng": 118.8,
+    "lat": 32.06,
+    "trace_type": "遗址/陵",
+    "status": "实物留存",
+    "note": "明故宫遗址、明孝陵、钟山；坐标为草稿，待核",
+    "trace_type_raw": "遗址/陵"
+  },
+  {
+    "ancient": "应天",
+    "modern_address": "江苏南京",
+    "lng": 118.8,
+    "lat": 32.06,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "即南京，朱元璋开国都城",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "集庆",
+    "modern_address": "江苏南京",
+    "lng": 118.8,
+    "lat": 32.06,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "元集庆路，朱元璋改应天",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "钟山",
+    "modern_address": "江苏南京紫金山",
+    "lng": 118.85,
+    "lat": 32.06,
+    "trace_type": "遗址/陵",
+    "status": "实物留存",
+    "note": "明孝陵所在",
+    "trace_type_raw": "陵"
+  },
+  {
+    "ancient": "紫金山",
+    "modern_address": "江苏南京紫金山",
+    "lng": 118.85,
+    "lat": 32.06,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "同钟山",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "狮子山",
+    "modern_address": "江苏南京下关狮子山（阅江楼）",
+    "lng": 118.77,
+    "lat": 32.07,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "龙湾之战朱元璋指挥处",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "龙湾",
+    "modern_address": "江苏南京下关龙江一带",
+    "lng": 118.78,
+    "lat": 32.05,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "1360 龙湾伏击陈友谅",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "江东桥",
+    "modern_address": "江苏南京江东门一带",
+    "lng": 118.73,
+    "lat": 32.03,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "龙湾之战陈友谅中计处",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "秦淮河",
+    "modern_address": "江苏南京秦淮河",
+    "lng": 118.78,
+    "lat": 32.03,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "明初都城水道",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "新河口",
+    "modern_address": "江苏南京江畔",
+    "lng": 118.8,
+    "lat": 32.0,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "龙湾之战登陆点",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "石灰山",
+    "modern_address": "江苏南京幕府山一带",
+    "lng": 118.77,
+    "lat": 32.08,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "龙湾伏兵屏蔽",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "凤阳",
+    "modern_address": "安徽凤阳（濠州）",
+    "lng": 117.6,
+    "lat": 32.9,
+    "trace_type": "遗址/陵",
+    "status": "实物留存",
+    "note": "明中都皇故城、明皇陵、龙兴寺（原皇觉寺）；草稿待核",
+    "trace_type_raw": "遗址/陵"
+  },
+  {
+    "ancient": "濠州",
+    "modern_address": "安徽凤阳",
+    "lng": 117.6,
+    "lat": 32.9,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "即凤阳，朱元璋起兵地",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "皇觉寺",
+    "modern_address": "安徽凤阳龙兴寺",
+    "lng": 117.6,
+    "lat": 32.91,
+    "trace_type": "遗址/陵",
+    "status": "实物留存",
+    "note": "朱元璋出家地，后改龙兴寺",
+    "trace_type_raw": "遗址"
+  },
+  {
+    "ancient": "滁州",
+    "modern_address": "安徽滁州",
+    "lng": 118.3,
+    "lat": 32.3,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "朱元璋早期据点",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "和州",
+    "modern_address": "安徽和县",
+    "lng": 118.4,
+    "lat": 31.7,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "朱元璋攻取",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "定远",
+    "modern_address": "安徽定远",
+    "lng": 117.7,
+    "lat": 32.5,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "冯国用/李善长来投",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "横涧山",
+    "modern_address": "安徽定远附近",
+    "lng": 117.68,
+    "lat": 32.52,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "缪大亨降朱元璋",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "池州",
+    "modern_address": "安徽池州",
+    "lng": 117.49,
+    "lat": 30.66,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "常遇春克池州",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "采石",
+    "modern_address": "安徽马鞍山当涂采石矶",
+    "lng": 118.48,
+    "lat": 31.6,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "渡江要冲、陈友谅弑徐寿辉处",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "太平",
+    "modern_address": "安徽马鞍山当涂",
+    "lng": 118.5,
+    "lat": 31.5,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "花云守城战死",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "镇江",
+    "modern_address": "江苏镇江",
+    "lng": 119.45,
+    "lat": 32.2,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "张士诚攻镇江败于龙潭",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "平江",
+    "modern_address": "江苏苏州",
+    "lng": 120.6,
+    "lat": 31.3,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "张士诚老巢",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "苏州",
+    "modern_address": "江苏苏州",
+    "lng": 120.6,
+    "lat": 31.3,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "即平江",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "常州",
+    "modern_address": "江苏常州",
+    "lng": 119.97,
+    "lat": 31.81,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "常遇春攻克",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "宁国",
+    "modern_address": "安徽宁国",
+    "lng": 118.97,
+    "lat": 30.63,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "常遇春中三箭仍克",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "高邮",
+    "modern_address": "江苏高邮",
+    "lng": 119.44,
+    "lat": 32.78,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "张士诚高邮守卫战",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "龙潭",
+    "modern_address": "江苏南京东/句容西",
+    "lng": 119.2,
+    "lat": 32.1,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "张士诚败处",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "南昌",
+    "modern_address": "江西南昌（洪都）",
+    "lng": 115.86,
+    "lat": 28.68,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "洪都，滕王阁",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "洪都",
+    "modern_address": "江西南昌",
+    "lng": 115.86,
+    "lat": 28.68,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "即南昌，朱文正守城",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "九江",
+    "modern_address": "江西九江（江州）",
+    "lng": 115.99,
+    "lat": 29.71,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "陈友谅都城",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "江州",
+    "modern_address": "江西九江",
+    "lng": 115.99,
+    "lat": 29.71,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "即九江",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "鄱阳湖",
+    "modern_address": "江西鄱阳湖",
+    "lng": 116.0,
+    "lat": 29.0,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "1363 鄱阳湖决战",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "湖口",
+    "modern_address": "江西湖口（鄱阳湖出口）",
+    "lng": 116.25,
+    "lat": 29.75,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "湖口县",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "黄州",
+    "modern_address": "湖北黄冈",
+    "lng": 114.87,
+    "lat": 30.45,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "徐寿辉退守",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "黄冈",
+    "modern_address": "湖北黄冈",
+    "lng": 114.87,
+    "lat": 30.45,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "即黄州",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "浠水",
+    "modern_address": "湖北浠水",
+    "lng": 115.3,
+    "lat": 30.45,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "徐寿辉定都",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "汉阳",
+    "modern_address": "湖北武汉汉阳",
+    "lng": 114.27,
+    "lat": 30.58,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "天完重建都",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "武汉",
+    "modern_address": "湖北武汉",
+    "lng": 114.27,
+    "lat": 30.58,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "含汉阳",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "麻城",
+    "modern_address": "湖北麻城",
+    "lng": 115.0,
+    "lat": 31.18,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "邹普胜家乡",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "罗田",
+    "modern_address": "湖北罗田",
+    "lng": 115.37,
+    "lat": 30.78,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "徐寿辉家乡",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "仙桃",
+    "modern_address": "湖北仙桃（沔阳）",
+    "lng": 113.45,
+    "lat": 30.36,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "陈友谅家乡",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "沔阳",
+    "modern_address": "湖北仙桃",
+    "lng": 113.45,
+    "lat": 30.36,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "即仙桃",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "阜阳",
+    "modern_address": "安徽阜阳（颍州）",
+    "lng": 115.81,
+    "lat": 32.9,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "红巾军起义地",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "颍州",
+    "modern_address": "安徽阜阳",
+    "lng": 115.81,
+    "lat": 32.9,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "即阜阳",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "怀来",
+    "modern_address": "河北怀来",
+    "lng": 115.5,
+    "lat": 40.4,
+    "trace_type": "古战场",
+    "status": "仅遗址/碑",
+    "note": "土木堡之变主战场附近；草稿待核",
+    "trace_type_raw": "古战场/碑"
+  },
+  {
+    "ancient": "土木堡",
+    "modern_address": "河北怀来土木堡村",
+    "lng": 115.45,
+    "lat": 40.37,
+    "trace_type": "古战场",
+    "status": "仅遗址/碑",
+    "note": "1449 土木堡之变",
+    "trace_type_raw": "古战场/碑"
+  },
+  {
+    "ancient": "宣府",
+    "modern_address": "河北宣化",
+    "lng": 115.03,
+    "lat": 40.6,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "宣化古城",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "宣化",
+    "modern_address": "河北宣化",
+    "lng": 115.03,
+    "lat": 40.6,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "即宣府",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "大同",
+    "modern_address": "山西大同",
+    "lng": 113.3,
+    "lat": 40.08,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "大同古城墙、代王庙等",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "阳高",
+    "modern_address": "山西阳高（阳和）",
+    "lng": 113.7,
+    "lat": 40.36,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "阳和之战明军覆没",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "阳和",
+    "modern_address": "山西阳高",
+    "lng": 113.7,
+    "lat": 40.36,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "即阳高",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "蔚县",
+    "modern_address": "河北蔚县",
+    "lng": 114.57,
+    "lat": 39.81,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "蔚州古城、王振家乡",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "居庸关",
+    "modern_address": "北京昌平居庸关",
+    "lng": 116.07,
+    "lat": 40.3,
+    "trace_type": "关隘",
+    "status": "实物留存",
+    "note": "明长城关隘",
+    "trace_type_raw": "关隘/遗址"
+  },
+  {
+    "ancient": "紫荆关",
+    "modern_address": "河北易县紫荆关",
+    "lng": 115.4,
+    "lat": 39.4,
+    "trace_type": "关隘",
+    "status": "实物留存",
+    "note": "入京要隘",
+    "trace_type_raw": "关隘"
+  },
+  {
+    "ancient": "北京",
+    "modern_address": "北京（京师）",
+    "lng": 116.4,
+    "lat": 39.9,
+    "trace_type": "遗址/陵",
+    "status": "实物留存",
+    "note": "明故宫/景山/十三陵；草稿待核",
+    "trace_type_raw": "遗址/陵"
+  },
+  {
+    "ancient": "京城",
+    "modern_address": "北京",
+    "lng": 116.4,
+    "lat": 39.9,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "即北京",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "鹞儿岭",
+    "modern_address": "河北怀来附近",
+    "lng": 115.48,
+    "lat": 40.42,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "朱勇中伏",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "庐州",
+    "modern_address": "安徽合肥",
+    "lng": 117.23,
+    "lat": 31.82,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "即合肥",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "合肥",
+    "modern_address": "安徽合肥",
+    "lng": 117.23,
+    "lat": 31.82,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "即庐州",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "寿县",
+    "modern_address": "安徽寿县（安丰）",
+    "lng": 116.78,
+    "lat": 32.57,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "寿县古城、安丰塘",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "安丰",
+    "modern_address": "安徽寿县",
+    "lng": 116.78,
+    "lat": 32.57,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "即寿县",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "九华山",
+    "modern_address": "安徽青阳九华山",
+    "lng": 117.8,
+    "lat": 30.5,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "佛教名山",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "云南",
+    "modern_address": "云南昆明晋宁（郑和出生地昆阳）",
+    "lng": 102.7,
+    "lat": 24.9,
+    "trace_type": "故居/出生地",
+    "status": "实物留存",
+    "note": "郑和公园/故里；草稿待核",
+    "trace_type_raw": "故居/出生地"
+  },
+  {
+    "ancient": "福建五虎门",
+    "modern_address": "福建福州闽江口",
+    "lng": 119.5,
+    "lat": 26.0,
+    "trace_type": "起航地",
+    "status": "仅存地名",
+    "note": "郑和首次起航地",
+    "trace_type_raw": "起航地"
+  },
+  {
+    "ancient": "古里",
+    "modern_address": "印度科泽科德(Kozhikode)",
+    "lng": 75.78,
+    "lat": 11.25,
+    "trace_type": "纪念碑",
+    "status": "实物留存",
+    "note": "郑和立碑、葬身地（海外）",
+    "trace_type_raw": "纪念碑"
+  },
+  {
+    "ancient": "麦加",
+    "modern_address": "沙特阿拉伯麦加",
+    "lng": 39.83,
+    "lat": 21.42,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "郑和朝圣梦（海外）",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "康郎山",
+    "modern_address": "江西鄱阳湖中（都昌县南）",
+    "lng": 116.3,
+    "lat": 29.1,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "1363 鄱阳湖决战朱元璋舰队停靠地；草稿待核",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "奉天门",
+    "modern_address": "江苏南京明故宫（午门内）",
+    "lng": 118.8,
+    "lat": 32.04,
+    "trace_type": "遗址/陵",
+    "status": "仅存地名",
+    "note": "明故宫正门，周观政阻女乐、胡案前文；草稿待核",
+    "trace_type_raw": "遗址"
+  },
+  {
+    "ancient": "番禺",
+    "modern_address": "广东广州番禺区",
+    "lng": 113.38,
+    "lat": 22.94,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "道同任县令；草稿待核",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "广州",
+    "modern_address": "广东广州",
+    "lng": 113.26,
+    "lat": 23.13,
+    "trace_type": "遗址/陵",
+    "status": "实物留存",
+    "note": "朱亮祖镇守；草稿待核",
+    "trace_type_raw": "遗址/地名"
+  },
+  {
+    "ancient": "滕王阁",
+    "modern_address": "江西南昌赣江畔",
+    "lng": 115.88,
+    "lat": 28.69,
+    "trace_type": "遗址/陵",
+    "status": "实物留存",
+    "note": "王勃写序，文中远眺鄱阳湖；历代重建；草稿待核",
+    "trace_type_raw": "遗址"
+  },
+  {
+    "ancient": "吉安",
+    "modern_address": "江西吉安",
+    "lng": 114.99,
+    "lat": 27.11,
+    "trace_type": "地名",
+    "status": "仅存地名",
+    "note": "陈友谅分兵占领为后盾；草稿待核",
+    "trace_type_raw": "地名"
+  },
+  {
+    "ancient": "武阳渡",
+    "modern_address": "江西南昌县武阳镇（抚河）",
+    "lng": 116.0,
+    "lat": 28.45,
+    "trace_type": "古战场",
+    "status": "仅存地名",
+    "note": "陈友谅退路，被朱元璋封锁；草稿待核",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "北平",
+    "modern_address": "北京（燕王封地/北平布政司）",
+    "lng": 116.407,
+    "lat": 39.904,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "都城/封地"
+  },
+  {
+    "ancient": "真定",
+    "modern_address": "河北正定县",
+    "lng": 114.571,
+    "lat": 38.136,
+    "trace_type": "古战场",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "战役地"
+  },
+  {
+    "ancient": "雄县",
+    "modern_address": "河北雄县",
+    "lng": 116.108,
+    "lat": 39.031,
+    "trace_type": "古战场",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "战役地"
+  },
+  {
+    "ancient": "莫州",
+    "modern_address": "河北任丘市莫州镇",
+    "lng": 116.08,
+    "lat": 38.93,
+    "trace_type": "古战场",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "战役地"
+  },
+  {
+    "ancient": "河间",
+    "modern_address": "河北河间市",
+    "lng": 116.009,
+    "lat": 38.434,
+    "trace_type": "古战场",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "战役地"
+  },
+  {
+    "ancient": "白沟河",
+    "modern_address": "河北白沟镇（雄县）",
+    "lng": 116.083,
+    "lat": 39.083,
+    "trace_type": "古战场",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "战役地"
+  },
+  {
+    "ancient": "苏家桥",
+    "modern_address": "河北白沟附近",
+    "lng": 116.08,
+    "lat": 39.08,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "营地"
+  },
+  {
+    "ancient": "东昌",
+    "modern_address": "山东聊城市",
+    "lng": 115.986,
+    "lat": 36.456,
+    "trace_type": "古战场",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "战役地"
+  },
+  {
+    "ancient": "夹河",
+    "modern_address": "河北武邑县一带（夹河之战，approx）",
+    "lng": 115.95,
+    "lat": 37.71,
+    "trace_type": "古战场",
+    "status": "古战场/故址",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "济南",
+    "modern_address": "山东济南市",
+    "lng": 117.12,
+    "lat": 36.651,
+    "trace_type": "古战场",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "守卫战"
+  },
+  {
+    "ancient": "德州",
+    "modern_address": "山东德州市",
+    "lng": 116.361,
+    "lat": 37.435,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "沧州",
+    "modern_address": "河北沧州市",
+    "lng": 116.838,
+    "lat": 38.304,
+    "trace_type": "古战场",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "战役地"
+  },
+  {
+    "ancient": "临清",
+    "modern_address": "山东临清市",
+    "lng": 115.717,
+    "lat": 36.855,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "济宁",
+    "modern_address": "山东济宁市",
+    "lng": 116.587,
+    "lat": 35.415,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "东阿",
+    "modern_address": "山东东阿县",
+    "lng": 116.233,
+    "lat": 36.338,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "东平",
+    "modern_address": "山东东平县",
+    "lng": 116.31,
+    "lat": 35.913,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "单县",
+    "modern_address": "山东单县",
+    "lng": 116.081,
+    "lat": 34.795,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "徐州",
+    "modern_address": "江苏徐州市",
+    "lng": 117.185,
+    "lat": 34.262,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "门户"
+  },
+  {
+    "ancient": "宿州",
+    "modern_address": "安徽宿州市",
+    "lng": 116.964,
+    "lat": 33.633,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "灵璧",
+    "modern_address": "安徽灵璧县",
+    "lng": 117.518,
+    "lat": 33.553,
+    "trace_type": "古战场",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "战役地"
+  },
+  {
+    "ancient": "扬州",
+    "modern_address": "江苏扬州市",
+    "lng": 119.414,
+    "lat": 32.394,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "浦子口",
+    "modern_address": "南京浦口（渡江处）",
+    "lng": 118.63,
+    "lat": 32.06,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "渡江"
+  },
+  {
+    "ancient": "金川门",
+    "modern_address": "南京金川门（内应开门）",
+    "lng": 118.77,
+    "lat": 32.07,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城门"
+  },
+  {
+    "ancient": "龙江驿",
+    "modern_address": "南京龙江驿",
+    "lng": 118.78,
+    "lat": 32.02,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "驿"
+  },
+  {
+    "ancient": "淮清桥",
+    "modern_address": "南京淮清桥",
+    "lng": 118.79,
+    "lat": 32.04,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "桥"
+  },
+  {
+    "ancient": "馆陶",
+    "modern_address": "河北馆陶县",
+    "lng": 115.182,
+    "lat": 36.529,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "渡河"
+  },
+  {
+    "ancient": "山海关",
+    "modern_address": "河北山海关",
+    "lng": 119.752,
+    "lat": 39.976,
+    "trace_type": "关隘",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "关"
+  },
+  {
+    "ancient": "通州",
+    "modern_address": "北京通州区",
+    "lng": 116.663,
+    "lat": 39.909,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "郑村坝",
+    "modern_address": "北京顺义东（郑村坝之战，approx）",
+    "lng": 116.8,
+    "lat": 40.05,
+    "trace_type": "古战场",
+    "status": "古战场/故址",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "古战场"
+  },
+  {
+    "ancient": "顺城门",
+    "modern_address": "南京/北京 顺城门",
+    "lng": 116.37,
+    "lat": 39.9,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城门"
+  },
+  {
+    "ancient": "张掖门",
+    "modern_address": "南京/北京 张掖门",
+    "lng": 116.36,
+    "lat": 39.89,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城门"
+  },
+  {
+    "ancient": "宁王属地",
+    "modern_address": "内蒙古宁城（大宁卫，宁王封地）",
+    "lng": 119.3,
+    "lat": 41.6,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "藩邸"
+  },
+  {
+    "ancient": "大宁",
+    "modern_address": "内蒙古宁城（大宁卫）",
+    "lng": 119.3,
+    "lat": 41.6,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "卫"
+  },
+  {
+    "ancient": "朵颜",
+    "modern_address": "内蒙古/河北交界（朵颜三卫，approx）",
+    "lng": 119.0,
+    "lat": 41.5,
+    "trace_type": "地名",
+    "status": "古战场/故址",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "部族"
+  },
+  {
+    "ancient": "蜀地",
+    "modern_address": "四川成都（代王迁地）",
+    "lng": 104.07,
+    "lat": 30.57,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "迁地"
+  },
+  {
+    "ancient": "保定",
+    "modern_address": "河北保定市",
+    "lng": 115.464,
+    "lat": 38.867,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "郡"
+  },
+  {
+    "ancient": "永平",
+    "modern_address": "河北卢龙（永平府）",
+    "lng": 118.86,
+    "lat": 39.89,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "府"
+  },
+  {
+    "ancient": "滹沱河",
+    "modern_address": "河北正定段（approx）",
+    "lng": 114.57,
+    "lat": 38.13,
+    "trace_type": "地名",
+    "status": "古战场/故址",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "河"
+  },
+  {
+    "ancient": "大都",
+    "modern_address": "北京（元大都）",
+    "lng": 116.407,
+    "lat": 39.904,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "元都"
+  },
+  {
+    "ancient": "上都",
+    "modern_address": "内蒙古正蓝旗（元上都）",
+    "lng": 116.18,
+    "lat": 42.25,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "元上都"
+  },
+  {
+    "ancient": "辽东",
+    "modern_address": "辽宁辽阳（辽东都司）",
+    "lng": 123.17,
+    "lat": 41.27,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "都司"
+  },
+  {
+    "ancient": "太原",
+    "modern_address": "山西太原",
+    "lng": 112.55,
+    "lat": 37.87,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "雁门关",
+    "modern_address": "山西代县雁门关",
+    "lng": 112.86,
+    "lat": 39.27,
+    "trace_type": "关隘",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "关"
+  },
+  {
+    "ancient": "甘肃",
+    "modern_address": "甘肃兰州（省治所）",
+    "lng": 103.83,
+    "lat": 36.06,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "省"
+  },
+  {
+    "ancient": "宁夏",
+    "modern_address": "宁夏银川",
+    "lng": 106.23,
+    "lat": 38.49,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "镇"
+  },
+  {
+    "ancient": "陕西",
+    "modern_address": "陕西西安（省治所）",
+    "lng": 108.95,
+    "lat": 34.27,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "省"
+  },
+  {
+    "ancient": "河南",
+    "modern_address": "河南郑州（省治所）",
+    "lng": 113.62,
+    "lat": 34.75,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "省"
+  },
+  {
+    "ancient": "杭州",
+    "modern_address": "浙江杭州",
+    "lng": 120.15,
+    "lat": 30.27,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "江西",
+    "modern_address": "江西南昌（省治所）",
+    "lng": 115.86,
+    "lat": 28.68,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "省"
+  },
+  {
+    "ancient": "襄阳",
+    "modern_address": "湖北襄阳",
+    "lng": 112.12,
+    "lat": 32.01,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "洛阳",
+    "modern_address": "河南洛阳",
+    "lng": 112.45,
+    "lat": 34.62,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "兰州",
+    "modern_address": "甘肃兰州",
+    "lng": 103.83,
+    "lat": 36.06,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "庆阳",
+    "modern_address": "甘肃庆阳",
+    "lng": 107.64,
+    "lat": 35.71,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "临洮",
+    "modern_address": "甘肃临洮",
+    "lng": 103.86,
+    "lat": 35.38,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "朔州",
+    "modern_address": "山西朔州",
+    "lng": 112.43,
+    "lat": 39.33,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "喜峰关",
+    "modern_address": "河北迁西喜峰口",
+    "lng": 118.28,
+    "lat": 40.43,
+    "trace_type": "关隘",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "关"
+  },
+  {
+    "ancient": "锦州",
+    "modern_address": "辽宁锦州",
+    "lng": 121.13,
+    "lat": 41.1,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "鸭绿江",
+    "modern_address": "中朝界河",
+    "lng": 124.3,
+    "lat": 40.3,
+    "trace_type": "地名",
+    "status": "古战场/故址",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "江"
+  },
+  {
+    "ancient": "朝鲜",
+    "modern_address": "朝鲜平壤",
+    "lng": 125.75,
+    "lat": 39.03,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "国"
+  },
+  {
+    "ancient": "钓鱼城",
+    "modern_address": "重庆合川钓鱼城",
+    "lng": 106.27,
+    "lat": 30.04,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "合州",
+    "modern_address": "重庆合川（钓鱼城）",
+    "lng": 106.27,
+    "lat": 30.04,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "嵩山寺",
+    "modern_address": "河南嵩山",
+    "lng": 113.03,
+    "lat": 34.49,
+    "trace_type": "祠堂",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "寺"
+  },
+  {
+    "ancient": "庆寿寺",
+    "modern_address": "北京庆寿寺",
+    "lng": 116.39,
+    "lat": 39.91,
+    "trace_type": "祠堂",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "寺"
+  },
+  {
+    "ancient": "永昌",
+    "modern_address": "甘肃永昌",
+    "lng": 101.96,
+    "lat": 38.23,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "崇明岛",
+    "modern_address": "上海崇明岛",
+    "lng": 121.4,
+    "lat": 31.62,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "岛"
+  },
+  {
+    "ancient": "瓜州",
+    "modern_address": "江苏扬州瓜洲",
+    "lng": 119.46,
+    "lat": 32.22,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "渡"
+  },
+  {
+    "ancient": "淮西",
+    "modern_address": "安徽凤阳（朱元璋故里）",
+    "lng": 117.5,
+    "lat": 32.92,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "地域"
+  },
+  {
+    "ancient": "泰州",
+    "modern_address": "江苏泰州",
+    "lng": 119.92,
+    "lat": 32.46,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "盐城",
+    "modern_address": "江苏盐城",
+    "lng": 120.16,
+    "lat": 33.39,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "湖州",
+    "modern_address": "浙江湖州",
+    "lng": 120.09,
+    "lat": 30.89,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "长洲",
+    "modern_address": "江苏苏州（长洲）",
+    "lng": 120.58,
+    "lat": 31.3,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "西凉",
+    "modern_address": "甘肃武威（古西凉）",
+    "lng": 102.63,
+    "lat": 37.93,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "古地"
+  },
+  {
+    "ancient": "桂林",
+    "modern_address": "广西桂林",
+    "lng": 110.29,
+    "lat": 25.27,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "巴格达",
+    "modern_address": "伊拉克巴格达（帖木儿背景）",
+    "lng": 44.36,
+    "lat": 33.31,
+    "trace_type": "地名",
+    "status": "实物留存",
+    "note": "坐标为草稿（现代治所近似），待核",
+    "trace_type_raw": "城"
+  },
+  {
+    "ancient": "蓟州",
+    "modern_address": "今天津蓟州区",
+    "lng": 117.4,
+    "lat": 40.05,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：九边蓟镇驻地"
+  },
+  {
+    "ancient": "蓟门",
+    "modern_address": "今天津蓟州一带（蓟门关隘泛称）",
+    "lng": 117.4,
+    "lat": 40.06,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：关隘泛称"
+  },
+  {
+    "ancient": "宁远",
+    "modern_address": "今辽宁兴城（明宁远卫）",
+    "lng": 120.72,
+    "lat": 40.62,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：关外重镇"
+  },
+  {
+    "ancient": "觉华岛",
+    "modern_address": "今辽宁兴城觉华岛（菊花岛）",
+    "lng": 120.6,
+    "lat": 40.5,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：海岛要塞"
+  },
+  {
+    "ancient": "广宁",
+    "modern_address": "今辽宁北镇（明辽东总兵驻地）",
+    "lng": 121.8,
+    "lat": 41.6,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：辽东重镇"
+  },
+  {
+    "ancient": "沈阳",
+    "modern_address": "今辽宁沈阳（后金天聪迁都盛京）",
+    "lng": 123.43,
+    "lat": 41.8,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：后金都城"
+  },
+  {
+    "ancient": "辽阳",
+    "modern_address": "今辽宁辽阳（明辽东都司）",
+    "lng": 123.17,
+    "lat": 41.27,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：辽东都司驻地"
+  },
+  {
+    "ancient": "铁岭",
+    "modern_address": "今辽宁铁岭（明铁岭卫）",
+    "lng": 123.73,
+    "lat": 42.22,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：辽北卫城"
+  },
+  {
+    "ancient": "开原",
+    "modern_address": "今辽宁开原（明开原卫）",
+    "lng": 124.04,
+    "lat": 42.55,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：辽北卫城"
+  },
+  {
+    "ancient": "抚顺",
+    "modern_address": "今辽宁抚顺（明抚顺所）",
+    "lng": 123.96,
+    "lat": 41.88,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：辽东边城"
+  },
+  {
+    "ancient": "赫图阿拉",
+    "modern_address": "今辽宁新宾赫图阿拉城",
+    "lng": 124.83,
+    "lat": 41.72,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：后金第一都城"
+  },
+  {
+    "ancient": "萨尔浒",
+    "modern_address": "今辽宁抚顺大伙房水库萨尔浒山",
+    "lng": 124.1,
+    "lat": 41.75,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：萨尔浒战场"
+  },
+  {
+    "ancient": "大凌河",
+    "modern_address": "今辽宁凌海（明大凌河城）",
+    "lng": 121.36,
+    "lat": 41.17,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：辽西城堡"
+  },
+  {
+    "ancient": "遵化",
+    "modern_address": "今河北遵化",
+    "lng": 117.96,
+    "lat": 40.19,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：己巳之变战场"
+  },
+  {
+    "ancient": "昌平",
+    "modern_address": "今北京昌平",
+    "lng": 116.23,
+    "lat": 40.22,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：明十三陵所在"
+  },
+  {
+    "ancient": "密云",
+    "modern_address": "今北京密云",
+    "lng": 116.84,
+    "lat": 40.38,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：京北门户"
+  },
+  {
+    "ancient": "兖州",
+    "modern_address": "今山东兖州",
+    "lng": 116.78,
+    "lat": 35.55,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：鲁南府城"
+  },
+  {
+    "ancient": "登州",
+    "modern_address": "今山东蓬莱（明登州卫）",
+    "lng": 120.75,
+    "lat": 37.81,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：海防卫城"
+  },
+  {
+    "ancient": "淮安",
+    "modern_address": "今江苏淮安",
+    "lng": 119.02,
+    "lat": 33.61,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：漕运总督驻地"
+  },
+  {
+    "ancient": "安庆",
+    "modern_address": "今安徽安庆",
+    "lng": 117.05,
+    "lat": 30.53,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：长江要隘"
+  },
+  {
+    "ancient": "武昌",
+    "modern_address": "今湖北武汉武昌",
+    "lng": 114.35,
+    "lat": 30.55,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：湖广首府"
+  },
+  {
+    "ancient": "荆州",
+    "modern_address": "今湖北荆州",
+    "lng": 112.24,
+    "lat": 30.33,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：湖广府城"
+  },
+  {
+    "ancient": "郧阳",
+    "modern_address": "今湖北郧县（郧阳府）",
+    "lng": 110.81,
+    "lat": 32.83,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：荆襄流民区"
+  },
+  {
+    "ancient": "安陆",
+    "modern_address": "今湖北钟祥（兴献王封地）",
+    "lng": 112.58,
+    "lat": 31.17,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：嘉靖龙潜之地"
+  },
+  {
+    "ancient": "岳州",
+    "modern_address": "今湖南岳阳（岳州府）",
+    "lng": 113.13,
+    "lat": 29.36,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：洞庭门户"
+  },
+  {
+    "ancient": "长沙",
+    "modern_address": "今湖南长沙",
+    "lng": 112.94,
+    "lat": 28.23,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：湖广府城"
+  },
+  {
+    "ancient": "衡州",
+    "modern_address": "今湖南衡阳（衡州府）",
+    "lng": 112.57,
+    "lat": 26.89,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：湘南府城"
+  },
+  {
+    "ancient": "永州",
+    "modern_address": "今湖南永州",
+    "lng": 111.61,
+    "lat": 26.42,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：湘南府城"
+  },
+  {
+    "ancient": "郴州",
+    "modern_address": "今湖南郴州",
+    "lng": 113.01,
+    "lat": 25.77,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：湘南要道"
+  },
+  {
+    "ancient": "常德",
+    "modern_address": "今湖南常德",
+    "lng": 111.7,
+    "lat": 29.03,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：湘西府城"
+  },
+  {
+    "ancient": "袁州",
+    "modern_address": "今江西宜春（袁州府）",
+    "lng": 114.39,
+    "lat": 27.8,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：赣西府城"
+  },
+  {
+    "ancient": "临江",
+    "modern_address": "今江西樟树（临江府治清江）",
+    "lng": 115.54,
+    "lat": 28.05,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：赣中府城"
+  },
+  {
+    "ancient": "抚州",
+    "modern_address": "今江西抚州",
+    "lng": 116.36,
+    "lat": 27.95,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：赣东府城"
+  },
+  {
+    "ancient": "赣州",
+    "modern_address": "今江西赣州",
+    "lng": 114.93,
+    "lat": 25.83,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：赣南府城"
+  },
+  {
+    "ancient": "赣南",
+    "modern_address": "今江西赣州一带（区域）",
+    "lng": 114.93,
+    "lat": 25.83,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "饶州",
+    "modern_address": "今江西鄱阳（饶州府）",
+    "lng": 116.7,
+    "lat": 29.0,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：赣东北府城"
+  },
+  {
+    "ancient": "乐安",
+    "modern_address": "今山东广饶一带（乐安州）",
+    "lng": 118.41,
+    "lat": 37.05,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：朱高煦封地"
+  },
+  {
+    "ancient": "福州",
+    "modern_address": "今福建福州",
+    "lng": 119.3,
+    "lat": 26.08,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：福建首府"
+  },
+  {
+    "ancient": "泉州",
+    "modern_address": "今福建泉州",
+    "lng": 118.68,
+    "lat": 24.87,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：海贸古港"
+  },
+  {
+    "ancient": "漳州",
+    "modern_address": "今福建漳州",
+    "lng": 117.65,
+    "lat": 24.51,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：月港所在"
+  },
+  {
+    "ancient": "宁波",
+    "modern_address": "今浙江宁波",
+    "lng": 121.54,
+    "lat": 29.87,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：海防要地"
+  },
+  {
+    "ancient": "台州",
+    "modern_address": "今浙江台州",
+    "lng": 121.42,
+    "lat": 28.66,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：戚家军战场"
+  },
+  {
+    "ancient": "温州",
+    "modern_address": "今浙江温州",
+    "lng": 120.7,
+    "lat": 28.0,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：浙南府城"
+  },
+  {
+    "ancient": "绍兴",
+    "modern_address": "今浙江绍兴",
+    "lng": 120.58,
+    "lat": 30.0,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：浙东府城"
+  },
+  {
+    "ancient": "嘉兴",
+    "modern_address": "今浙江嘉兴",
+    "lng": 120.76,
+    "lat": 30.75,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：浙北府城"
+  },
+  {
+    "ancient": "松江",
+    "modern_address": "今上海松江",
+    "lng": 121.23,
+    "lat": 31.03,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：棉布重镇"
+  },
+  {
+    "ancient": "钱塘",
+    "modern_address": "今浙江杭州（钱塘县）",
+    "lng": 120.15,
+    "lat": 30.27,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：杭州旧称"
+  },
+  {
+    "ancient": "潮州",
+    "modern_address": "今广东潮州",
+    "lng": 116.62,
+    "lat": 23.66,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：粤东府城"
+  },
+  {
+    "ancient": "肇庆",
+    "modern_address": "今广东肇庆",
+    "lng": 112.47,
+    "lat": 23.05,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：两广总督驻地"
+  },
+  {
+    "ancient": "梧州",
+    "modern_address": "今广西梧州",
+    "lng": 111.28,
+    "lat": 23.48,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：两广门户"
+  },
+  {
+    "ancient": "柳州",
+    "modern_address": "今广西柳州",
+    "lng": 109.42,
+    "lat": 24.33,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：桂中府城"
+  },
+  {
+    "ancient": "南宁",
+    "modern_address": "今广西南宁",
+    "lng": 108.32,
+    "lat": 22.82,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：桂南府城"
+  },
+  {
+    "ancient": "昆明",
+    "modern_address": "今云南昆明",
+    "lng": 102.71,
+    "lat": 25.04,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：云南首府"
+  },
+  {
+    "ancient": "大理",
+    "modern_address": "今云南大理",
+    "lng": 100.23,
+    "lat": 25.59,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：滇西府城"
+  },
+  {
+    "ancient": "贵阳",
+    "modern_address": "今贵州贵阳",
+    "lng": 106.63,
+    "lat": 26.65,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：贵州首府"
+  },
+  {
+    "ancient": "遵义",
+    "modern_address": "今贵州遵义（播州）",
+    "lng": 106.92,
+    "lat": 27.73,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：播州土司"
+  },
+  {
+    "ancient": "成都",
+    "modern_address": "今四川成都",
+    "lng": 104.06,
+    "lat": 30.66,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：四川首府"
+  },
+  {
+    "ancient": "重庆",
+    "modern_address": "今重庆",
+    "lng": 106.55,
+    "lat": 29.56,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：川东重镇"
+  },
+  {
+    "ancient": "西安",
+    "modern_address": "今陕西西安",
+    "lng": 108.94,
+    "lat": 34.26,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：西北首府"
+  },
+  {
+    "ancient": "宣大",
+    "modern_address": "今山西大同一带（宣大总督辖区）",
+    "lng": 113.3,
+    "lat": 40.09,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：军镇泛称"
+  },
+  {
+    "ancient": "延绥",
+    "modern_address": "今陕西榆林（延绥镇）",
+    "lng": 109.73,
+    "lat": 38.28,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：九边延绥镇"
+  },
+  {
+    "ancient": "固原",
+    "modern_address": "今宁夏固原（三边总督驻地）",
+    "lng": 106.24,
+    "lat": 36.0,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：三边总制驻地"
+  },
+  {
+    "ancient": "甘州",
+    "modern_address": "今甘肃张掖（甘州镇）",
+    "lng": 100.45,
+    "lat": 38.93,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：九边甘肃镇"
+  },
+  {
+    "ancient": "西宁",
+    "modern_address": "今青海西宁",
+    "lng": 101.78,
+    "lat": 36.62,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：青藏门户"
+  },
+  {
+    "ancient": "河套",
+    "modern_address": "今内蒙古河套地区（区域）",
+    "lng": 108.5,
+    "lat": 40.5,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "和林",
+    "modern_address": "今蒙古哈拉和林",
+    "lng": 102.85,
+    "lat": 47.2,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：北元早期据点"
+  },
+  {
+    "ancient": "应昌",
+    "modern_address": "今内蒙古克什克腾旗达里诺尔附近",
+    "lng": 117.53,
+    "lat": 43.26,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：北元据点"
+  },
+  {
+    "ancient": "捕鱼儿海",
+    "modern_address": "今蒙古贝尔湖",
+    "lng": 117.65,
+    "lat": 47.62,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：蓝玉北战场"
+  },
+  {
+    "ancient": "斡难河",
+    "modern_address": "今蒙古鄂嫩河",
+    "lng": 115.6,
+    "lat": 49.5,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：漠北河流"
+  },
+  {
+    "ancient": "土剌河",
+    "modern_address": "今蒙古图拉河",
+    "lng": 103.5,
+    "lat": 47.05,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：漠北河流"
+  },
+  {
+    "ancient": "定西",
+    "modern_address": "今甘肃定西",
+    "lng": 104.63,
+    "lat": 35.58,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：西北州城"
+  },
+  {
+    "ancient": "平壤",
+    "modern_address": "今朝鲜平壤",
+    "lng": 125.75,
+    "lat": 39.02,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：万历援朝战场"
+  },
+  {
+    "ancient": "釜山",
+    "modern_address": "今朝鲜釜山",
+    "lng": 129.08,
+    "lat": 35.18,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：万历援朝战场"
+  },
+  {
+    "ancient": "王京（首尔）",
+    "modern_address": "今韩国首尔（朝鲜王京汉城）",
+    "lng": 126.98,
+    "lat": 37.57,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：万历援朝战场"
+  },
+  {
+    "ancient": "高丽",
+    "modern_address": "今朝鲜半岛开城一带",
+    "lng": 126.56,
+    "lat": 37.97,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：政权级标注"
+  },
+  {
+    "ancient": "安南",
+    "modern_address": "今越南河内一带",
+    "lng": 105.85,
+    "lat": 21.03,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：政权级标注"
+  },
+  {
+    "ancient": "日本",
+    "modern_address": "日本京都一带",
+    "lng": 135.77,
+    "lat": 35.01,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：政权级标注"
+  },
+  {
+    "ancient": "琉球",
+    "modern_address": "今冲绳那霸",
+    "lng": 127.68,
+    "lat": 26.21,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：朝贡国标注"
+  },
+  {
+    "ancient": "福建",
+    "modern_address": "今福建福州（省级泛称）",
+    "lng": 119.3,
+    "lat": 26.09,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "山西",
+    "modern_address": "今山西太原（省级泛称）",
+    "lng": 112.55,
+    "lat": 37.88,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "山东",
+    "modern_address": "今山东济南（省级泛称）",
+    "lng": 117.12,
+    "lat": 36.66,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "广东",
+    "modern_address": "今广东广州（省级泛称）",
+    "lng": 113.26,
+    "lat": 23.14,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "浙江",
+    "modern_address": "今浙江杭州（省级泛称）",
+    "lng": 120.15,
+    "lat": 30.28,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "广西",
+    "modern_address": "今广西桂林（省级泛称）",
+    "lng": 110.29,
+    "lat": 25.28,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "四川",
+    "modern_address": "今四川成都（省级泛称）",
+    "lng": 104.06,
+    "lat": 30.67,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "江浙",
+    "modern_address": "今江浙一带（区域泛称）",
+    "lng": 120.15,
+    "lat": 30.29,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "两广",
+    "modern_address": "今广东广州一带（两广泛称）",
+    "lng": 113.26,
+    "lat": 23.15,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "湖广",
+    "modern_address": "今湖北武汉一带（湖广泛称）",
+    "lng": 114.35,
+    "lat": 30.56,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "蒙古",
+    "modern_address": "蒙古高原（区域泛称）",
+    "lng": 110.0,
+    "lat": 47.0,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "鞑靼",
+    "modern_address": "蒙古高原东部（区域泛称）",
+    "lng": 112.0,
+    "lat": 47.5,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "瓦剌",
+    "modern_address": "蒙古高原西部（区域泛称）",
+    "lng": 102.85,
+    "lat": 47.21,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "女真",
+    "modern_address": "东北地区（区域泛称）",
+    "lng": 126.0,
+    "lat": 44.0,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "西域",
+    "modern_address": "西域地区（区域泛称）",
+    "lng": 87.6,
+    "lat": 43.8,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：区域级标注"
+  },
+  {
+    "ancient": "西苑",
+    "modern_address": "北京西苑（今中南海、北海一带）",
+    "lng": 116.383,
+    "lat": 39.924,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：宫苑"
+  },
+  {
+    "ancient": "南宫",
+    "modern_address": "北京南宫（崇质宫）",
+    "lng": 116.406,
+    "lat": 39.913,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：宫殿"
+  },
+  {
+    "ancient": "午门",
+    "modern_address": "北京故宫午门",
+    "lng": 116.397,
+    "lat": 39.916,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：宫门"
+  },
+  {
+    "ancient": "德胜门",
+    "modern_address": "北京德胜门",
+    "lng": 116.378,
+    "lat": 39.947,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：城门"
+  },
+  {
+    "ancient": "西直门",
+    "modern_address": "北京西直门",
+    "lng": 116.355,
+    "lat": 39.941,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：城门"
+  },
+  {
+    "ancient": "安定门",
+    "modern_address": "北京安定门",
+    "lng": 116.408,
+    "lat": 39.948,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：城门"
+  },
+  {
+    "ancient": "正阳门",
+    "modern_address": "北京正阳门",
+    "lng": 116.398,
+    "lat": 39.899,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：城门"
+  },
+  {
+    "ancient": "崇文门",
+    "modern_address": "北京崇文门",
+    "lng": 116.417,
+    "lat": 39.9,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：城门"
+  },
+  {
+    "ancient": "东直门",
+    "modern_address": "北京东直门",
+    "lng": 116.428,
+    "lat": 39.941,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：城门"
+  },
+  {
+    "ancient": "东安门",
+    "modern_address": "北京东安门",
+    "lng": 116.403,
+    "lat": 39.917,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：皇城城门"
+  },
+  {
+    "ancient": "东华门",
+    "modern_address": "北京故宫东华门",
+    "lng": 116.402,
+    "lat": 39.917,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：宫门"
+  },
+  {
+    "ancient": "西安门",
+    "modern_address": "北京西安门",
+    "lng": 116.385,
+    "lat": 39.916,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：皇城城门"
+  },
+  {
+    "ancient": "长安门",
+    "modern_address": "北京长安门",
+    "lng": 116.391,
+    "lat": 39.908,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：皇城城门"
+  },
+  {
+    "ancient": "左掖门",
+    "modern_address": "北京左掖门",
+    "lng": 116.399,
+    "lat": 39.915,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：宫门"
+  },
+  {
+    "ancient": "奉天殿",
+    "modern_address": "北京故宫奉天殿",
+    "lng": 116.39,
+    "lat": 39.919,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：宫殿"
+  },
+  {
+    "ancient": "平台（紫禁城）",
+    "modern_address": "北京故宫平台",
+    "lng": 116.393,
+    "lat": 39.918,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：宫殿"
+  },
+  {
+    "ancient": "国子监",
+    "modern_address": "北京国子监",
+    "lng": 116.41,
+    "lat": 39.947,
+    "trace_type": "manual",
+    "status": "已定位",
+    "note": "本轮补标：官学"
+  },
+  {
+    "ancient": "占城",
+    "modern_address": "今越南中南部（归仁一带）",
+    "lng": 13.9,
+    "lat": 109.2,
+    "trace_type": "航海停靠",
+    "status": "已定位",
+    "note": "郑和下西洋首站"
+  },
+  {
+    "ancient": "爪哇",
+    "modern_address": "今印度尼西亚爪哇岛",
+    "lng": 110.4,
+    "lat": -6.95,
+    "trace_type": "航海停靠",
+    "status": "已定位"
+  },
+  {
+    "ancient": "苏门答腊",
+    "modern_address": "今印尼苏门答腊岛北部（须文达那）",
+    "lng": 97.45,
+    "lat": 5.1,
+    "trace_type": "航海停靠",
+    "status": "已定位"
+  },
+  {
+    "ancient": "三佛齐",
+    "modern_address": "今印尼巨港（旧港）",
+    "lng": 104.76,
+    "lat": -2.99,
+    "trace_type": "航海停靠",
+    "status": "已定位"
+  },
+  {
+    "ancient": "马六甲海峡",
+    "modern_address": "今马来西亚马六甲",
+    "lng": 102.25,
+    "lat": 2.19,
+    "trace_type": "航海停靠",
+    "status": "已定位"
+  },
+  {
+    "ancient": "锡兰山",
+    "modern_address": "今斯里兰卡加勒",
+    "lng": 80.22,
+    "lat": 6.04,
+    "trace_type": "航海停靠",
+    "status": "已定位"
+  },
+  {
+    "ancient": "溜山",
+    "modern_address": "今马尔代夫",
+    "lng": 73.51,
+    "lat": 4.17,
+    "trace_type": "航海停靠",
+    "status": "已定位"
+  },
+  {
+    "ancient": "红海",
+    "modern_address": "今红海沿岸（吉达一带）",
+    "lng": 39.15,
+    "lat": 21.5,
+    "trace_type": "航海停靠",
+    "status": "已定位"
+  },
+  {
+    "ancient": "东非",
+    "modern_address": "今索马里摩加迪沙一带",
+    "lng": 45.34,
+    "lat": 2.04,
+    "trace_type": "航海停靠",
+    "status": "已定位"
+  },
+  {
+    "ancient": "顺天",
+    "modern_address": "今韩国顺天（顺天倭城）",
+    "lng": 127.5,
+    "lat": 34.87,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "露梁海",
+    "modern_address": "今韩国露梁海峡",
+    "lng": 127.72,
+    "lat": 34.87,
+    "trace_type": "古战场",
+    "status": "已定位",
+    "note": "露梁海战"
+  },
+  {
+    "ancient": "全罗道",
+    "modern_address": "今韩国全罗道",
+    "lng": 127.15,
+    "lat": 35.82,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "义州",
+    "modern_address": "今朝鲜义州",
+    "lng": 125.42,
+    "lat": 39.62,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "名护屋",
+    "modern_address": "今日本佐贺县名护屋城址",
+    "lng": 129.88,
+    "lat": 33.46,
+    "trace_type": "古城址",
+    "status": "已定位"
+  },
+  {
+    "ancient": "大阪",
+    "modern_address": "今日本大阪",
+    "lng": 135.5,
+    "lat": 34.69,
+    "trace_type": "古城址",
+    "status": "已定位"
+  },
+  {
+    "ancient": "牡丹峰",
+    "modern_address": "今朝鲜平壤牡丹峰",
+    "lng": 125.76,
+    "lat": 39.05,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "练光亭",
+    "modern_address": "今朝鲜平壤练光亭",
+    "lng": 125.76,
+    "lat": 39.02,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "南原",
+    "modern_address": "今韩国南原",
+    "lng": 127.39,
+    "lat": 35.4,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "全州",
+    "modern_address": "今韩国全州",
+    "lng": 127.14,
+    "lat": 35.82,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "光州",
+    "modern_address": "今韩国光州",
+    "lng": 126.85,
+    "lat": 35.16,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "清州",
+    "modern_address": "今韩国清州",
+    "lng": 127.49,
+    "lat": 36.64,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "延安府",
+    "modern_address": "今朝鲜黄海南道延安",
+    "lng": 126.55,
+    "lat": 37.95,
+    "trace_type": "古战场",
+    "status": "近似定位"
+  },
+  {
+    "ancient": "东莱",
+    "modern_address": "今韩国釜山东莱",
+    "lng": 129.08,
+    "lat": 35.2,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "蔚山",
+    "modern_address": "今韩国蔚山",
+    "lng": 129.31,
+    "lat": 35.55,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "岛山营",
+    "modern_address": "今韩国蔚山岛山城",
+    "lng": 129.36,
+    "lat": 35.57,
+    "trace_type": "古战场",
+    "status": "近似定位"
+  },
+  {
+    "ancient": "西生浦",
+    "modern_address": "今韩国蔚山西生浦",
+    "lng": 129.43,
+    "lat": 35.52,
+    "trace_type": "古战场",
+    "status": "近似定位"
+  },
+  {
+    "ancient": "泗川",
+    "modern_address": "今韩国泗川",
+    "lng": 128.07,
+    "lat": 35.0,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "忠州",
+    "modern_address": "今韩国忠州",
+    "lng": 127.93,
+    "lat": 36.99,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "宜宁",
+    "modern_address": "今韩国宜宁",
+    "lng": 128.14,
+    "lat": 35.42,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "安东",
+    "modern_address": "今韩国安东",
+    "lng": 128.73,
+    "lat": 36.57,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "永川",
+    "modern_address": "今韩国永川",
+    "lng": 128.94,
+    "lat": 35.97,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "义城",
+    "modern_address": "今韩国义城",
+    "lng": 128.7,
+    "lat": 36.35,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "新宁",
+    "modern_address": "今韩国庆尚北道新宁",
+    "lng": 129.05,
+    "lat": 36.05,
+    "trace_type": "古战场",
+    "status": "近似定位"
+  },
+  {
+    "ancient": "汉山岛",
+    "modern_address": "今韩国统营汉山岛",
+    "lng": 128.1,
+    "lat": 34.75,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "巨济岛",
+    "modern_address": "今韩国巨济岛",
+    "lng": 128.62,
+    "lat": 34.88,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "漆川岛",
+    "modern_address": "今韩国巨济漆川",
+    "lng": 128.7,
+    "lat": 34.85,
+    "trace_type": "古战场",
+    "status": "近似定位"
+  },
+  {
+    "ancient": "观音浦",
+    "modern_address": "今韩国南海岛观音浦",
+    "lng": 127.9,
+    "lat": 34.77,
+    "trace_type": "古战场",
+    "status": "近似定位"
+  },
+  {
+    "ancient": "临津",
+    "modern_address": "今韩国临津江",
+    "lng": 126.7,
+    "lat": 37.8,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "大隅",
+    "modern_address": "今日本九州大隅",
+    "lng": 130.85,
+    "lat": 31.2,
+    "trace_type": "古战场",
+    "status": "近似定位"
+  },
+  {
+    "ancient": "萨摩",
+    "modern_address": "今日本九州萨摩",
+    "lng": 130.55,
+    "lat": 31.6,
+    "trace_type": "古战场",
+    "status": "近似定位"
+  },
+  {
+    "ancient": "文华殿",
+    "modern_address": "北京故宫文华殿",
+    "lng": 116.404,
+    "lat": 39.916,
+    "trace_type": "宫殿",
+    "status": "已定位"
+  },
+  {
+    "ancient": "乾清宫",
+    "modern_address": "北京故宫乾清宫",
+    "lng": 116.391,
+    "lat": 39.919,
+    "trace_type": "宫殿",
+    "status": "已定位"
+  },
+  {
+    "ancient": "天坛（南郊）",
+    "modern_address": "北京天坛",
+    "lng": 116.406,
+    "lat": 39.882,
+    "trace_type": "坛庙",
+    "status": "已定位"
+  },
+  {
+    "ancient": "东林书院",
+    "modern_address": "江苏无锡东林书院",
+    "lng": 120.31,
+    "lat": 31.58,
+    "trace_type": "书院",
+    "status": "已定位"
+  },
+  {
+    "ancient": "无锡",
+    "modern_address": "今江苏无锡",
+    "lng": 120.3,
+    "lat": 31.57,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "蔚州",
+    "modern_address": "今河北蔚县",
+    "lng": 114.59,
+    "lat": 39.84,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "平凉",
+    "modern_address": "今甘肃平凉",
+    "lng": 106.68,
+    "lat": 35.54,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "平湖",
+    "modern_address": "今浙江平湖",
+    "lng": 121.02,
+    "lat": 30.7,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "淳安",
+    "modern_address": "今浙江淳安",
+    "lng": 119.04,
+    "lat": 29.61,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "舟山",
+    "modern_address": "今浙江舟山",
+    "lng": 122.1,
+    "lat": 30.02,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "金华",
+    "modern_address": "今浙江金华",
+    "lng": 119.65,
+    "lat": 29.08,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "莱州",
+    "modern_address": "今山东莱州",
+    "lng": 119.94,
+    "lat": 37.18,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "皮岛",
+    "modern_address": "今朝鲜椵岛（皮岛）",
+    "lng": 124.32,
+    "lat": 39.47,
+    "trace_type": "海岛",
+    "status": "已定位"
+  },
+  {
+    "ancient": "金州",
+    "modern_address": "今辽宁大连金州（明金州卫）",
+    "lng": 121.72,
+    "lat": 39.05,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "松山",
+    "modern_address": "今辽宁兴城松山",
+    "lng": 120.72,
+    "lat": 40.52,
+    "trace_type": "古战场",
+    "status": "已定位"
+  },
+  {
+    "ancient": "武安",
+    "modern_address": "今河北武安",
+    "lng": 114.2,
+    "lat": 36.7,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "谷城",
+    "modern_address": "今湖北谷城",
+    "lng": 111.65,
+    "lat": 32.26,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "延安府",
+    "modern_address": "今陕西延安",
+    "lng": 109.49,
+    "lat": 36.59,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "北直隶河间府阜城县",
+    "modern_address": "今河北阜城",
+    "lng": 116.16,
+    "lat": 37.87,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "赤壁",
+    "modern_address": "今湖北赤壁市",
+    "lng": 113.9,
+    "lat": 29.86,
+    "trace_type": "地名典故",
+    "status": "已定位",
+    "note": "书中引三国典故"
+  },
+  {
+    "ancient": "钜鹿",
+    "modern_address": "今河北巨鹿",
+    "lng": 115.04,
+    "lat": 37.22,
+    "trace_type": "古战场",
+    "status": "已定位",
+    "note": "卢象昇殉国处"
+  },
+  {
+    "ancient": "高阳",
+    "modern_address": "今河北高阳",
+    "lng": 115.78,
+    "lat": 38.69,
+    "trace_type": "古战场",
+    "status": "已定位",
+    "note": "孙承宗殉国处"
+  },
+  {
+    "ancient": "鸡足山",
+    "modern_address": "今云南宾川鸡足山",
+    "lng": 100.39,
+    "lat": 25.92,
+    "trace_type": "山川",
+    "status": "已定位"
+  },
+  {
+    "ancient": "黑水峪",
+    "modern_address": "今陕西周至黑水峪",
+    "lng": 108.1,
+    "lat": 34.03,
+    "trace_type": "古战场",
+    "status": "近似定位"
+  },
+  {
+    "ancient": "荥阳",
+    "modern_address": "今河南荥阳",
+    "lng": 113.38,
+    "lat": 34.79,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "黄河",
+    "modern_address": "黄河中下游（泛指）",
+    "lng": 112.0,
+    "lat": 34.0,
+    "trace_type": "河流",
+    "status": "近似定位",
+    "note": "泛指"
+  },
+  {
+    "ancient": "上海",
+    "modern_address": "今上海",
+    "lng": 121.47,
+    "lat": 31.23,
+    "trace_type": "城市",
+    "status": "已定位"
+  },
+  {
+    "ancient": "慈溪",
+    "modern_address": "今浙江慈溪",
+    "lng": 121.24,
+    "lat": 30.17,
+    "trace_type": "城市",
+    "status": "已定位"
+  }
+]
