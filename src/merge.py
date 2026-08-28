@@ -125,6 +125,29 @@ profiles = load_json(PROFILES, {})
 reigns = load_json(REIGNS, [])
 # 人物年谱（人工整理生卒年，标注通行史料来源），供报告年谱视图使用
 lifespans = load_json(LIFESPANS, [])
+# 年谱补录（源=记忆/通用明史）：并入 lifespans，重跑不丢；不覆盖已有条目。
+# 生年不详者用「卒年 - 估值」占位并标 life_estimated，报告端以虚线条区分，绝不冒充已知年份。
+MANUAL_LIFESPANS = os.path.join(BASE, "data", "manual_lifespans.json")
+ESTIMATED_SPAN = 55
+lifespan_added = 0
+for _ml in (load_json(MANUAL_LIFESPANS, {}).get("entries") or []):
+    if not _ml.get("name") or any(x["name"] == _ml["name"] for x in lifespans):
+        continue
+    entry = {
+        "name": _ml["name"],
+        "group": _ml.get("group") or "文苑行者",
+        "birth": _ml.get("birth"),
+        "death": _ml.get("death"),
+        "note": _ml.get("note", ""),
+        "approx": bool(_ml.get("approx")),
+        "source": "记忆",
+    }
+    if entry["birth"] is None and entry["death"] is not None:
+        entry["birth"] = entry["death"] - ESTIMATED_SPAN
+        entry["life_estimated"] = True
+        entry["approx"] = True
+    lifespans.append(entry)
+    lifespan_added += 1
 # 郑和下西洋示意航线停靠点（按书中叙述整理），供地图航线叠加使用
 voyages = load_json(VOYAGES, {})
 
@@ -363,6 +386,7 @@ data = {
                      "location_fixes": len(CORRECTIONS.get("location_fixes") or {}),
                      "relation_flipped": rel_flipped,
                      "relation_dropped": rel_dropped_fix,
+                     "lifespan_added": lifespan_added,
                  },
                  "location_merge_groups": {k: sorted(v) for k, v in sorted(merged_location_groups.items())},
                  "selfloop_dropped": selfloop_dropped,
