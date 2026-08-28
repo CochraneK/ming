@@ -8,7 +8,7 @@
 ## 在线演示（GitHub Pages）
 
 - 全七部报告：<https://CochraneK.github.io/ming/>
-- 壹部专版：<https://CochraneK.github.io/ming/web/report_p1.html>
+- 壹部专版：<https://CochraneK.github.io/ming/report_p1.html>
 
 > 报告页面通过 CDN 加载 Leaflet 地图库与 OpenStreetMap 瓦片，需联网查看地图部分；其余内容（角色卡、时间线、章节打卡）已内联，离线可用。
 
@@ -21,7 +21,7 @@ src/                  抽取与生成流水线（Python）
   _dump_chapter.py    导出单章正文（供抽取使用）
   _append_extract.py  安全追加/覆写单章抽取结果
   merge.py            extract_raw.json → data.json（聚合+归一+挂地理标注）
-  generate_report.py  data.json → web/report.html（静态报告生成器）
+  generate_report.py  data.json → index.html（静态报告生成器，输出到仓库根目录）
   clean_rules.py      人名/别名词典归一规则（generate_report.py 依赖）
 data/                 派生数据（结构化事实，可自由使用）
   extract_raw.json    156 章原始抽取（角色/地点/事件/关系）
@@ -31,10 +31,8 @@ data/                 派生数据（结构化事实，可自由使用）
   manual_relations.json 手工补的关系
   lifespans.json / reigns.json / voyages.json 生卒/在位/航行
   chapters_index.json 章节标题索引（已脱敏，仅标题无正文）
-web/                  生成产物
-  report.html         全七部交互报告（GitHub Pages 入口）
-  report_p1.html      壹部专版
-  index.html          着陆页（重定向到 report.html）
+index.html            全七部交互报告（GitHub Pages 根入口）
+report_p1.html        壹部专版
 ```
 
 ## 复现方式
@@ -45,7 +43,7 @@ web/                  生成产物
 ```bash
 pip install -r requirements.txt   # 仅标准库即可，无需第三方包
 python src/merge.py               # 由 data/ 重建 data.json（可选，已包含）
-python src/generate_report.py     # 读取 data/data.json → 写出 web/report.html
+python src/generate_report.py     # 读取 data/data.json → 写出 index.html（仓库根目录）
 ```
 
 ### 完整：从原著重新抽取
@@ -53,7 +51,7 @@ python src/generate_report.py     # 读取 data/data.json → 写出 web/report.
 2. 切分章节：`python src/split_chapters.py` → `data/chapters.json`。
 3. 逐章抽取（需 LLM）：调用 `_dump_chapter.py` 取章节正文，经模型抽取五元组后由 `_append_extract.py` 写入 `data/extract_raw.json`。
 4. 聚合：`python src/merge.py` → `data/data.json`。
-5. 生成报告：`python src/generate_report.py` → `web/report.html`。
+5. 生成报告：`python src/generate_report.py` → `index.html`（仓库根目录）。
 
 ## 数据口径与限制
 

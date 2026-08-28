@@ -22,7 +22,7 @@ BASE = Path(__file__).resolve().parents[1]
 DATA_PATH = BASE / "data" / "data.json"
 RAW_PATH = BASE / "data" / "extract_raw.json"
 CHAPTERS_PATH = BASE / "data" / "chapters.json"
-OUT_PATH = BASE / "web"
+OUT_PATH = BASE  # 报告直接输出到项目根：index.html（全书）+ report_p1.html（壹部）
 
 # 人名归一与 merge.py 共用同一份规则；data.json 已在聚合时归一，这里是双保险
 from clean_rules import PERSON_CANON, PERSON_CANON_BY_PART
@@ -428,6 +428,124 @@ def build_visualizations(chars, events, relations, selected_keys, chapter_by_key
     }
 
 
+def build_relation_graph_full(relations, chars):
+    """Force-directed layout of the whole-book character relationship graph.
+
+    Coordinates are precomputed in Python (numpy FR) so the static report
+    needs no graph library at runtime. Returns nodes (with x/y), deduped
+    links (dominant category + raw count), viewBox bounds and summary stats.
+    """
+    char_by_name = {c["name"]: c for c in chars}
+    deg = {}
+    for r in relations:
+        deg[r["from"]] = deg.get(r["from"], 0) + 1
+        deg[r["to"]] = deg.get(r["to"], 0) + 1
+    if not deg:
+        return {"nodes": [], "links": [], "width": 0, "height": 0,
+                "stats": {"nodes": 0, "edges": 0, "isolated": len(chars)}}
+    try:
+        import numpy as np
+    except Exception:
+        # fall back to a deterministic circle layout
+        nodes = sorted(deg.keys(), key=lambda n: (-deg[n], n))
+        n = len(nodes)
+        step = 2 * 3.14159265 / max(n, 1)
+        out = [{"name": nm, "faction": char_by_name.get(nm, {}).get("faction", "") or "未知",
+                "tier": (char_by_name.get(nm, {}).get("faction", "") or "未知").split("·")[0],
+                "role": char_by_name.get(nm, {}).get("role", "") or "",
+                "degree": deg[nm], "r": round(min(3 + deg[nm] ** 0.5 * 1.2, 26), 1),
+                "x": round(680 + 640 * __import__("math").cos(i * step), 1),
+                "y": round(400 + 360 * __import__("math").sin(i * step), 1)}
+               for i, nm in enumerate(nodes)]
+        return {"nodes": out, "links": [], "width": 1360, "height": 800,
+                "stats": {"nodes": n, "edges": 0, "isolated": len(chars) - n}}
+
+    nodes = sorted(deg.keys(), key=lambda n: (-deg[n], n))
+    idx = {name: i for i, name in enumerate(nodes)}
+    n = len(nodes)
+
+    edge_groups = {}
+    for r in relations:
+        a, b = r["from"], r["to"]
+        if a == b:
+            continue
+        i, j = idx[a], idx[b]
+        key = (i, j) if i < j else (j, i)
+        grp = edge_groups.setdefault(key, {"count": 0, "cats": {}})
+        grp["count"] += 1
+        cat = r.get("category") or "其他"
+        grp["cats"][cat] = grp["cats"].get(cat, 0) + 1
+    edges = []
+    for (i, j), grp in edge_groups.items():
+        dominant = max(grp["cats"], key=lambda c: (grp["cats"][c],
+                         RELATION_CATEGORIES.index(c) if c in RELATION_CATEGORIES else 99))
+        edges.append((i, j, dominant, grp["count"]))
+
+    rng = np.random.default_rng(20260826)
+    pos = rng.normal(0, 1, (n, 2)).astype(np.float64)
+    k = np.sqrt(1.0 / n) * 3.0
+    t = 0.2
+    gravity = 0.015
+    src = np.array([e[0] for e in edges], dtype=np.int64)
+    tgt = np.array([e[1] for e in edges], dtype=np.int64)
+    for _ in range(800):
+        diff = pos[None, :, :] - pos[:, None, :]
+        dist2 = (diff ** 2).sum(-1) + 1e-9
+        dist = np.sqrt(dist2)
+        rep = (k * k / dist)[..., None] * (diff / dist[..., None])
+        rep[np.arange(n), np.arange(n), 0] = 0.0
+        rep[np.arange(n), np.arange(n), 1] = 0.0
+        disp = rep.sum(0)
+        d2 = dist2[src, tgt]
+        dd = np.sqrt(d2) + 1e-9
+        att = (dd / k)[:, None] * (diff[src, tgt] / dd[:, None])
+        np.add.at(disp, src, -att)
+        np.add.at(disp, tgt, att)
+        disp -= gravity * pos
+        length = np.sqrt((disp ** 2).sum(1)) + 1e-9
+        limit = np.minimum(length, t) / length
+        pos += disp * limit[:, None]
+        t *= 0.993
+
+    xs = pos[:, 0]; ys = pos[:, 1]
+    minx, maxx = float(xs.min()), float(xs.max())
+    miny, maxy = float(ys.min()), float(ys.max())
+    target_w = 1280.0
+    scale = target_w / max((maxx - minx), 1e-6)
+    pad = 40.0
+    norm_x = (xs - minx) * scale + pad
+    norm_y = (ys - miny) * scale + pad
+    height = float((maxy - miny) * scale + 2 * pad)
+    width = float(target_w + 2 * pad)
+
+    def tier(f):
+        return (f or "未知").split("·")[0]
+
+    out_nodes = []
+    for i, name in enumerate(nodes):
+        c = char_by_name.get(name, {})
+        d = deg[name]
+        out_nodes.append({
+            "name": name,
+            "faction": c.get("faction", "") or "未知",
+            "tier": tier(c.get("faction", "") or "未知"),
+            "role": c.get("role", "") or "",
+            "degree": d,
+            "r": round(min(3 + d ** 0.5 * 1.0, 20), 1),
+            "x": round(float(norm_x[i]), 1),
+            "y": round(float(norm_y[i]), 1),
+        })
+    out_links = [{"source": nodes[i], "target": nodes[j], "category": cat, "count": cnt}
+                 for (i, j, cat, cnt) in edges]
+    return {
+        "nodes": out_nodes,
+        "links": out_links,
+        "width": round(width, 1),
+        "height": round(height, 1),
+        "stats": {"nodes": n, "edges": len(edges), "isolated": len(chars) - n},
+    }
+
+
 def build_scope(scope: str):
     data = load_json(DATA_PATH, {})
     raw_list = load_json(RAW_PATH, [])
@@ -688,6 +806,7 @@ def build_scope(scope: str):
         "unknownTimeline": unknown_events,
         "distribution": distribution,
         "visualizations": visualizations,
+        "relationGraphFull": build_relation_graph_full(relations, chars),
         "metrics": metrics,
         "cleaning": data.get("meta", {}).get("cleaning", {}),
         "relationCategories": RELATION_CATEGORIES,
@@ -735,7 +854,17 @@ HTML_TEMPLATE = r'''<!doctype html>
 .dynasty-event-row{display:flex;justify-content:space-between;gap:10px;align-items:baseline;border-bottom:1px dashed #eee7de;padding:7px 2px;font-size:13px}
 @media(max-width:1000px){.dynasty-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.dynasty-detail-grid{grid-template-columns:1fr}}
 @media(max-width:640px){.dynasty-cards{grid-template-columns:1fr}.dynasty-band{height:40px}}
-.chronicle-wrap{position:relative;overflow:hidden}.chronicle-band{position:absolute;top:0;bottom:0;opacity:.16;z-index:0}.chronicle-content{position:relative;z-index:1}.chronicle-axis{position:relative;height:20px;border-bottom:1px solid var(--line);margin-bottom:8px}.chronicle-tick{position:absolute;transform:translateX(-50%);font-size:10px;color:var(--muted)}.chronicle-group{margin:15px 0 5px;font-size:13px;font-weight:700;color:#40362f;display:flex;align-items:center}.chronicle-row{display:grid;grid-template-columns:132px 1fr;gap:10px;align-items:center;padding:2px 0}.chronicle-name{text-align:right;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chronicle-track{position:relative;height:14px;background:#f3eee4;border-radius:3px}.chronicle-bar{position:absolute;top:3px;height:8px;border-radius:2px}.voyage-num{background:none;border:none;color:#8a6a1f;font-weight:700;font-size:11px;text-shadow:0 1px 0 #fff}@media(max-width:640px){.chronicle-row{grid-template-columns:92px 1fr}}</style>
+.chronicle-wrap{position:relative;overflow:hidden}.chronicle-band{position:absolute;top:0;bottom:0;opacity:.16;z-index:0}.chronicle-content{position:relative;z-index:1}.chronicle-axis{position:relative;height:20px;border-bottom:1px solid var(--line);margin-bottom:8px}.chronicle-tick{position:absolute;transform:translateX(-50%);font-size:10px;color:var(--muted)}.chronicle-group{margin:15px 0 5px;font-size:13px;font-weight:700;color:#40362f;display:flex;align-items:center}.chronicle-row{display:grid;grid-template-columns:132px 1fr;gap:10px;align-items:center;padding:2px 0}.chronicle-name{text-align:right;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chronicle-track{position:relative;height:14px;background:#f3eee4;border-radius:3px}.chronicle-bar{position:absolute;top:3px;height:8px;border-radius:2px}.voyage-num{background:none;border:none;color:#8a6a1f;font-weight:700;font-size:11px;text-shadow:0 1px 0 #fff}@media(max-width:640px){.chronicle-row{grid-template-columns:92px 1fr}}
+.map-layout{display:flex;gap:14px;align-items:stretch}
+.map-main{flex:1;min-width:0}
+.loc-dock{flex:0 0 336px;width:336px;max-height:590px;overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:14px 16px}
+.loc-dock[hidden]{display:none}
+.loc-dock .dock-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px}
+.loc-dock .dock-head h3{margin:0;color:var(--accent);font-size:19px;line-height:1.3}
+.loc-dock .dock-close{border:0;background:#f1ebe2;border-radius:5px;padding:4px 9px;white-space:nowrap}
+.loc-dock .detail-grid{margin-top:0}
+@media(max-width:760px){.map-layout{flex-direction:column}.map-main{order:1}.loc-dock{flex:none;width:auto;max-height:340px;order:2}
+#fullNet{position:relative}.full-graph-canvas{display:block;width:100%;height:auto;min-height:320px;cursor:grab;background:#fffdf9;border:1px solid var(--line);border-radius:8px}.full-graph-canvas.dragging{cursor:grabbing}.full-graph-tip-box{position:fixed;pointer-events:none;background:rgba(40,33,28,.92);color:#fffdf9;font-size:12px;padding:5px 8px;border-radius:6px;max-width:240px;white-space:nowrap;transform:translate(-50%,calc(-100% - 12px));display:none;z-index:50}.full-graph-tip{color:var(--muted);font-size:12px}</style>
 </head>
 <body>
 <header class="app-header"><div class="header-inner">
@@ -749,7 +878,7 @@ HTML_TEMPLATE = r'''<!doctype html>
   <section id="distribution" class="view"></section>
   <section id="visuals" class="view"></section>
   <section id="locations" class="view"></section>
-  <section id="map" class="view"><div class="section-head"><div><h2>地图</h2><p>仅显示已有坐标的地点；点位与地址均保留核验状态。</p></div></div><div class="panel map-wrap"><div class="toolbar" id="voyageToolbar" style="margin-bottom:10px"><span id="voyageToggleWrap"><label style="display:inline-flex;gap:6px;align-items:center;color:var(--ink)"><input type="checkbox" id="voyageToggle" checked>郑和下西洋（示意航线）</label></span><span class="muted grow" id="voyageNote"></span></div><div id="mapBox" class="map-box"></div><div class="map-note" id="mapNote"></div></div></section>
+  <section id="map" class="view"><div class="section-head"><div><h2>地图</h2><p>仅显示已有坐标的地点；点位与地址均保留核验状态。点击任一红点，右侧面板会显示该地点的书中介绍，可随时切换节点。</p></div></div><div class="panel map-wrap"><div class="toolbar" id="voyageToolbar" style="margin-bottom:10px"><span id="voyageToggleWrap"><label style="display:inline-flex;gap:6px;align-items:center;color:var(--ink)"><input type="checkbox" id="voyageToggle">郑和下西洋（示意航线）</label></span><span class="muted grow" id="voyageNote"></span></div><div class="map-layout"><div class="map-main"><div id="mapBox" class="map-box"></div><div class="map-note" id="mapNote"></div></div><aside id="locDock" class="loc-dock" hidden></aside></div></div></section>
   <section id="characters" class="view"></section>
   <section id="events" class="view"></section>
   <section id="relations" class="view"></section>
@@ -771,18 +900,19 @@ const $=s=>document.querySelector(s);
 const displayText=value=>String(value==null?'':value).replace(/[\u2192\u21E2\u21D2\u279C\u279D\u279E]/g,'至').replace(/\u2190/g,'来自').replace(/\u2194/g,'关联');
 const esc=value=>displayText(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pageSize=36;
-const state={dynastyEra:'',voyages:true,view:'overview',locMode:'index',locPage:1,locQuery:'',locRegion:'全部区域',chapterPage:1,distributionPage:1,distributionPart:'全部七部',distributionSort:'order',visualPart:'全部',visualPerson:'',charPage:1,charQuery:'',charPart:'',charFaction:'全部势力',charMinor:false,eventPage:1,eventQuery:'',eventType:'全部类型',eventCategory:'全部类别',relationPage:1,relationQuery:'',relationCategory:'全部类别',timelinePage:1,timelineCategory:'全部类别',printMode:null,rendered:{}};
+const state={dynastyEra:'',voyages:false,view:'overview',locMode:'index',locPage:1,locQuery:'',locRegion:'全部区域',chapterPage:1,distributionPage:1,distributionPart:'全部七部',distributionSort:'order',visualPart:'全部',visualPerson:'',netMode:'ego',charPage:1,charQuery:'',charPart:'',charFaction:'全部势力',charMinor:false,eventPage:1,eventQuery:'',eventType:'全部类型',eventCategory:'全部类别',relationPage:1,relationQuery:'',relationCategory:'全部类别',timelinePage:1,timelineCategory:'全部类别',printMode:null,rendered:{}};
 const metrics=DATA.metrics;
 const chapterLabel=key=>DATA.chapters[key]?.title||key;
 const chapterChips=items=>(items||[]).slice(0,6).map(x=>`<span class="source-chip" title="${esc(x.title)}">${esc(x.title)}</span>`).join('')+((items||[]).length>6?`<span class="source-chip">+${items.length-6}章</span>`:'');
 const pager=(page,total,size=pageSize)=>{const pages=Math.max(1,Math.ceil(total/size));return `<div class="pagination"><button data-page="prev" ${page<=1?'disabled':''}>上一页</button><span class="page-label">第 ${page} / ${pages} 页 · ${total} 条</span><button data-page="next" ${page>=pages?'disabled':''}>下一页</button></div>`};
 const slicePage=(list,page)=>list.slice((page-1)*pageSize,page*pageSize);
-function setView(view){state.view=view;document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===view));document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x.dataset.view===view));if(!state.rendered[view]){({overview:renderOverview,distribution:renderDistribution,visuals:renderVisuals,locations:renderLocations,map:renderMap,characters:renderCharacters,events:renderEvents,relations:renderRelations,timeline:renderTimeline,dynasty:renderDynasty,chronicle:renderChronicle}[view])();state.rendered[view]=true;}window.scrollTo(0,0)}
+function setView(view){state.view=view;document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===view));document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x.dataset.view===view));if(!state.rendered[view]){({overview:renderOverview,distribution:renderDistribution,visuals:renderVisuals,locations:renderLocations,map:renderMap,characters:renderCharacters,events:renderEvents,relations:renderRelations,timeline:renderTimeline,dynasty:renderDynasty,chronicle:renderChronicle}[view])();state.rendered[view]=true;}if(view==='map'&&mapInstance){setTimeout(()=>mapInstance.invalidateSize(),60)}if(view==='visuals'&&state.netMode==='full'){setTimeout(()=>renderFullGraph(),30)}window.scrollTo(0,0)}
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
 document.addEventListener('click',e=>{const opener=e.target.closest('[data-open-view]');if(opener)setView(opener.dataset.openView)});
 function openDetail(title,html){$('#dialogTitle').textContent=title;$('#dialogContent').innerHTML=html;$('#detailDialog').showModal()}
 $('#dialogClose').addEventListener('click',()=>$('#detailDialog').close());
 $('#detailDialog').addEventListener('click',e=>{if(e.target.id==='detailDialog')$('#detailDialog').close()});
+const voyageToggleEl=$('#voyageToggle');if(voyageToggleEl){voyageToggleEl.addEventListener('change',e=>{state.voyages=e.target.checked;renderMap()})}
 function renderOverview(){
  $('#headerStat').textContent=`${metrics.chapters}章 · ${metrics.characters}人 · ${metrics.events}件事件 · ${metrics.relations}条关系`;
  $('#overview').innerHTML=`<div class="section-head"><div><h2>知识库总览</h2><p>${esc(DATA.scopeLabel)} · 抽取结果与人工整理的统一出口</p></div><span class="status draft">结果仍需史料核验</span></div><div class="summary-hero"><div class="hero-copy"><h2>${esc(DATA.scopeLabel)}</h2><p>从章节、人物、地点、事件、关系和时间六个入口查看同一份结构化数据。每条记录都保留来源章节，未定位地点与未知年份不会被静默丢弃。</p><div class="hero-note">来源章节 ${metrics.chapters} · 已定位地点 ${metrics.locatedLocations}/${metrics.locations} · 有数值年份事件 ${metrics.timedEvents}/${metrics.events}</div></div><div class="metric-grid"><div class="metric"><span class="value">${metrics.characters}</span><span class="label">人物实体</span></div><div class="metric"><span class="value">${metrics.locations}</span><span class="label">地点实体</span></div><div class="metric"><span class="value">${metrics.events}</span><span class="label">事件实体</span></div><div class="metric"><span class="value">${metrics.relations}</span><span class="label">关系记录</span></div></div></div><div class="panel"><div class="section-head"><div><h2 style="font-size:18px">数据状态</h2><p>输出口径明确区分实体总量、已定位数量和待核验记录。</p></div></div><div class="quality-grid"><div class="quality"><strong>${metrics.locatedLocations}/${metrics.locations} 个地点已定位</strong><span>其余地点仍可在地点索引和章节视图中查看</span></div><div class="quality"><strong>${metrics.unknownEvents} 件事件年份待考</strong><span>保留在事件索引，不会从结果中消失</span></div><div class="quality"><strong>${metrics.relations} 条关系完整保留</strong><span>关系索引支持分页查看，不在人物卡中截断</span></div><div class="quality"><strong>章节来源可追溯</strong><span>人物、地点、事件和关系均关联章节标题</span></div></div></div>`;
@@ -799,9 +929,61 @@ function renderVisuals(){
  const heatmap=heatRows||'<div class="network-empty">当前范围没有可展示人物。</div>';const maxHeatColumns=Math.max(chapters.length,1);const heatHeader=`<div class="heatmap-corner">人物 / 章节</div>${chapters.map((ch,index)=>`<div class="heatmap-chapter" title="${esc(ch.part)} · ${esc(ch.title)}">${String(index+1).padStart(2,'0')}</div>`).join('')}`;
  const visibleParts=evolution.parts.filter(x=>state.visualPart==='全部'||x.partKey===state.visualPart);const maxTotal=Math.max(...visibleParts.map(x=>x.total),1);const colorByType=type=>`--event-color:${eventCatColor(type)}`;const legend=evolution.types.map(type=>`<span class="event-legend-item"><i style="${colorByType(type)}"></i>${esc(type)}</span>`).join('');const evolutionRows=visibleParts.map(part=>`<div class="evolution-row"><div class="evolution-label"><strong title="${esc(part.part)}">${esc(part.part)}</strong><span>${part.total}件事件</span></div><div class="evolution-track" title="${esc(part.part)} · ${part.total}件"><div class="evolution-fill" style="width:${part.total*100/maxTotal}%">${evolution.types.map(type=>`<span class="evolution-segment" style="width:${part.total?part.values[type]*100/part.total:0}%;background:${eventCatColor(type)}" title="${esc(type)} ${part.values[type]}件"></span>`).join('')}</div></div><div class="evolution-total">${part.total}</div></div>`).join('');
  const names=network.names;let selectedName=state.visualPerson&&network.byName[state.visualPerson]?state.visualPerson:(names[0]?.name||'');state.visualPerson=selectedName;const graph=network.byName[selectedName];const neighbors=(graph?.neighbors||[]).slice(0,12);const svgWidth=760,svgHeight=430,cx=svgWidth/2,cy=svgHeight/2,rx=290,ry=154;const positioned=neighbors.map((item,index)=>{const angle=-Math.PI/2+(Math.PI*2*index/Math.max(neighbors.length,1));return {...item,x:Math.round(cx+Math.cos(angle)*rx),y:Math.round(cy+Math.sin(angle)*ry)}});const networkLinks=positioned.map(item=>{const mx=Math.round((cx+item.x)/2),my=Math.round((cy+item.y)/2);return `<line class="network-link ${item.direction==='反向'?'incoming':''}" style="stroke:${relCatColor(item.category)}" x1="${cx}" y1="${cy}" x2="${item.x}" y2="${item.y}"><title>${esc(item.category)} · ${esc(item.direction)} · ${esc(item.relation)} · ${item.relationCount}条来源</title></line><text class="network-edge-label" x="${mx}" y="${my-5}">${esc(item.direction)}</text><text class="network-edge-label" x="${mx}" y="${my+8}">${esc(item.relation.length>12?item.relation.slice(0,12)+'...':item.relation)}</text>`}).join('');const networkNodes=positioned.map(item=>`<g><circle class="network-node" cx="${item.x}" cy="${item.y}" r="28"><title>${esc(item.name)} · ${item.chapterCount}章 · ${item.relationCount}条来源</title></circle><text class="network-label" x="${item.x}" y="${item.y+4}">${esc(item.name.length>6?item.name.slice(0,5)+'...':item.name)}</text></g>`).join('');const networkSvg=selectedName?`<svg class="network-svg" viewBox="0 0 ${svgWidth} ${svgHeight}" role="img" aria-label="${esc(selectedName)}的人物关系网络"><g>${networkLinks}</g><g><circle class="network-node center" cx="${cx}" cy="${cy}" r="42"><title>${esc(graph.center.name)} · ${graph.center.chapterCount}章 · ${graph.center.relationCount}条关系</title></circle><text class="network-label center" x="${cx}" y="${cy+4}">${esc(selectedName.length>7?selectedName.slice(0,6)+'...':selectedName)}</text></g><g>${networkNodes}</g></svg>`:'<div class="network-empty">当前范围没有可展示关系的人物。</div>';
- $('#visuals').innerHTML=`<div class="section-head"><div><h2>图谱：从章节分布到人物网络</h2><p>${esc(DATA.scopeLabel)} · 只展示高频人物、归一后的事件类别和核心人物邻域，保留原始数据的可读结构。</p></div><span class="status draft">图形用于发现线索</span></div><div class="visual-toolbar"><label for="visualPart">范围</label><select id="visualPart">${partOptions}</select><span class="visual-note">热力图按章节顺序排列；颜色和线型均有文字说明。</span></div><div class="visuals-stack"><section class="panel visuals-panel"><div class="section-head"><div><h3>一、人物出场轨迹</h3><p>纵轴为章节覆盖度最高的 24 位人物，横轴为当前范围内的章节序号；深色格表示该人物在该章有记录。</p></div><span class="visual-note">${heat.characters.length} 人 · ${chapters.length} 章</span></div><div class="heatmap-wrap"><div class="heatmap-grid" style="--heatmap-columns:${maxHeatColumns}">${heatHeader}${heatmap}</div></div><div class="heatmap-legend"><span><i class="heatmap-key present"></i>有出场记录</span><span><i class="heatmap-key empty"></i>无出场记录</span><span>人物行按章节覆盖度排序</span></div></section><section class="panel visuals-panel"><div class="section-head"><div><h3>二、事件类型演变</h3><p>各分部共享同一尺度；条形长度代表该部事件总量，内部颜色表示归一后的事件类别。</p></div><span class="visual-note">${visibleParts.length} 个分部 · ${evolution.types.length} 类</span></div><div class="event-legend">${legend}</div><div class="evolution-list">${evolutionRows||'<div class="network-empty">当前范围没有事件。</div>'}</div></section><section class="panel visuals-panel"><div class="section-head"><div><h3>三、核心人物关系网络</h3><p>默认选择关系度最高的人物；实线表示主动关系，虚线表示反向记录，重复关系已合并。</p></div></div><div class="network-controls"><label for="visualPerson">中心人物</label><select id="visualPerson">${names.map(item=>`<option value="${esc(item.name)}" ${item.name===selectedName?'selected':''}>${esc(item.name)} · ${item.relationCount}条关系 · ${item.chapterCount}章</option>`).join('')}</select></div>${graph?`<div class="network-summary"><span>中心：<strong>${esc(graph.center.name)}</strong></span><span>覆盖 ${graph.center.chapterCount} 章</span><span>关系记录 ${graph.center.relationCount} 条</span><span>展示邻居 ${neighbors.length} 人</span></div><div class="cat-legend">${(DATA.relationCategories||[]).map(c=>`<span><i class="cat-dot" style="--cat:${relCatColor(c)};margin-right:4px"></i>${esc(c)}</span>`).join('')}</div>${networkSvg}`:'<div class="network-empty">暂无关系网络数据。</div>'}</section></div>`;
+ $('#visuals').innerHTML=`<div class="section-head"><div><h2>图谱：从章节分布到人物网络</h2><p>${esc(DATA.scopeLabel)} · 只展示高频人物、归一后的事件类别和核心人物邻域，保留原始数据的可读结构。</p></div><span class="status draft">图形用于发现线索</span></div><div class="visual-toolbar"><label for="visualPart">范围</label><select id="visualPart">${partOptions}</select><span class="visual-note">热力图按章节顺序排列；颜色和线型均有文字说明。</span></div><div class="visuals-stack"><section class="panel visuals-panel"><div class="section-head"><div><h3>一、人物出场轨迹</h3><p>纵轴为章节覆盖度最高的 24 位人物，横轴为当前范围内的章节序号；深色格表示该人物在该章有记录。</p></div><span class="visual-note">${heat.characters.length} 人 · ${chapters.length} 章</span></div><div class="heatmap-wrap"><div class="heatmap-grid" style="--heatmap-columns:${maxHeatColumns}">${heatHeader}${heatmap}</div></div><div class="heatmap-legend"><span><i class="heatmap-key present"></i>有出场记录</span><span><i class="heatmap-key empty"></i>无出场记录</span><span>人物行按章节覆盖度排序</span></div></section><section class="panel visuals-panel"><div class="section-head"><div><h3>二、事件类型演变</h3><p>各分部共享同一尺度；条形长度代表该部事件总量，内部颜色表示归一后的事件类别。</p></div><span class="visual-note">${visibleParts.length} 个分部 · ${evolution.types.length} 类</span></div><div class="event-legend">${legend}</div><div class="evolution-list">${evolutionRows||'<div class="network-empty">当前范围没有事件。</div>'}</div></section><section class="panel visuals-panel"><div class="section-head"><div><h3>三、核心人物关系网络</h3><p>切换查看：中心人物邻域，或全书人物关系总图（力导向布局，点越大关系越多）。</p></div></div><div class="network-controls"><label for="netMode">关系视图</label><select id="netMode"><option value="ego" ${state.netMode==='ego'?'selected':''}>中心人物</option><option value="full" ${state.netMode==='full'?'selected':''}>全书版本</option></select><span class="muted grow" id="netModeNote"></span></div><div id="egoNet"><div class="network-controls"><label for="visualPerson">中心人物</label><select id="visualPerson">${names.map(item=>`<option value="${esc(item.name)}" ${item.name===selectedName?'selected':''}>${esc(item.name)} · ${item.relationCount}条关系 · ${item.chapterCount}章</option>`).join('')}</select></div>${graph?`<div class="network-summary"><span>中心：<strong>${esc(graph.center.name)}</strong></span><span>覆盖 ${graph.center.chapterCount} 章</span><span>关系记录 ${graph.center.relationCount} 条</span><span>展示邻居 ${neighbors.length} 人</span></div><div class="cat-legend">${(DATA.relationCategories||[]).map(c=>`<span><i class="cat-dot" style="--cat:${relCatColor(c)};margin-right:4px"></i>${esc(c)}</span>`).join('')}</div>${networkSvg}`:'<div class="network-empty">暂无关系网络数据。</div>'}</div><div id="fullNet" style="display:${state.netMode==='full'?'block':'none'}"><div class="network-summary" id="fullSummary"></div><canvas id="fullGraph" class="network-svg full-graph-canvas"></canvas><div id="fullTip" class="full-graph-tip-box"></div><div class="cat-legend" id="fullLegend"></div><p class="full-graph-tip">滚轮缩放 · 拖拽平移 · 点击节点高亮其邻域 · 点击空白复位</p></div></section></div>`;
  $('#visualPart').addEventListener('change',event=>{state.visualPart=event.target.value;renderVisuals()});$('#visualPerson').addEventListener('change',event=>{state.visualPerson=event.target.value;renderVisuals()});
+const nmEl=$('#netMode');if(nmEl){nmEl.addEventListener('change',e=>{state.netMode=e.target.value;const ego=$('#egoNet'),full=$('#fullNet');if(state.netMode==='full'){ego.style.display='none';full.style.display='block';renderFullGraph()}else{ego.style.display='block';full.style.display='none';stopFullSim();}});if(state.netMode==='full'){renderFullGraph()}}
 }
+function factionColor(tier){const palette=['#8d3025','#476b86','#527b5c','#b88b35','#6d688c','#a24b55','#3d7a7a','#9a6b2f','#7a5ca8','#4f7d3a','#b0466f','#356f9c','#8a6d2b','#5c7a3a','#9c5a3a'];let h=0;for(let i=0;i<tier.length;i++){h=(h*31+tier.charCodeAt(i))>>>0}return palette[h%palette.length]}
+let fullT={k:1,tx:0,ty:0};
+function applyFullTransform(){if(fullCanvas)drawFull()}
+function fgByName(n){if(!_fgCache){_fgCache={};(DATA.relationGraphFull.nodes||[]).forEach(x=>{_fgCache[x.name]=x})}return _fgCache[n]}
+function drawFull(){
+  const g=DATA.relationGraphFull;if(!g||!g.nodes||!g.nodes.length)return;
+  const ctx=fullCtx;ctx.save();ctx.setTransform(fullDpr,0,0,fullDpr,0,0);ctx.clearRect(0,0,fullCssW,fullCssH);
+  const k=fullT.k,tx=fullT.tx,ty=fullT.ty;const hl=fullHighlight;const inc=new Set();
+  const S=fullSim?fullSim.nodes:null;
+  if(hl){inc.add(hl);g.links.forEach(l=>{if(l.source===hl)inc.add(l.target);if(l.target===hl)inc.add(l.source)});}
+  g.links.forEach(l=>{const a=S?S[fullSim.ix[l.source]]:fgByName(l.source);const b=S?S[fullSim.ix[l.target]]:fgByName(l.target);if(!a||!b)return;const ax=a.x*k+tx,ay=a.y*k+ty,bx=b.x*k+tx,by=b.y*k+ty;let op=0.5,w=Math.min(0.6+l.count*0.35,3.2);if(hl){const on=(l.source===hl||l.target===hl);op=on?0.95:0.05;w=on?Math.min(w+0.8,4):w;}ctx.strokeStyle=relCatColor(l.category);ctx.globalAlpha=op;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();});
+  ctx.globalAlpha=1;
+  g.nodes.forEach((nd,i)=>{const s=S?S[i]:nd;const x=s.x*k+tx,y=s.y*k+ty,r=Math.max(s.r*k,2.2);let op=1;if(hl){op=inc.has(nd.name)?1:0.12;}ctx.globalAlpha=op;ctx.fillStyle=factionColor(nd.tier);ctx.beginPath();ctx.arc(x,y,r,0,6.2832);ctx.fill();ctx.lineWidth=0.8;ctx.strokeStyle='#fffdf9';ctx.stroke();if(nd.degree>=10&&(!hl||inc.has(nd.name))){ctx.globalAlpha=op;ctx.fillStyle='#443a32';ctx.font='11px "Microsoft YaHei","PingFang SC",sans-serif';ctx.textAlign='center';ctx.fillText(nd.name.length>6?nd.name.slice(0,6)+'…':nd.name,x,y-r-4);}});
+  ctx.globalAlpha=1;ctx.restore();
+}
+/* 实时力模拟：网格加速斥力 + 弹簧 + 中心引力 + 微抖动（轻微飘动） */
+let fullSim=null,fullReduceMotion=false,_fullBound=false,_fullResizeBound=false;
+function sizeFullCanvas(){if(!fullCanvas)return;const g=DATA.relationGraphFull;if(!g)return;const cssW=fullCanvas.parentElement.clientWidth||800;const cssH=Math.max(320,Math.min(cssW*(g.height/g.width),cssW*1.15));fullCssW=cssW;fullCssH=cssH;fullDpr=window.devicePixelRatio||1;fullCanvas.style.height=cssH+'px';fullCanvas.width=Math.round(cssW*fullDpr);fullCanvas.height=Math.round(cssH*fullDpr);fullCanvas.style.width=cssW+'px';const s=cssW/g.width;fullT={k:s,tx:0,ty:0};if(!_fullResizeBound){_fullResizeBound=true;let rt=null;window.addEventListener('resize',()=>{if(!fullCanvas)return;clearTimeout(rt);rt=setTimeout(()=>{sizeFullCanvas();drawFull();},120);});}}
+function initFullSim(){const g=DATA.relationGraphFull;if(!g||!g.nodes||!g.nodes.length){fullSim=null;return;}const nodes=g.nodes.map(nd=>({name:nd.name,x:nd.x,y:nd.y,vx:0,vy:0,r:nd.r,degree:nd.degree,faction:nd.faction,tier:nd.tier,role:nd.role,fixed:false}));const ix={};nodes.forEach((n,i)=>ix[n.name]=i);const links=g.links.map(l=>({a:ix[l.source],b:ix[l.target],category:l.category,count:l.count}));fullSim={nodes,ix,links,w:g.width,h:g.height,alpha:1,alphaTarget:0,raf:null,dragIdx:-1,reduced:fullReduceMotion};}
+function fullStep(){const S=fullSim;if(!S)return;const N=S.nodes,n=N.length;const k=24,rep=160,spring=0.02,gravity=0.018,cx=S.w/2,cy=S.h/2,alpha=S.alpha;const thermal=S.reduced?0:0.22;const cell=k*4;const grid=new Map();for(let i=0;i<n;i++){const nd=N[i];const gx=Math.floor(nd.x/cell),gy=Math.floor(nd.y/cell);const key=gx+'|'+gy;let arr=grid.get(key);if(!arr){arr=[];grid.set(key,arr);}arr.push(i);}for(let i=0;i<n;i++){const a=N[i];if(a.fixed)continue;let fx=0,fy=0;const gx=Math.floor(a.x/cell),gy=Math.floor(a.y/cell);for(let ox=-1;ox<=1;ox++)for(let oy=-1;oy<=1;oy++){const arr=grid.get((gx+ox)+'|'+(gy+oy));if(!arr)continue;for(let q=0;q<arr.length;q++){const j=arr[q];if(j===i)continue;const b=N[j];let dx=a.x-b.x,dy=a.y-b.y;let d2=dx*dx+dy*dy;if(d2<1e-3){dx=Math.random()-0.5;dy=Math.random()-0.5;d2=dx*dx+dy*dy+1e-3;}const d=Math.sqrt(d2);const f=rep/d2;fx+=dx/d*f;fy+=dy/d*f;}}fx+=(cx-a.x)*gravity;fy+=(cy-a.y)*gravity;a._fx=fx;a._fy=fy;}for(let e=0;e<S.links.length;e++){const l=S.links[e];const a=N[l.a],b=N[l.b];if(a.fixed&&b.fixed)continue;let dx=b.x-a.x,dy=b.y-a.y;let d=Math.sqrt(dx*dx+dy*dy)+1e-6;const f=(d-k)*spring;const fx=dx/d*f,fy=dy/d*f;if(!a.fixed){a._fx+=fx;a._fy+=fy;}if(!b.fixed){b._fx-=fx;b._fy-=fy;}}const damp=0.85,maxStep=12;for(let i=0;i<n;i++){const a=N[i];if(a.fixed){a.vx=0;a.vy=0;continue;}const jx=thermal?(Math.random()-0.5)*thermal:0;const jy=thermal?(Math.random()-0.5)*thermal:0;a.vx=(a.vx+a._fx*alpha+jx)*damp;a.vy=(a.vy+a._fy*alpha+jy)*damp;const sp=Math.hypot(a.vx,a.vy);if(sp>maxStep){a.vx*=maxStep/sp;a.vy*=maxStep/sp;}a.x+=a.vx;a.y+=a.vy;}const floor=0.05;S.alpha+=(S.alphaTarget-S.alpha)*0.02;if(S.alpha<floor)S.alpha=floor;}
+function fullLoop(){if(!fullSim)return;fullStep();drawFull();if(fullSim.reduced&&fullSim.alpha<=0.051&&fullSim.dragIdx<0){const r=fullSim.raf;fullSim.raf=null;if(r)cancelAnimationFrame(r);return;}fullSim.raf=requestAnimationFrame(fullLoop);}
+function startFullSim(){if(!fullSim)initFullSim();if(fullSim&&!fullSim.raf){fullSim.raf=requestAnimationFrame(fullLoop);}}
+function stopFullSim(){if(fullSim&&fullSim.raf){cancelAnimationFrame(fullSim.raf);fullSim.raf=null;}}
+function renderFullGraph(){
+  const g=DATA.relationGraphFull;const sum=document.getElementById('fullSummary'),legend=document.getElementById('fullLegend'),canvas=document.getElementById('fullGraph');
+  if(!g||!g.nodes||!g.nodes.length){if(sum)sum.innerHTML='<span>当前范围没有可绘制的关系图。</span>';return;}
+  fullReduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  fullCanvas=canvas;fullCtx=canvas.getContext('2d');_fgCache=null;fullHighlight=null;
+  sizeFullCanvas();
+  legend.innerHTML=(DATA.relationCategories||[]).map(c=>`<span><i class="cat-dot" style="--cat:${relCatColor(c)};margin-right:4px"></i>${esc(c)}</span>`).join('')+`<span class="muted"> · 点大小=关系数，颜色=势力大类 · 可拖拽节点</span>`;
+  sum.innerHTML=`<span>全书关系图：<strong>${g.stats.nodes}</strong> 名人物 · <strong>${g.stats.edges}</strong> 条关系</span><span>孤立人物 ${g.stats.isolated}</span>`;
+  initFullSim();
+  drawFull();
+  if(!_fullBound){setupFullInteractions(canvas);_fullBound=true;}
+  startFullSim();
+}
+function showFullNode(name){const g=DATA.relationGraphFull;const node=fgByName(name);if(!node)return;fullHighlight=name;const inc=new Set([name]);g.links.forEach(l=>{if(l.source===name)inc.add(l.target);if(l.target===name)inc.add(l.source)});const neigh=[...inc].filter(x=>x!==name);document.getElementById('fullSummary').innerHTML=`<span>已选：<strong>${esc(name)}</strong></span><span>${esc(node.faction||'势力待补')}</span><span>关系 ${node.degree} 条</span><span>邻域 ${neigh.length} 人</span>`;drawFull();}
+function resetFullHighlight(){fullHighlight=null;const g=DATA.relationGraphFull;if(g)document.getElementById('fullSummary').innerHTML=`<span>全书关系图：<strong>${g.stats.nodes}</strong> 名人物 · <strong>${g.stats.edges}</strong> 条关系</span><span>孤立人物 ${g.stats.isolated}</span>`;drawFull();}
+function setupFullInteractions(canvas){
+  const hit=(mx,my)=>{const arr=fullSim?fullSim.nodes:DATA.relationGraphFull.nodes;let best=-1,bd=1e9;for(let i=0;i<arr.length;i++){const nd=arr[i];const sx=nd.x*fullT.k+fullT.tx,sy=nd.y*fullT.k+fullT.ty;const d=Math.hypot(sx-mx,sy-my);const rr=Math.max(nd.r*fullT.k,2.2)+6;if(d<rr&&d<bd){bd=d;best=i;}}return best;};
+  let panning=false,lx=0,ly=0,moved=false,dragIdx=-1;
+  canvas.addEventListener('wheel',e=>{e.preventDefault();const rect=canvas.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;const f=e.deltaY<0?1.12:1/1.12;const nk=Math.min(Math.max(fullT.k*f,0.15),14);const r=nk/fullT.k;fullT.tx=mx-(mx-fullT.tx)*r;fullT.ty=my-(my-fullT.ty)*r;fullT.k=nk;drawFull();},{passive:false});
+  canvas.addEventListener('pointerdown',e=>{const rect=canvas.getBoundingClientRect();const idx=hit(e.clientX-rect.left,e.clientY-rect.top);moved=false;lx=e.clientX;ly=e.clientY;if(idx>=0){dragIdx=idx;if(fullSim){const nd=fullSim.nodes[idx];nd.fixed=true;fullSim.dragIdx=idx;fullSim.alpha=Math.max(fullSim.alpha,0.6);fullSim.alphaTarget=0.6;}startFullSim();canvas.classList.add('dragging');if(canvas.setPointerCapture)try{canvas.setPointerCapture(e.pointerId);}catch(_){}}else{panning=true;canvas.classList.add('dragging');}});
+  window.addEventListener('pointerup',()=>{if(dragIdx>=0&&fullSim){const nd=fullSim.nodes[dragIdx];nd.fixed=false;fullSim.dragIdx=-1;fullSim.alphaTarget=0;fullSim.alpha=Math.max(fullSim.alpha,0.35);}dragIdx=-1;panning=false;canvas.classList.remove('dragging');});
+  canvas.addEventListener('pointermove',e=>{const rect=canvas.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+    if(dragIdx>=0){const dx=e.clientX-lx,dy=e.clientY-ly;if(Math.abs(dx)>3||Math.abs(dy)>3)moved=true;const nd=fullSim.nodes[dragIdx];nd.x=(mx-fullT.tx)/fullT.k;nd.y=(my-fullT.ty)/fullT.k;nd.vx=dx/fullT.k;nd.vy=dy/fullT.k;lx=e.clientX;ly=e.clientY;fullSim.alpha=Math.max(fullSim.alpha,0.6);return;}
+    if(panning){const dx=e.clientX-lx,dy=e.clientY-ly;if(Math.abs(dx)>3||Math.abs(dy)>3)moved=true;fullT.tx+=dx;fullT.ty+=dy;lx=e.clientX;ly=e.clientY;drawFull();return;}
+    const idx=hit(mx,my);const tip=document.getElementById('fullTip');if(idx>=0){const nd=(fullSim?fullSim.nodes:fgByName(DATA.relationGraphFull.nodes[idx].name));canvas.style.cursor='grab';tip.style.display='block';tip.style.left=e.clientX+'px';tip.style.top=e.clientY+'px';tip.textContent=`${nd.name}${nd.faction?' · '+nd.faction:''}${nd.role?' · '+nd.role:''} · ${nd.degree}条关系`;}else{canvas.style.cursor='grab';tip.style.display='none';}});
+  canvas.addEventListener('click',e=>{if(moved){moved=false;return;}const rect=canvas.getBoundingClientRect();const idx=hit(e.clientX-rect.left,e.clientY-rect.top);if(idx>=0){const name=(fullSim?fullSim.nodes[idx].name:DATA.relationGraphFull.nodes[idx].name);showFullNode(name);}else resetFullHighlight();});
+}
+let fullCanvas=null,fullCtx=null,fullDpr=1,fullCssW=0,fullCssH=0,fullHighlight=null,_fgCache=null;
 function locationCard(item){const coords=item.lat!=null?`${Number(item.lat).toFixed(2)}, ${Number(item.lng).toFixed(2)}`:'未定位';return `<article class="location-card"><div class="card-head"><div><span class="card-title">${esc(item.ancient)}</span> <span class="tag">${esc(item.trace)}</span></div><span class="status ${item.status==='已定位'?'':'draft'}">${esc(item.status)}</span></div><div class="meta">今址：${esc(item.modern)}${item.mentionedAs?.length?`<br>别称：${esc(item.mentionedAs.join('、'))}`:''}</div><div class="meta">坐标：${esc(coords)} · ${esc(item.region)}</div>${item.directEvents.length?`<div class="meta"><b>直接关联事件：</b><ul class="event-list">${item.directEvents.slice(0,6).map(x=>`<li><button class="link-button" data-event-name="${esc(x)}">${esc(x)}</button></li>`).join('')}</ul></div>`:`<div class="meta">当前章节仅提及，未确认具体事件落点。</div>`}${item.relatedEventCount?`<div class="meta muted">同章另有 ${item.relatedEventCount} 件事件，未作为地点直接关联。</div>`:''}<div class="source-row">${chapterChips(item.chapters)}<button class="action" data-location-id="${item.id}">详情</button></div></article>`}
 function bindPaging(root,callback){root.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>{if(!b.disabled){callback(b.dataset.page==='next'?1:-1)}}))}
 function renderLocations(){
@@ -814,7 +996,8 @@ function renderLocations(){
  root.querySelectorAll('[data-event-name]').forEach(b=>b.addEventListener('click',()=>{const event=DATA.events.find(x=>x.name===b.dataset.eventName);if(event)showEvent(event)}));
 }
 function showEvent(event){openDetail(event.name,`<div class="detail-grid"><div class="detail-block"><strong>时间</strong><p>${esc(event.year||'年份待考')}</p></div><div class="detail-block"><strong>类别</strong><p>${catBadge(event.category,eventCatColor(event.category))}</p></div><div class="detail-block"><strong>原类型</strong><p>${esc(event.type)}</p></div><div class="detail-block"><strong>地点</strong><p>${esc(event.location)}</p></div><div class="detail-block"><strong>参与者</strong><p>${esc(event.participants.join('、')||'未标注')}</p></div><div class="detail-block detail-wide"><strong>来源章节</strong><div class="source-row">${chapterChips(event.sources)}</div></div></div>`)}
-let mapInstance=null;function renderMap(){const locations=DATA.locations.filter(x=>x.lat!=null&&x.lng!=null);const voyage=(DATA.voyages&&DATA.voyages.points&&DATA.voyages.points.length>=2)?DATA.voyages:null;const tw=$('#voyageToggleWrap');if(tw){tw.style.display=voyage?'':'none';const vn=$('#voyageNote');if(vn){vn.textContent=voyage?`${voyage.points.length} 个停靠点 · ${esc(voyage.note||'')}`:''}}$('#mapNote').textContent=`已定位 ${locations.length}/${DATA.locations.length} 个地点。${window.L?'地图瓦片来自 OpenStreetMap，需联网加载。':'当前为离线点位图，地图瓦片未加载。'}`;const box=$('#mapBox');if(mapInstance){mapInstance.remove();mapInstance=null}box.innerHTML='';if(window.L){const map=L.map(box).setView([34.5,113],4);mapInstance=map;L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);locations.forEach(x=>L.circleMarker([x.lat,x.lng],{radius:6,color:'#8d3025',fillColor:'#b94a37',fillOpacity:.85}).addTo(map).bindPopup(`<b>${esc(x.ancient)}</b><br>${esc(x.modern)}<br>${esc(x.status)}`));if(voyage&&state.voyages){const pts=voyage.points.map(p=>[p.lat,p.lng]);L.polyline(pts,{color:'#b88b35',weight:3,dashArray:'7 6',opacity:.9}).addTo(map).bindPopup(`<b>${esc(voyage.name)}</b><br>${esc(voyage.note||'')}`);voyage.points.forEach((p,i)=>{L.circleMarker([p.lat,p.lng],{radius:8,color:'#8a6a1f',fillColor:'#e8c872',fillOpacity:.95,weight:2}).addTo(map).bindPopup(`<b>${i+1}. ${esc(p.name)}</b>`).bindTooltip(String(i+1),{permanent:true,direction:'top',className:'voyage-num',offset:[0,-9]})})}setTimeout(()=>map.invalidateSize(),100)}else{const points=locations;const proj=x=>{const px=Math.max(30,Math.min(970,(x.lng-73)/62*940)),py=Math.max(30,Math.min(490,(54-x.lat)/36*460));return[px,py]};let route='';if(voyage&&state.voyages){const vs=voyage.points.map(proj);route=`<polyline points="${vs.map(v=>v.join(',')).join(' ')}" fill="none" stroke="#b88b35" stroke-width="2" stroke-dasharray="6 5"/>`+voyage.points.map((p,i)=>{const[px,py]=proj(p);return `<circle cx="${px}" cy="${py}" r="7" fill="#e8c872" stroke="#8a6a1f" stroke-width="2"/><text x="${px}" y="${py+3}" text-anchor="middle" font-size="9" fill="#5f4a14" font-weight="bold">${i+1}</text><title>${i+1}. ${esc(p.name)}</title>`}).join('')}box.innerHTML=`<svg class="fallback-map" viewBox="0 0 1000 520" role="img" aria-label="地点坐标图"><rect width="1000" height="520" fill="#e6eee7"/><path d="M80 440 Q280 280 480 350 T920 150" fill="none" stroke="#b8cbb8" stroke-width="80" opacity=".45"/>${route}${points.map(x=>{const[px,py]=proj(x);return `<circle cx="${px}" cy="${py}" r="5" fill="#8d3025"/><title>${esc(x.ancient)} · ${esc(x.modern)}</title>`}).join('')}</svg>`}const t=$('#voyageToggle');if(t){t.onchange=()=>{state.voyages=t.checked;renderMap()}}}
+function showLocation(x){const evs=(x.directEvents||[]).map(n=>DATA.events.find(e=>e.name===n)).filter(Boolean);const people=[...new Set(evs.flatMap(e=>e.participants||[]))];const eventsHtml=evs.length?`<ul class="event-list">${evs.map(e=>`<li><button class="link-button" data-loc-event="${esc(e.name)}">${esc(e.name)}</button> · ${esc(e.year||'年份待考')}</li>`).join('')}</ul>`:`<p class="muted">当前范围仅提及，书中未确认具体事件落点。</p>`;const relatedHtml=x.relatedEventCount?`<p class="muted">同章另有 ${x.relatedEventCount} 件事件，未作为地点直接关联。</p>`:'';const peopleHtml=people.length?esc(people.slice(0,15).join('、')):'无（或未标注）';const html=`<div class="detail-grid"><div class="detail-block"><strong>今址</strong><p>${esc(x.modern)}</p></div><div class="detail-block"><strong>书中身份</strong><p>${esc(x.trace)}</p></div><div class="detail-block"><strong>别称</strong><p>${esc(x.mentionedAs.join('、')||'无')}</p></div><div class="detail-block"><strong>坐标</strong><p>${x.lat==null?'未定位':`${x.lat}, ${x.lng}`}</p></div><div class="detail-block detail-wide"><strong>书中直接关联事件（${evs.length}）</strong>${eventsHtml}${relatedHtml}</div><div class="detail-block detail-wide"><strong>书中涉及人物</strong><p>${peopleHtml}</p></div><div class="detail-block detail-wide"><strong>来源章节</strong><div class="source-row">${chapterChips(x.chapters)}</div></div><div class="detail-block detail-wide"><strong>核验备注</strong><p>${esc(x.note||'暂无')}</p></div></div>`;const dock=$('#locDock');dock.innerHTML=`<div class="dock-head"><h3>${esc(x.ancient)}</h3><button class="dock-close" id="locDockClose">关闭</button></div>${html}`;dock.hidden=false;const closeDock=()=>{dock.hidden=true;if(mapInstance)setTimeout(()=>mapInstance.invalidateSize(),60)};$('#locDockClose').addEventListener('click',closeDock);dock.querySelectorAll('[data-loc-event]').forEach(b=>b.addEventListener('click',()=>{const ev=DATA.events.find(e=>e.name===b.dataset.locEvent);if(ev)showEvent(ev)}));if(mapInstance)setTimeout(()=>mapInstance.invalidateSize(),60)}
+let mapInstance=null;function renderMap(){const locations=DATA.locations.filter(x=>x.lat!=null&&x.lng!=null);const voyage=(DATA.voyages&&DATA.voyages.points&&DATA.voyages.points.length>=2)?DATA.voyages:null;const tw=$('#voyageToggleWrap');if(tw){tw.style.display=voyage?'':'none';const vn=$('#voyageNote');if(vn){vn.textContent=voyage?`${voyage.points.length} 个停靠点 · ${esc(voyage.note||'')}`:''}}$('#mapNote').textContent=`已定位 ${locations.length}/${DATA.locations.length} 个地点。${window.L?'地图瓦片来自 OpenStreetMap，需联网加载。':'当前为离线点位图，地图瓦片未加载。'}`;const box=$('#mapBox');if(mapInstance){mapInstance.remove();mapInstance=null}box.innerHTML='';if(window.L){const map=L.map(box).setView([34.5,113],4);mapInstance=map;L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);locations.forEach(x=>{const m=L.circleMarker([x.lat,x.lng],{radius:6,color:'#8d3025',fillColor:'#b94a37',fillOpacity:.85}).addTo(map);m.bindTooltip(esc(x.ancient));m.on('click',()=>showLocation(x))});if(voyage&&state.voyages){const pts=voyage.points.map(p=>[p.lat,p.lng]);L.polyline(pts,{color:'#b88b35',weight:3,dashArray:'7 6',opacity:.9}).addTo(map).bindPopup(`<b>${esc(voyage.name)}</b><br>${esc(voyage.note||'')}`);voyage.points.forEach((p,i)=>{L.circleMarker([p.lat,p.lng],{radius:8,color:'#8a6a1f',fillColor:'#e8c872',fillOpacity:.95,weight:2}).addTo(map).bindPopup(`<b>${i+1}. ${esc(p.name)}</b>`).bindTooltip(String(i+1),{permanent:true,direction:'top',className:'voyage-num',offset:[0,-9]})})}setTimeout(()=>map.invalidateSize(),100)}else{const points=locations;const proj=x=>{const px=Math.max(30,Math.min(970,(x.lng-73)/62*940)),py=Math.max(30,Math.min(490,(54-x.lat)/36*460));return[px,py]};let route='';if(voyage&&state.voyages){const vs=voyage.points.map(proj);route=`<polyline points="${vs.map(v=>v.join(',')).join(' ')}" fill="none" stroke="#b88b35" stroke-width="2" stroke-dasharray="6 5"/>`+voyage.points.map((p,i)=>{const[px,py]=proj(p);return `<circle cx="${px}" cy="${py}" r="7" fill="#e8c872" stroke="#8a6a1f" stroke-width="2"/><text x="${px}" y="${py+3}" text-anchor="middle" font-size="9" fill="#5f4a14" font-weight="bold">${i+1}</text><title>${i+1}. ${esc(p.name)}</title>`}).join('')}box.innerHTML=`<svg class="fallback-map" viewBox="0 0 1000 520" role="img" aria-label="地点坐标图"><rect width="1000" height="520" fill="#e6eee7"/><path d="M80 440 Q280 280 480 350 T920 150" fill="none" stroke="#b8cbb8" stroke-width="80" opacity=".45"/>${route}${points.map(x=>{const[px,py]=proj(x);return `<circle cx="${px}" cy="${py}" r="5" fill="#8d3025" data-loc-ancient="${esc(x.ancient)}" style="cursor:pointer"><title>${esc(x.ancient)} · ${esc(x.modern)}（点击查看书中介绍）</title></circle>`}).join('')}</svg>`}box.querySelectorAll('[data-loc-ancient]').forEach(c=>c.addEventListener('click',()=>{const x=DATA.locations.find(y=>y.ancient===c.dataset.locAncient);if(x)showLocation(x)}));const t=$('#voyageToggle');if(t){t.onchange=()=>{state.voyages=t.checked;renderMap()}}}
 function renderCharacters(){
  const factions=[...new Set(DATA.characters.map(x=>x.faction).filter(Boolean))].sort();const list=DATA.characters.filter(x=>(!state.charPart||x.chapters.some(k=>k.startsWith(state.charPart+'-')))&&(!state.charFaction||state.charFaction==='全部势力'||x.faction===state.charFaction)&&(!state.charQuery||`${x.name} ${x.faction} ${x.role} ${x.aliases.join(' ')} ${x.events.join(' ')}`.toLowerCase().includes(state.charQuery.toLowerCase()))&&(state.charMinor||x.chapters.length>1));const page=slicePage(list,state.charPage);$('#characters').innerHTML=`<div class="section-head"><div><h2>人物索引</h2><p>${metrics.characters} 个角色实体；默认按章节覆盖度排序，关系完整保留在详情中。</p></div></div><div class="panel"><div class="toolbar"><label>部次</label><select id="charPart"><option value="">全部七部</option>${Object.entries(PARTS).map(([k,v])=>`<option value="${k}" ${state.charPart===k?'selected':''}>${esc(v)}</option>`).join('')}</select><label>势力</label><select id="charFaction"><option>全部势力</option>${factions.map(x=>`<option ${state.charFaction===x?'selected':''}>${esc(x)}</option>`).join('')}</select><input class="search grow" id="charQuery" value="${esc(state.charQuery)}" placeholder="姓名、身份、别名或事件"><label style="display:inline-flex;gap:6px;align-items:center;color:var(--ink)"><input type="checkbox" id="charMinor" ${state.charMinor?'checked':''}>显示次要人物(仅1章)</label><button class="action" id="charReset">重置</button></div><div class="character-toolbar"><button class="mode active" data-char-mode="screen">屏幕卡</button><button class="mode" data-char-mode="front">打印正面</button><button class="mode" data-char-mode="back">打印背面</button><span class="muted" id="charCount">显示 ${page.length} / ${list.length} · 次要(仅1章) ${DATA.characters.filter(x=>x.chapters.length<=1).length} 人${state.charMinor?'':'（已折叠）'}</span></div><div id="charScreen" class="character-grid">${page.map(characterCard).join('')||'<div class="empty">没有匹配人物</div>'}</div><div id="printGuide" class="print-guide" style="display:none">当前筛选结果共 ${list.length} 张；打印页只在选择打印模式时生成。</div><div id="printArea" class="print-area"></div>${pager(state.charPage,list.length)}</div>`;
  $('#charPart').addEventListener('change',e=>{state.charPart=e.target.value;state.charPage=1;renderCharacters()});$('#charFaction').addEventListener('change',e=>{state.charFaction=e.target.value;state.charPage=1;renderCharacters()});$('#charQuery').addEventListener('input',e=>{state.charQuery=e.target.value;state.charPage=1;renderCharacters()});$('#charReset').addEventListener('click',()=>{state.charPart='';state.charFaction='全部势力';state.charQuery='';state.charPage=1;renderCharacters()});$('#charMinor').addEventListener('change',e=>{state.charMinor=e.target.checked;state.charPage=1;renderCharacters()});
@@ -871,7 +1054,7 @@ def main():
     args = parser.parse_args()
     OUT_PATH.mkdir(parents=True, exist_ok=True)
     if args.scope == "full":
-        render("full", OUT_PATH / "report.html")
+        render("full", OUT_PATH / "index.html")
         render("p1", OUT_PATH / "report_p1.html")
     else:
         render("p1", OUT_PATH / "report_p1.html")
