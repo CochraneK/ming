@@ -14901,11 +14901,11 @@
         "p3-c18",
         "p7-c21"
       ],
-      "modern_address": "安徽青阳九华山",
+      "modern_address": "安徽池州·九华山",
       "lng": 117.8,
-      "lat": 30.5,
+      "lat": 30.33,
       "trace_type": "地名",
-      "status": "实物留存",
+      "status": "坐标来自内置地名词典（待核验）",
       "note": "佛教名山"
     },
     {
@@ -17891,8 +17891,11 @@
         "p3-c5",
         "p7-c21"
       ],
+      "modern_address": "山东泰安·泰山",
+      "lng": 117.1,
+      "lat": 36.25,
       "trace_type": "地名",
-      "status": "抽取待补"
+      "status": "坐标来自内置地名词典（待核验）"
     },
     {
       "ancient": "余姚",
@@ -19623,11 +19626,11 @@
         "p5-c4",
         "p7-c6"
       ],
-      "trace_type": "地名",
-      "status": "抽取待补",
       "modern_address": "杭州·西湖",
       "lng": 120.15,
-      "lat": 30.27
+      "lat": 30.27,
+      "trace_type": "地名",
+      "status": "坐标来自内置地名词典（待核验）"
     },
     {
       "ancient": "武当",
@@ -22062,9 +22065,9 @@
       "chapters": [
         "p7-c21"
       ],
-      "modern_address": "南京紫金山等名山（徐霞客所登）",
-      "lng": 118.85,
-      "lat": 32.06,
+      "modern_address": "江苏太湖",
+      "lng": 120.2,
+      "lat": 31.25,
       "trace_type": "地名",
       "status": "坐标来自内置地名词典（待核验）"
     },
@@ -22077,9 +22080,9 @@
       "chapters": [
         "p7-c21"
       ],
-      "modern_address": "南京紫金山等名山（徐霞客所登）",
-      "lng": 118.85,
-      "lat": 32.06,
+      "modern_address": "浙江舟山·普陀山",
+      "lng": 122.38,
+      "lat": 30.0,
       "trace_type": "地名",
       "status": "坐标来自内置地名词典（待核验）"
     },
@@ -22092,9 +22095,9 @@
       "chapters": [
         "p7-c21"
       ],
-      "modern_address": "南京紫金山等名山（徐霞客所登）",
-      "lng": 118.85,
-      "lat": 32.06,
+      "modern_address": "浙江乐清·雁荡山",
+      "lng": 121.13,
+      "lat": 28.37,
       "trace_type": "地名",
       "status": "坐标来自内置地名词典（待核验）"
     },
@@ -22107,9 +22110,9 @@
       "chapters": [
         "p7-c21"
       ],
-      "modern_address": "南京紫金山等名山（徐霞客所登）",
-      "lng": 118.85,
-      "lat": 32.06,
+      "modern_address": "安徽黄山",
+      "lng": 118.17,
+      "lat": 30.13,
       "trace_type": "地名",
       "status": "坐标来自内置地名词典（待核验）"
     },
@@ -22122,9 +22125,9 @@
       "chapters": [
         "p7-c21"
       ],
-      "modern_address": "南京紫金山等名山（徐霞客所登）",
-      "lng": 118.85,
-      "lat": 32.06,
+      "modern_address": "陕西华阴·华山",
+      "lng": 110.08,
+      "lat": 34.48,
       "trace_type": "地名",
       "status": "坐标来自内置地名词典（待核验）"
     },
@@ -22137,9 +22140,9 @@
       "chapters": [
         "p7-c21"
       ],
-      "modern_address": "南京紫金山等名山（徐霞客所登）",
-      "lng": 118.85,
-      "lat": 32.06,
+      "modern_address": "湖南衡阳·衡山",
+      "lng": 112.73,
+      "lat": 27.25,
       "trace_type": "地名",
       "status": "坐标来自内置地名词典（待核验）"
     },
@@ -22152,9 +22155,9 @@
       "chapters": [
         "p7-c21"
       ],
-      "modern_address": "南京紫金山等名山（徐霞客所登）",
-      "lng": 118.85,
-      "lat": 32.06,
+      "modern_address": "河南登封·嵩山",
+      "lng": 113.02,
+      "lat": 34.52,
       "trace_type": "地名",
       "status": "坐标来自内置地名词典（待核验）"
     },
@@ -22167,9 +22170,9 @@
       "chapters": [
         "p7-c21"
       ],
-      "modern_address": "南京紫金山等名山（徐霞客所登）",
-      "lng": 118.85,
-      "lat": 32.06,
+      "modern_address": "陕西西安·终南山",
+      "lng": 108.95,
+      "lat": 34.0,
       "trace_type": "地名",
       "status": "坐标来自内置地名词典（待核验）"
     }
@@ -75136,8 +75139,8 @@
   },
   "meta": {
     "source_chapters": 156,
-    "geo_annotated": 684,
-    "located_locations": 349,
+    "geo_annotated": 654,
+    "located_locations": 350,
     "cleaning": {
       "person_merges": 24,
       "person_merged_names": [

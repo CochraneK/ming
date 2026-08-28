@@ -30,16 +30,6 @@
     "trace_type_raw": "地名"
   },
   {
-    "ancient": "钟山",
-    "modern_address": "江苏南京紫金山",
-    "lng": 118.85,
-    "lat": 32.06,
-    "trace_type": "遗址·陵",
-    "status": "实物留存",
-    "note": "明孝陵所在",
-    "trace_type_raw": "陵"
-  },
-  {
     "ancient": "紫金山",
     "modern_address": "江苏南京紫金山",
     "lng": 118.85,
@@ -350,16 +340,6 @@
     "trace_type_raw": "地名"
   },
   {
-    "ancient": "黄冈",
-    "modern_address": "湖北黄冈",
-    "lng": 114.87,
-    "lat": 30.45,
-    "trace_type": "地名",
-    "status": "仅存地名",
-    "note": "即黄州",
-    "trace_type_raw": "地名"
-  },
-  {
     "ancient": "浠水",
     "modern_address": "湖北浠水",
     "lng": 115.3,
@@ -377,16 +357,6 @@
     "trace_type": "地名",
     "status": "仅存地名",
     "note": "天完重建都",
-    "trace_type_raw": "地名"
-  },
-  {
-    "ancient": "武汉",
-    "modern_address": "湖北武汉",
-    "lng": 114.27,
-    "lat": 30.58,
-    "trace_type": "地名",
-    "status": "仅存地名",
-    "note": "含汉阳",
     "trace_type_raw": "地名"
   },
   {
@@ -410,16 +380,6 @@
     "trace_type_raw": "地名"
   },
   {
-    "ancient": "仙桃",
-    "modern_address": "湖北仙桃（沔阳）",
-    "lng": 113.45,
-    "lat": 30.36,
-    "trace_type": "地名",
-    "status": "仅存地名",
-    "note": "陈友谅家乡",
-    "trace_type_raw": "地名"
-  },
-  {
     "ancient": "沔阳",
     "modern_address": "湖北仙桃",
     "lng": 113.45,
@@ -427,16 +387,6 @@
     "trace_type": "地名",
     "status": "仅存地名",
     "note": "即仙桃",
-    "trace_type_raw": "地名"
-  },
-  {
-    "ancient": "阜阳",
-    "modern_address": "安徽阜阳（颍州）",
-    "lng": 115.81,
-    "lat": 32.9,
-    "trace_type": "地名",
-    "status": "仅存地名",
-    "note": "红巾军起义地",
     "trace_type_raw": "地名"
   },
   {
@@ -480,16 +430,6 @@
     "trace_type_raw": "地名"
   },
   {
-    "ancient": "宣化",
-    "modern_address": "河北宣化",
-    "lng": 115.03,
-    "lat": 40.6,
-    "trace_type": "地名",
-    "status": "实物留存",
-    "note": "即宣府",
-    "trace_type_raw": "地名"
-  },
-  {
     "ancient": "大同",
     "modern_address": "山西大同",
     "lng": 113.3,
@@ -498,16 +438,6 @@
     "status": "实物留存",
     "note": "大同古城墙、代王庙等",
     "trace_type_raw": "地名"
-  },
-  {
-    "ancient": "阳高",
-    "modern_address": "山西阳高（阳和）",
-    "lng": 113.7,
-    "lat": 40.36,
-    "trace_type": "古战场",
-    "status": "仅存地名",
-    "note": "阳和之战明军覆没",
-    "trace_type_raw": "古战场"
   },
   {
     "ancient": "阳和",
@@ -590,26 +520,6 @@
     "trace_type_raw": "地名"
   },
   {
-    "ancient": "合肥",
-    "modern_address": "安徽合肥",
-    "lng": 117.23,
-    "lat": 31.82,
-    "trace_type": "地名",
-    "status": "仅存地名",
-    "note": "即庐州",
-    "trace_type_raw": "地名"
-  },
-  {
-    "ancient": "寿县",
-    "modern_address": "安徽寿县（安丰）",
-    "lng": 116.78,
-    "lat": 32.57,
-    "trace_type": "地名",
-    "status": "实物留存",
-    "note": "寿县古城、安丰塘",
-    "trace_type_raw": "地名"
-  },
-  {
     "ancient": "安丰",
     "modern_address": "安徽寿县",
     "lng": 116.78,
@@ -621,11 +531,11 @@
   },
   {
     "ancient": "九华山",
-    "modern_address": "安徽青阳九华山",
+    "modern_address": "安徽池州·九华山",
     "lng": 117.8,
-    "lat": 30.5,
+    "lat": 30.33,
     "trace_type": "地名",
-    "status": "实物留存",
+    "status": "坐标来自内置地名词典（待核验）",
     "note": "佛教名山",
     "trace_type_raw": "地名"
   },
@@ -1018,36 +928,6 @@
     "status": "实物留存",
     "note": "坐标为草稿（现代治所近似），待核",
     "trace_type_raw": "城"
-  },
-  {
-    "ancient": "郑村坝",
-    "modern_address": "北京顺义东（郑村坝之战，approx）",
-    "lng": 116.8,
-    "lat": 40.05,
-    "trace_type": "古战场",
-    "status": "古战场/故址",
-    "note": "坐标为草稿（现代治所近似），待核",
-    "trace_type_raw": "古战场"
-  },
-  {
-    "ancient": "顺城门",
-    "modern_address": "南京/北京 顺城门",
-    "lng": 116.37,
-    "lat": 39.9,
-    "trace_type": "地名",
-    "status": "实物留存",
-    "note": "坐标为草稿（现代治所近似），待核",
-    "trace_type_raw": "城门"
-  },
-  {
-    "ancient": "张掖门",
-    "modern_address": "南京/北京 张掖门",
-    "lng": 116.36,
-    "lat": 39.89,
-    "trace_type": "地名",
-    "status": "实物留存",
-    "note": "坐标为草稿（现代治所近似），待核",
-    "trace_type_raw": "城门"
   },
   {
     "ancient": "宁王属地",
@@ -1624,15 +1504,6 @@
     "note": "本轮补标：京北门户"
   },
   {
-    "ancient": "兖州",
-    "modern_address": "今山东兖州",
-    "lng": 116.78,
-    "lat": 35.55,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：鲁南府城"
-  },
-  {
     "ancient": "登州",
     "modern_address": "今山东蓬莱（明登州卫）",
     "lng": 120.75,
@@ -1696,15 +1567,6 @@
     "note": "本轮补标：嘉靖龙潜之地"
   },
   {
-    "ancient": "岳州",
-    "modern_address": "今湖南岳阳（岳州府）",
-    "lng": 113.13,
-    "lat": 29.36,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：洞庭门户"
-  },
-  {
     "ancient": "长沙",
     "modern_address": "今湖南长沙",
     "lng": 112.94,
@@ -1712,42 +1574,6 @@
     "trace_type": "地名",
     "status": "已定位",
     "note": "本轮补标：湖广府城"
-  },
-  {
-    "ancient": "衡州",
-    "modern_address": "今湖南衡阳（衡州府）",
-    "lng": 112.57,
-    "lat": 26.89,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：湘南府城"
-  },
-  {
-    "ancient": "永州",
-    "modern_address": "今湖南永州",
-    "lng": 111.61,
-    "lat": 26.42,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：湘南府城"
-  },
-  {
-    "ancient": "郴州",
-    "modern_address": "今湖南郴州",
-    "lng": 113.01,
-    "lat": 25.77,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：湘南要道"
-  },
-  {
-    "ancient": "常德",
-    "modern_address": "今湖南常德",
-    "lng": 111.7,
-    "lat": 29.03,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：湘西府城"
   },
   {
     "ancient": "袁州",
@@ -1768,15 +1594,6 @@
     "note": "本轮补标：赣中府城"
   },
   {
-    "ancient": "抚州",
-    "modern_address": "今江西抚州",
-    "lng": 116.36,
-    "lat": 27.95,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：赣东府城"
-  },
-  {
     "ancient": "赣州",
     "modern_address": "今江西赣州",
     "lng": 114.93,
@@ -1795,15 +1612,6 @@
     "note": "本轮补标：区域级标注"
   },
   {
-    "ancient": "饶州",
-    "modern_address": "今江西鄱阳（饶州府）",
-    "lng": 116.7,
-    "lat": 29.0,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：赣东北府城"
-  },
-  {
     "ancient": "乐安",
     "modern_address": "今山东广饶一带（乐安州）",
     "lng": 118.41,
@@ -1811,24 +1619,6 @@
     "trace_type": "地名",
     "status": "已定位",
     "note": "本轮补标：朱高煦封地"
-  },
-  {
-    "ancient": "福州",
-    "modern_address": "今福建福州",
-    "lng": 119.3,
-    "lat": 26.08,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：福建首府"
-  },
-  {
-    "ancient": "泉州",
-    "modern_address": "今福建泉州",
-    "lng": 118.68,
-    "lat": 24.87,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：海贸古港"
   },
   {
     "ancient": "漳州",
@@ -1856,15 +1646,6 @@
     "trace_type": "地名",
     "status": "已定位",
     "note": "本轮补标：戚家军战场"
-  },
-  {
-    "ancient": "温州",
-    "modern_address": "今浙江温州",
-    "lng": 120.7,
-    "lat": 28.0,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：浙南府城"
   },
   {
     "ancient": "绍兴",
@@ -1903,105 +1684,6 @@
     "note": "本轮补标：杭州旧称"
   },
   {
-    "ancient": "潮州",
-    "modern_address": "今广东潮州",
-    "lng": 116.62,
-    "lat": 23.66,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：粤东府城"
-  },
-  {
-    "ancient": "肇庆",
-    "modern_address": "今广东肇庆",
-    "lng": 112.47,
-    "lat": 23.05,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：两广总督驻地"
-  },
-  {
-    "ancient": "梧州",
-    "modern_address": "今广西梧州",
-    "lng": 111.28,
-    "lat": 23.48,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：两广门户"
-  },
-  {
-    "ancient": "柳州",
-    "modern_address": "今广西柳州",
-    "lng": 109.42,
-    "lat": 24.33,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：桂中府城"
-  },
-  {
-    "ancient": "南宁",
-    "modern_address": "今广西南宁",
-    "lng": 108.32,
-    "lat": 22.82,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：桂南府城"
-  },
-  {
-    "ancient": "昆明",
-    "modern_address": "今云南昆明",
-    "lng": 102.71,
-    "lat": 25.04,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：云南首府"
-  },
-  {
-    "ancient": "大理",
-    "modern_address": "今云南大理",
-    "lng": 100.23,
-    "lat": 25.59,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：滇西府城"
-  },
-  {
-    "ancient": "贵阳",
-    "modern_address": "今贵州贵阳",
-    "lng": 106.63,
-    "lat": 26.65,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：贵州首府"
-  },
-  {
-    "ancient": "遵义",
-    "modern_address": "今贵州遵义（播州）",
-    "lng": 106.92,
-    "lat": 27.73,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：播州土司"
-  },
-  {
-    "ancient": "成都",
-    "modern_address": "今四川成都",
-    "lng": 104.06,
-    "lat": 30.66,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：四川首府"
-  },
-  {
-    "ancient": "重庆",
-    "modern_address": "今重庆",
-    "lng": 106.55,
-    "lat": 29.56,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：川东重镇"
-  },
-  {
     "ancient": "西安",
     "modern_address": "今陕西西安",
     "lng": 108.94,
@@ -2027,33 +1709,6 @@
     "trace_type": "地名",
     "status": "已定位",
     "note": "本轮补标：九边延绥镇"
-  },
-  {
-    "ancient": "固原",
-    "modern_address": "今宁夏固原（三边总督驻地）",
-    "lng": 106.24,
-    "lat": 36.0,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：三边总制驻地"
-  },
-  {
-    "ancient": "甘州",
-    "modern_address": "今甘肃张掖（甘州镇）",
-    "lng": 100.45,
-    "lat": 38.93,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：九边甘肃镇"
-  },
-  {
-    "ancient": "西宁",
-    "modern_address": "今青海西宁",
-    "lng": 101.78,
-    "lat": 36.62,
-    "trace_type": "地名",
-    "status": "已定位",
-    "note": "本轮补标：青藏门户"
   },
   {
     "ancient": "河套",
@@ -2734,14 +2389,6 @@
     "lat": 36.05,
     "trace_type": "古战场",
     "status": "近似定位"
-  },
-  {
-    "ancient": "汉山岛",
-    "modern_address": "今韩国统营汉山岛",
-    "lng": 128.1,
-    "lat": 34.75,
-    "trace_type": "古战场",
-    "status": "已定位"
   },
   {
     "ancient": "巨济岛",
@@ -3541,7 +3188,10 @@
   {
     "ancient": "泰山",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 117.1,
+    "lat": 36.25,
+    "modern_address": "山东泰安·泰山"
   },
   {
     "ancient": "长安道",
@@ -4335,27 +3985,7 @@
     "status": "抽取待补"
   },
   {
-    "ancient": "七星门",
-    "trace_type": "地名",
-    "status": "抽取待补"
-  },
-  {
-    "ancient": "小西门",
-    "trace_type": "地名",
-    "status": "抽取待补"
-  },
-  {
-    "ancient": "大西门",
-    "trace_type": "地名",
-    "status": "抽取待补"
-  },
-  {
     "ancient": "含毯门",
-    "trace_type": "地名",
-    "status": "抽取待补"
-  },
-  {
-    "ancient": "风月楼",
     "trace_type": "地名",
     "status": "抽取待补"
   },
@@ -4386,11 +4016,6 @@
   },
   {
     "ancient": "宝山",
-    "trace_type": "地名",
-    "status": "抽取待补"
-  },
-  {
-    "ancient": "闲山",
     "trace_type": "地名",
     "status": "抽取待补"
   },
@@ -4462,11 +4087,6 @@
   },
   {
     "ancient": "慈庆宫",
-    "trace_type": "地名",
-    "status": "抽取待补"
-  },
-  {
-    "ancient": "刑部大牢",
     "trace_type": "地名",
     "status": "抽取待补"
   },
@@ -4574,14 +4194,6 @@
     "lng": 121.15,
     "lat": 30.05,
     "modern_address": "浙江余姚（黄尊素故里）"
-  },
-  {
-    "ancient": "京城诏狱",
-    "trace_type": "地名",
-    "status": "坐标来自内置地名词典（待核验）",
-    "lng": 116.397,
-    "lat": 39.908,
-    "modern_address": "北京·刑部大牢"
   },
   {
     "ancient": "杏山",
@@ -5038,14 +4650,6 @@
     "status": "抽取待补"
   },
   {
-    "ancient": "紫金山、太湖、普陀山、雁荡山、九华山、黄山、武夷山、庐山、泰山、华山、衡山、嵩山、终南山",
-    "trace_type": "地名",
-    "status": "坐标来自内置地名词典（待核验）",
-    "lng": 118.85,
-    "lat": 32.06,
-    "modern_address": "南京紫金山等名山（徐霞客所登）"
-  },
-  {
     "ancient": "怀庆",
     "trace_type": "地名",
     "status": "抽取待补"
@@ -5074,5 +4678,133 @@
     "ancient": "榆林",
     "trace_type": "地名",
     "status": "抽取待补"
+  },
+  {
+    "ancient": "太湖",
+    "lng": 120.2,
+    "lat": 31.25,
+    "modern_address": "江苏太湖",
+    "trace_type": "地名",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "普陀山",
+    "lng": 122.38,
+    "lat": 30.0,
+    "modern_address": "浙江舟山·普陀山",
+    "trace_type": "地名",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "雁荡山",
+    "lng": 121.13,
+    "lat": 28.37,
+    "modern_address": "浙江乐清·雁荡山",
+    "trace_type": "地名",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "黄山",
+    "lng": 118.17,
+    "lat": 30.13,
+    "modern_address": "安徽黄山",
+    "trace_type": "地名",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "华山",
+    "lng": 110.08,
+    "lat": 34.48,
+    "modern_address": "陕西华阴·华山",
+    "trace_type": "地名",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "衡山",
+    "lng": 112.73,
+    "lat": 27.25,
+    "modern_address": "湖南衡阳·衡山",
+    "trace_type": "地名",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "嵩山",
+    "lng": 113.02,
+    "lat": 34.52,
+    "modern_address": "河南登封·嵩山",
+    "trace_type": "地名",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "终南山",
+    "lng": 108.95,
+    "lat": 34.0,
+    "modern_address": "陕西西安·终南山",
+    "trace_type": "地名",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "新郑",
+    "lng": 113.73,
+    "lat": 34.4,
+    "modern_address": "河南新郑（高拱籍）",
+    "trace_type": "故居·出生地",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "琼山",
+    "lng": 110.33,
+    "lat": 20.03,
+    "modern_address": "海口·琼山（海瑞出生地）",
+    "trace_type": "故居·出生地",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "蕲州",
+    "lng": 115.43,
+    "lat": 30.23,
+    "modern_address": "湖北蕲春",
+    "trace_type": "地名",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "代州",
+    "lng": 112.72,
+    "lat": 39.06,
+    "modern_address": "山西代县（孙传庭籍）",
+    "trace_type": "故居·出生地",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "武陵",
+    "lng": 111.7,
+    "lat": 29.03,
+    "modern_address": "湖南常德（杨鹤/杨嗣昌籍）",
+    "trace_type": "故居·出生地",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "西湖",
+    "lng": 120.15,
+    "lat": 30.27,
+    "modern_address": "杭州·西湖",
+    "trace_type": "地名",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "徐闻",
+    "lng": 110.17,
+    "lat": 20.13,
+    "modern_address": "广东徐闻（汤显祖贬地）",
+    "trace_type": "地名",
+    "status": "坐标来自内置地名词典（待核验）"
+  },
+  {
+    "ancient": "叙永",
+    "lng": 105.43,
+    "lat": 28.17,
+    "modern_address": "四川叙永（熊文灿籍）",
+    "trace_type": "故居·出生地",
+    "status": "坐标来自内置地名词典（待核验）"
   }
 ]
