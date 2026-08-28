@@ -25,6 +25,7 @@ BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(BASE, "data", "extract_raw.json")
 GEO = os.path.join(BASE, "data", "geo_annotations.json")
 MANUAL = os.path.join(BASE, "data", "manual_relations.json")
+MANUAL_YEARS = os.path.join(BASE, "data", "manual_event_years.json")
 PROFILES = os.path.join(BASE, "data", "char_profiles.json")
 REIGNS = os.path.join(BASE, "data", "reigns.json")
 LIFESPANS = os.path.join(BASE, "data", "lifespans.json")
@@ -116,6 +117,8 @@ if os.path.exists(GEO):
         geo[g["ancient"]] = g
 # 人工增补关系（名臣对/组合），与原始抽取解耦，重跑不丢
 manual_rels = load_json(MANUAL, [])
+# 人工补年：未知年份事件回填（来源=记忆/推导），与原始抽取解耦，重跑不丢
+manual_years = load_json(MANUAL_YEARS, {})
 # 角色精校档案（生卒/籍贯），可单独维护，重跑不丢
 profiles = load_json(PROFILES, {})
 # 帝王在位时段（人工整理的王朝骨架），供报告帝王视图与时间轴年号标注使用
@@ -203,6 +206,18 @@ for ch in raw:
 for name, e in events.items():
     e["year"] = normalize_year(e["year"])
     e["category"] = canon_event_type(e.get("type", ""), name)
+
+# 人工补年：仅回填抽取阶段未给年份的事件，写入来源标记，尊重源透明度
+if manual_years:
+    for name, e in events.items():
+        my = manual_years.get(e["name"])
+        if my and e.get("year") in ("", None):
+            e["year"] = normalize_year(my["year"])
+            e["year_source"] = my.get("source", "记忆")
+            if my.get("approx"):
+                e["year_approx"] = True
+            if my.get("note"):
+                e["year_note"] = my["note"]
 
 seen, rels = set(), []
 character_names = set(characters.keys())

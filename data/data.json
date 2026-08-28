@@ -24912,11 +24912,13 @@
         "陈瑄"
       ],
       "location": "",
-      "year": "",
+      "year": 1415,
       "chapters": [
         "p2-c3"
       ],
-      "category": "制度科举"
+      "category": "制度科举",
+      "year_source": "记忆",
+      "year_note": "永乐十三年凿清江浦，海漕改河漕"
     },
     {
       "name": "朱棣正式迁都北京",
@@ -25261,11 +25263,14 @@
         "阿鲁台"
       ],
       "location": "蒙古",
-      "year": "",
+      "year": 1434,
       "chapters": [
         "p2-c7"
       ],
-      "category": "政治斗争"
+      "category": "政治斗争",
+      "year_source": "记忆",
+      "year_approx": true,
+      "year_note": "脱懽杀阿鲁台，瓦剌据鞑靼地"
     },
     {
       "name": "阿鲁台求明庇护",
@@ -25275,11 +25280,14 @@
         "朱棣"
       ],
       "location": "长城",
-      "year": "",
+      "year": 1408,
       "chapters": [
         "p2-c7"
       ],
-      "category": "外交边务"
+      "category": "外交边务",
+      "year_source": "记忆",
+      "year_approx": true,
+      "year_note": "永乐册封和宁王，附明"
     },
     {
       "name": "朱棣亲征瓦剌",
@@ -25378,11 +25386,13 @@
         "朱棣"
       ],
       "location": "",
-      "year": "",
+      "year": 1430,
       "chapters": [
         "p2-c8"
       ],
-      "category": "制度科举"
+      "category": "制度科举",
+      "year_source": "记忆",
+      "year_note": "宣德五年始专设巡抚"
     },
     {
       "name": "杨荣劝朱棣先谒陵后即位",
@@ -25480,11 +25490,13 @@
         "朱棣"
       ],
       "location": "云南",
-      "year": "",
+      "year": 1404,
       "chapters": [
         "p2-c9"
       ],
-      "category": "政治斗争"
+      "category": "政治斗争",
+      "year_source": "记忆",
+      "year_note": "永乐二年封汉王，拒赴云南留京"
     },
     {
       "name": "解缙被贬出京",
@@ -25956,11 +25968,13 @@
         "脱欢"
       ],
       "location": "蒙古",
-      "year": "",
+      "year": 1439,
       "chapters": [
         "p2-c13"
       ],
-      "category": "外交边务"
+      "category": "外交边务",
+      "year_source": "记忆",
+      "year_note": "脱懽死，也先继统"
     },
     {
       "name": "王振削减也先贡使",
@@ -25970,11 +25984,13 @@
         "也先"
       ],
       "location": "",
-      "year": "",
+      "year": 1449,
       "chapters": [
         "p2-c13"
       ],
-      "category": "外交边务"
+      "category": "外交边务",
+      "year_source": "记忆",
+      "year_note": "正统十四年，土木堡前"
     },
     {
       "name": "梁贵报信英宗被俘未死",
@@ -26336,11 +26352,13 @@
         "伯颜帖木儿"
       ],
       "location": "黑松林",
-      "year": "",
+      "year": 1449,
       "chapters": [
         "p2-c19"
       ],
-      "category": "军事战争"
+      "category": "军事战争",
+      "year_source": "记忆",
+      "year_note": "土木堡之变后囚禁期"
     },
     {
       "name": "喜宁南侵绕京攻南京计划搁置",
@@ -26368,11 +26386,13 @@
         "喜宁"
       ],
       "location": "",
-      "year": "",
+      "year": 1450,
       "chapters": [
         "p2-c19"
       ],
-      "category": "外交边务"
+      "category": "外交边务",
+      "year_source": "记忆",
+      "year_note": "被俘期间，也先拟联姻"
     },
     {
       "name": "朱祁镇设圈套借明军除喜宁",
@@ -26415,11 +26435,14 @@
         "朱祁镇"
       ],
       "location": "北京",
-      "year": "",
+      "year": 1449,
       "chapters": [
         "p2-c19"
       ],
-      "category": "人物生平"
+      "category": "人物生平",
+      "year_source": "记忆",
+      "year_approx": true,
+      "year_note": "英宗被俘囚禁期"
     },
     {
       "name": "罗通刘定之攻讦于谦",
@@ -26555,11 +26578,13 @@
         "朱祁镇"
       ],
       "location": "南宫",
-      "year": "",
+      "year": 1450,
       "chapters": [
         "p2-c21"
       ],
-      "category": "案件刑狱"
+      "category": "案件刑狱",
+      "year_source": "记忆",
+      "year_note": "景泰元年"
     },
     {
       "name": "朱祁钰废朱见深立朱见济",
@@ -26591,11 +26616,13 @@
         "徐有贞"
       ],
       "location": "",
-      "year": "",
+      "year": 1450,
       "chapters": [
         "p2-c21"
       ],
-      "category": "人物生平"
+      "category": "人物生平",
+      "year_source": "记忆",
+      "year_note": "景泰元年建言南迁被讥，改名"
     },
     {
       "name": "钟同章纶复储被杖",
@@ -27510,11 +27537,13 @@
         "王华"
       ],
       "location": "居庸关",
-      "year": "",
+      "year": 1487,
       "chapters": [
         "p3-c8"
       ],
-      "category": "人物生平"
+      "category": "人物生平",
+      "year_source": "记忆",
+      "year_note": "约十五岁"
     },
     {
       "name": "王守仁洪都婚日失踪道观",
@@ -27540,11 +27569,13 @@
         "程颐"
       ],
       "location": "",
-      "year": "",
+      "year": 1488,
       "chapters": [
         "p3-c8"
       ],
-      "category": "人物生平"
+      "category": "人物生平",
+      "year_source": "记忆",
+      "year_approx": true
     },
     {
       "name": "王守仁格竹求理染病",
@@ -27554,11 +27585,13 @@
         "朱熹"
       ],
       "location": "北京",
-      "year": "",
+      "year": 1490,
       "chapters": [
         "p3-c9"
       ],
-      "category": "人物生平"
+      "category": "人物生平",
+      "year_source": "记忆",
+      "year_approx": true
     },
     {
       "name": "王守仁中进士",
@@ -27882,11 +27915,13 @@
         "钱宁"
       ],
       "location": "北京",
-      "year": "",
+      "year": 1517,
       "chapters": [
         "p3-c12"
       ],
-      "category": "宫廷变故"
+      "category": "宫廷变故",
+      "year_source": "记忆",
+      "year_note": "正德十二年建豹房"
     },
     {
       "name": "马昂献妹入宫",
@@ -27897,11 +27932,13 @@
         "杨廷和"
       ],
       "location": "北京",
-      "year": "",
+      "year": 1513,
       "chapters": [
         "p3-c12"
       ],
-      "category": "宫廷变故"
+      "category": "宫廷变故",
+      "year_source": "记忆",
+      "year_note": "正德八年"
     },
     {
       "name": "杨廷和守孝离朝",
@@ -27926,11 +27963,14 @@
         "钱宁"
       ],
       "location": "北京",
-      "year": "",
+      "year": 1517,
       "chapters": [
         "p3-c12"
       ],
-      "category": "宫廷变故"
+      "category": "宫廷变故",
+      "year_source": "记忆",
+      "year_approx": true,
+      "year_note": "正德中后期伴驾"
     },
     {
       "name": "夜奔出居庸关",
@@ -28087,11 +28127,13 @@
         "钱宁"
       ],
       "location": "南昌",
-      "year": "",
+      "year": 1514,
       "chapters": [
         "p3-c14"
       ],
-      "category": "政治斗争"
+      "category": "政治斗争",
+      "year_source": "记忆",
+      "year_note": "正德九年复护卫"
     },
     {
       "name": "王守仁起复升迁",
@@ -28129,11 +28171,13 @@
         "王守仁"
       ],
       "location": "江西",
-      "year": "",
+      "year": 1508,
       "chapters": [
         "p3-c14"
       ],
-      "category": "人物生平"
+      "category": "人物生平",
+      "year_source": "记忆",
+      "year_note": "龙场悟道，正德三年谪龙场"
     },
     {
       "name": "孙燧守江西",
@@ -28157,11 +28201,13 @@
         "朱宸濠"
       ],
       "location": "南昌",
-      "year": "",
+      "year": 1499,
       "chapters": [
         "p3-c14"
       ],
-      "category": "政治斗争"
+      "category": "政治斗争",
+      "year_source": "记忆",
+      "year_note": "弘治十二年科场案后"
     },
     {
       "name": "王孙察觉宁王谋反",
@@ -28172,11 +28218,14 @@
         "朱宸濠"
       ],
       "location": "江西",
-      "year": "",
+      "year": 1516,
       "chapters": [
         "p3-c14"
       ],
-      "category": "政治斗争"
+      "category": "政治斗争",
+      "year_source": "记忆",
+      "year_approx": true,
+      "year_note": "正德十一年上疏预警"
     },
     {
       "name": "宁王宴请试探",
@@ -29370,11 +29419,14 @@
         "朱厚熜"
       ],
       "location": "北京",
-      "year": "",
+      "year": 1530,
       "chapters": [
         "p4-c5"
       ],
-      "category": "宫廷变故"
+      "category": "宫廷变故",
+      "year_source": "记忆",
+      "year_approx": true,
+      "year_note": "嘉靖中期起崇道"
     },
     {
       "name": "壬寅宫变",
@@ -29463,11 +29515,13 @@
         "朱厚熜"
       ],
       "location": "北京",
-      "year": "",
+      "year": 1542,
       "chapters": [
         "p4-c6"
       ],
-      "category": "政治斗争"
+      "category": "政治斗争",
+      "year_source": "记忆",
+      "year_note": "嘉靖二十一年入阁"
     },
     {
       "name": "香叶冠决裂",
@@ -30284,11 +30338,13 @@
         "徐惟学"
       ],
       "location": "日本九州/东南亚",
-      "year": "",
+      "year": 1550,
       "chapters": [
         "p4-c14"
       ],
-      "category": "外交边务"
+      "category": "外交边务",
+      "year_source": "记忆",
+      "year_approx": true
     },
     {
       "name": "徐海被抵押投倭成汉奸",
@@ -30299,11 +30355,13 @@
         "倭寇"
       ],
       "location": "日本",
-      "year": "",
+      "year": 1550,
       "chapters": [
         "p4-c14"
       ],
-      "category": "外交边务"
+      "category": "外交边务",
+      "year_source": "记忆",
+      "year_approx": true
     },
     {
       "name": "三里桥徐海诈败破明军",
@@ -30314,11 +30372,13 @@
         "倭寇"
       ],
       "location": "三里桥",
-      "year": "",
+      "year": 1555,
       "chapters": [
         "p4-c14"
       ],
-      "category": "军事战争"
+      "category": "军事战争",
+      "year_source": "记忆",
+      "year_note": "王江泾之战前后"
     },
     {
       "name": "胡宗宪释汪直家眷",
@@ -31050,11 +31110,13 @@
         "严嵩"
       ],
       "location": "北京",
-      "year": "",
+      "year": 1550,
       "chapters": [
         "p4-c21"
       ],
-      "category": "政治斗争"
+      "category": "政治斗争",
+      "year_source": "记忆",
+      "year_note": "嘉靖二十九年"
     },
     {
       "name": "永寿宫失火徐阶趁机占上风",
@@ -31093,11 +31155,13 @@
         "徐阶"
       ],
       "location": "",
-      "year": "",
+      "year": 1562,
       "chapters": [
         "p4-c21"
       ],
-      "category": "政治斗争"
+      "category": "政治斗争",
+      "year_source": "记忆",
+      "year_note": "嘉靖四十一年徐阶代首辅"
     },
     {
       "name": "何心隐献策：除严嵩唯赖皇帝",
@@ -58196,6 +58260,22 @@
       ]
     },
     {
+      "name": "朱高煦封云南耍赖留京",
+      "year": 1404,
+      "year_start": 1404,
+      "year_end": 1404,
+      "type": "其他",
+      "category": "政治斗争",
+      "location": "云南",
+      "participants": [
+        "朱高煦",
+        "朱棣"
+      ],
+      "chapters": [
+        "p2-c9"
+      ]
+    },
+    {
       "name": "立储之议定朱高炽为太子",
       "year": 1404,
       "year_start": 1404,
@@ -58552,6 +58632,22 @@
       ]
     },
     {
+      "name": "阿鲁台求明庇护",
+      "year": 1408,
+      "year_start": 1408,
+      "year_end": 1408,
+      "type": "外交事件",
+      "category": "外交边务",
+      "location": "长城",
+      "participants": [
+        "阿鲁台",
+        "朱棣"
+      ],
+      "chapters": [
+        "p2-c7"
+      ]
+    },
+    {
       "name": "朱棣封马哈木为顺宁王",
       "year": 1409,
       "year_start": 1409,
@@ -58873,6 +58969,21 @@
       ],
       "chapters": [
         "p2-c2"
+      ]
+    },
+    {
+      "name": "陈瑄疏通河道漕运畅通",
+      "year": 1415,
+      "year_start": 1415,
+      "year_end": 1415,
+      "type": "其他",
+      "category": "制度科举",
+      "location": "",
+      "participants": [
+        "陈瑄"
+      ],
+      "chapters": [
+        "p2-c3"
       ]
     },
     {
@@ -59306,6 +59417,37 @@
       ]
     },
     {
+      "name": "巡抚制度创设",
+      "year": 1430,
+      "year_start": 1430,
+      "year_end": 1430,
+      "type": "制度",
+      "category": "制度科举",
+      "location": "",
+      "participants": [
+        "朱棣"
+      ],
+      "chapters": [
+        "p2-c8"
+      ]
+    },
+    {
+      "name": "瓦剌吞并鞑靼地盘",
+      "year": 1434,
+      "year_start": 1434,
+      "year_end": 1434,
+      "type": "政治斗争",
+      "category": "政治斗争",
+      "location": "蒙古",
+      "participants": [
+        "马哈木",
+        "阿鲁台"
+      ],
+      "chapters": [
+        "p2-c7"
+      ]
+    },
+    {
       "name": "脱欢统一瓦剌败阿鲁台",
       "year": 1434,
       "year_start": 1434,
@@ -59360,6 +59502,22 @@
       ]
     },
     {
+      "name": "也先统一蒙古",
+      "year": 1439,
+      "year_start": 1439,
+      "year_end": 1439,
+      "type": "其他",
+      "category": "外交边务",
+      "location": "蒙古",
+      "participants": [
+        "也先",
+        "脱欢"
+      ],
+      "chapters": [
+        "p2-c13"
+      ]
+    },
+    {
       "name": "于谦不送礼被王振囚",
       "year": 1441,
       "year_start": 1441,
@@ -59404,6 +59562,23 @@
       ],
       "chapters": [
         "p2-c13"
+      ]
+    },
+    {
+      "name": "也先夜谋杀朱祁镇被雷雨中止",
+      "year": 1449,
+      "year_start": 1449,
+      "year_end": 1449,
+      "type": "其他",
+      "category": "军事战争",
+      "location": "黑松林",
+      "participants": [
+        "也先",
+        "朱祁镇",
+        "伯颜帖木儿"
+      ],
+      "chapters": [
+        "p2-c19"
       ]
     },
     {
@@ -59825,6 +60000,22 @@
       ]
     },
     {
+      "name": "王振削减也先贡使",
+      "year": 1449,
+      "year_start": 1449,
+      "year_end": 1449,
+      "type": "外交事件",
+      "category": "外交边务",
+      "location": "",
+      "participants": [
+        "王振",
+        "也先"
+      ],
+      "chapters": [
+        "p2-c13"
+      ]
+    },
+    {
       "name": "英宗亲征",
       "year": 1449,
       "year_start": 1449,
@@ -59855,6 +60046,22 @@
       ],
       "chapters": [
         "p2-c18"
+      ]
+    },
+    {
+      "name": "钱皇后哭瘸瞎眼守望朱祁镇",
+      "year": 1449,
+      "year_start": 1449,
+      "year_end": 1449,
+      "type": "其他",
+      "category": "人物生平",
+      "location": "北京",
+      "participants": [
+        "钱皇后",
+        "朱祁镇"
+      ],
+      "chapters": [
+        "p2-c19"
       ]
     },
     {
@@ -59924,6 +60131,21 @@
       ]
     },
     {
+      "name": "徐珵改名徐有贞",
+      "year": 1450,
+      "year_start": 1450,
+      "year_end": 1450,
+      "type": "其他",
+      "category": "人物生平",
+      "location": "",
+      "participants": [
+        "徐有贞"
+      ],
+      "chapters": [
+        "p2-c21"
+      ]
+    },
+    {
       "name": "朱祁镇归南宫被幽禁",
       "year": 1450,
       "year_start": 1450,
@@ -59938,6 +60160,23 @@
       ],
       "chapters": [
         "p2-c20"
+      ]
+    },
+    {
+      "name": "朱祁镇拒也先妹婚事",
+      "year": 1450,
+      "year_start": 1450,
+      "year_end": 1450,
+      "type": "其他",
+      "category": "外交边务",
+      "location": "",
+      "participants": [
+        "朱祁镇",
+        "也先",
+        "喜宁"
+      ],
+      "chapters": [
+        "p2-c19"
       ]
     },
     {
@@ -60078,6 +60317,26 @@
       "participants": [
         "胡濙",
         "朱祁钰"
+      ],
+      "chapters": [
+        "p2-c21"
+      ]
+    },
+    {
+      "name": "金刀案构陷朱祁镇复辟",
+      "year": 1450,
+      "year_start": 1450,
+      "year_end": 1450,
+      "type": "案件",
+      "category": "案件刑狱",
+      "location": "南宫",
+      "participants": [
+        "卢忠",
+        "李善",
+        "阮浪",
+        "王瑶",
+        "朱祁钰",
+        "朱祁镇"
       ],
       "chapters": [
         "p2-c21"
@@ -60862,6 +61121,39 @@
       ]
     },
     {
+      "name": "王守仁少年出居庸关言靖难",
+      "year": 1487,
+      "year_start": 1487,
+      "year_end": 1487,
+      "type": "其他",
+      "category": "人物生平",
+      "location": "居庸关",
+      "participants": [
+        "王守仁",
+        "王华"
+      ],
+      "chapters": [
+        "p3-c8"
+      ]
+    },
+    {
+      "name": "王守仁格物穷理求圣",
+      "year": 1488,
+      "year_start": 1488,
+      "year_end": 1488,
+      "type": "其他",
+      "category": "人物生平",
+      "location": "",
+      "participants": [
+        "王守仁",
+        "朱熹",
+        "程颐"
+      ],
+      "chapters": [
+        "p3-c8"
+      ]
+    },
+    {
       "name": "王恕任吏部尚书倡午朝",
       "year": 1488,
       "year_start": 1488,
@@ -60927,6 +61219,22 @@
       ]
     },
     {
+      "name": "王守仁格竹求理染病",
+      "year": 1490,
+      "year_start": 1490,
+      "year_end": 1490,
+      "type": "其他",
+      "category": "人物生平",
+      "location": "北京",
+      "participants": [
+        "王守仁",
+        "朱熹"
+      ],
+      "chapters": [
+        "p3-c9"
+      ]
+    },
+    {
       "name": "弘治三阁臣入阁",
       "year": 1495,
       "year_start": 1495,
@@ -60942,6 +61250,22 @@
       ],
       "chapters": [
         "p3-c6"
+      ]
+    },
+    {
+      "name": "唐伯虎装疯脱身",
+      "year": 1499,
+      "year_start": 1499,
+      "year_end": 1499,
+      "type": "其他",
+      "category": "政治斗争",
+      "location": "南昌",
+      "participants": [
+        "唐寅",
+        "朱宸濠"
+      ],
+      "chapters": [
+        "p3-c14"
       ]
     },
     {
@@ -61316,6 +61640,21 @@
       ]
     },
     {
+      "name": "知行合一悟道",
+      "year": 1508,
+      "year_start": 1508,
+      "year_end": 1508,
+      "type": "其他",
+      "category": "人物生平",
+      "location": "江西",
+      "participants": [
+        "王守仁"
+      ],
+      "chapters": [
+        "p3-c14"
+      ]
+    },
+    {
       "name": "龙场悟道创心学",
       "year": 1508,
       "year_start": 1508,
@@ -61567,6 +61906,40 @@
       ]
     },
     {
+      "name": "马昂献妹入宫",
+      "year": 1513,
+      "year_start": 1513,
+      "year_end": 1513,
+      "type": "其他",
+      "category": "宫廷变故",
+      "location": "北京",
+      "participants": [
+        "马昂",
+        "朱厚照",
+        "杨廷和"
+      ],
+      "chapters": [
+        "p3-c12"
+      ]
+    },
+    {
+      "name": "宁王护卫兴废",
+      "year": 1514,
+      "year_start": 1514,
+      "year_end": 1514,
+      "type": "政治斗争",
+      "category": "政治斗争",
+      "location": "南昌",
+      "participants": [
+        "朱宸濠",
+        "刘瑾",
+        "钱宁"
+      ],
+      "chapters": [
+        "p3-c14"
+      ]
+    },
+    {
       "name": "杨廷和守孝离朝",
       "year": 1514,
       "year_start": 1514,
@@ -61591,6 +61964,23 @@
       "category": "军事战争",
       "location": "江西",
       "participants": [
+        "孙燧",
+        "朱宸濠"
+      ],
+      "chapters": [
+        "p3-c14"
+      ]
+    },
+    {
+      "name": "王孙察觉宁王谋反",
+      "year": 1516,
+      "year_start": 1516,
+      "year_end": 1516,
+      "type": "政治斗争",
+      "category": "政治斗争",
+      "location": "江西",
+      "participants": [
+        "王守仁",
         "孙燧",
         "朱宸濠"
       ],
@@ -61696,6 +62086,23 @@
       ]
     },
     {
+      "name": "江彬挡虎",
+      "year": 1517,
+      "year_start": 1517,
+      "year_end": 1517,
+      "type": "其他",
+      "category": "宫廷变故",
+      "location": "北京",
+      "participants": [
+        "江彬",
+        "朱厚照",
+        "钱宁"
+      ],
+      "chapters": [
+        "p3-c12"
+      ]
+    },
+    {
       "name": "江西剿匪",
       "year": 1517,
       "year_start": 1517,
@@ -61724,6 +62131,22 @@
       ],
       "chapters": [
         "p3-c13"
+      ]
+    },
+    {
+      "name": "豹房享乐",
+      "year": 1517,
+      "year_start": 1517,
+      "year_end": 1517,
+      "type": "其他",
+      "category": "宫廷变故",
+      "location": "北京",
+      "participants": [
+        "朱厚照",
+        "钱宁"
+      ],
+      "chapters": [
+        "p3-c12"
       ]
     },
     {
@@ -63033,6 +63456,21 @@
       ]
     },
     {
+      "name": "嘉靖修道求长生",
+      "year": 1530,
+      "year_start": 1530,
+      "year_end": 1530,
+      "type": "其他",
+      "category": "宫廷变故",
+      "location": "北京",
+      "participants": [
+        "朱厚熜"
+      ],
+      "chapters": [
+        "p4-c5"
+      ]
+    },
+    {
       "name": "夏言议分祭天地",
       "year": 1530,
       "year_start": 1530,
@@ -63439,6 +63877,22 @@
       ]
     },
     {
+      "name": "严嵩写青词拍马",
+      "year": 1542,
+      "year_start": 1542,
+      "year_end": 1542,
+      "type": "其他",
+      "category": "政治斗争",
+      "location": "北京",
+      "participants": [
+        "严嵩",
+        "朱厚熜"
+      ],
+      "chapters": [
+        "p4-c6"
+      ]
+    },
+    {
       "name": "严嵩告倒夏言入阁",
       "year": 1542,
       "year_start": 1542,
@@ -63827,6 +64281,23 @@
       ]
     },
     {
+      "name": "徐海被抵押投倭成汉奸",
+      "year": 1550,
+      "year_start": 1550,
+      "year_end": 1550,
+      "type": "其他",
+      "category": "外交边务",
+      "location": "日本",
+      "participants": [
+        "徐海",
+        "徐惟学",
+        "倭寇"
+      ],
+      "chapters": [
+        "p4-c14"
+      ]
+    },
+    {
       "name": "徐阶以文书拖延退敌",
       "year": 1550,
       "year_start": 1550,
@@ -63841,6 +64312,38 @@
       ],
       "chapters": [
         "p4-c10"
+      ]
+    },
+    {
+      "name": "李默因会试题被严嵩构陷死于狱",
+      "year": 1550,
+      "year_start": 1550,
+      "year_end": 1550,
+      "type": "政治斗争",
+      "category": "政治斗争",
+      "location": "北京",
+      "participants": [
+        "李默",
+        "严嵩"
+      ],
+      "chapters": [
+        "p4-c21"
+      ]
+    },
+    {
+      "name": "汪直崛起为海上集团首领",
+      "year": 1550,
+      "year_start": 1550,
+      "year_end": 1550,
+      "type": "其他",
+      "category": "外交边务",
+      "location": "日本九州/东南亚",
+      "participants": [
+        "汪直",
+        "徐惟学"
+      ],
+      "chapters": [
+        "p4-c14"
       ]
     },
     {
@@ -64080,6 +64583,23 @@
       ],
       "chapters": [
         "p4-c12"
+      ]
+    },
+    {
+      "name": "三里桥徐海诈败破明军",
+      "year": 1555,
+      "year_start": 1555,
+      "year_end": 1555,
+      "type": "战役",
+      "category": "军事战争",
+      "location": "三里桥",
+      "participants": [
+        "徐海",
+        "宗礼",
+        "倭寇"
+      ],
+      "chapters": [
+        "p4-c14"
       ]
     },
     {
@@ -65020,6 +65540,22 @@
       ],
       "chapters": [
         "p4-c22"
+      ]
+    },
+    {
+      "name": "严嵩设宴跪求徐阶照应",
+      "year": 1562,
+      "year_start": 1562,
+      "year_end": 1562,
+      "type": "政治斗争",
+      "category": "政治斗争",
+      "location": "",
+      "participants": [
+        "严嵩",
+        "徐阶"
+      ],
+      "chapters": [
+        "p4-c21"
       ]
     },
     {
@@ -73797,23 +74333,6 @@
       ]
     },
     {
-      "name": "三里桥徐海诈败破明军",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "战役",
-      "category": "军事战争",
-      "location": "三里桥",
-      "participants": [
-        "徐海",
-        "宗礼",
-        "倭寇"
-      ],
-      "chapters": [
-        "p4-c14"
-      ]
-    },
-    {
       "name": "严世蕃论天下三人",
       "year": "",
       "year_start": null,
@@ -73830,134 +74349,6 @@
       ],
       "chapters": [
         "p4-c8"
-      ]
-    },
-    {
-      "name": "严嵩写青词拍马",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "政治斗争",
-      "location": "北京",
-      "participants": [
-        "严嵩",
-        "朱厚熜"
-      ],
-      "chapters": [
-        "p4-c6"
-      ]
-    },
-    {
-      "name": "严嵩设宴跪求徐阶照应",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "政治斗争",
-      "category": "政治斗争",
-      "location": "",
-      "participants": [
-        "严嵩",
-        "徐阶"
-      ],
-      "chapters": [
-        "p4-c21"
-      ]
-    },
-    {
-      "name": "也先夜谋杀朱祁镇被雷雨中止",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "军事战争",
-      "location": "黑松林",
-      "participants": [
-        "也先",
-        "朱祁镇",
-        "伯颜帖木儿"
-      ],
-      "chapters": [
-        "p2-c19"
-      ]
-    },
-    {
-      "name": "也先统一蒙古",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "外交边务",
-      "location": "蒙古",
-      "participants": [
-        "也先",
-        "脱欢"
-      ],
-      "chapters": [
-        "p2-c13"
-      ]
-    },
-    {
-      "name": "唐伯虎装疯脱身",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "政治斗争",
-      "location": "南昌",
-      "participants": [
-        "唐寅",
-        "朱宸濠"
-      ],
-      "chapters": [
-        "p3-c14"
-      ]
-    },
-    {
-      "name": "嘉靖修道求长生",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "宫廷变故",
-      "location": "北京",
-      "participants": [
-        "朱厚熜"
-      ],
-      "chapters": [
-        "p4-c5"
-      ]
-    },
-    {
-      "name": "宁王护卫兴废",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "政治斗争",
-      "category": "政治斗争",
-      "location": "南昌",
-      "participants": [
-        "朱宸濠",
-        "刘瑾",
-        "钱宁"
-      ],
-      "chapters": [
-        "p3-c14"
-      ]
-    },
-    {
-      "name": "巡抚制度创设",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "制度",
-      "category": "制度科举",
-      "location": "",
-      "participants": [
-        "朱棣"
-      ],
-      "chapters": [
-        "p2-c8"
       ]
     },
     {
@@ -73980,38 +74371,6 @@
       ]
     },
     {
-      "name": "徐海被抵押投倭成汉奸",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "外交边务",
-      "location": "日本",
-      "participants": [
-        "徐海",
-        "徐惟学",
-        "倭寇"
-      ],
-      "chapters": [
-        "p4-c14"
-      ]
-    },
-    {
-      "name": "徐珵改名徐有贞",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "人物生平",
-      "location": "",
-      "participants": [
-        "徐有贞"
-      ],
-      "chapters": [
-        "p2-c21"
-      ]
-    },
-    {
       "name": "朱棣生母碽妃之谜",
       "year": "",
       "year_start": null,
@@ -74026,55 +74385,6 @@
       ],
       "chapters": [
         "p2-c1"
-      ]
-    },
-    {
-      "name": "朱祁镇拒也先妹婚事",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "外交边务",
-      "location": "",
-      "participants": [
-        "朱祁镇",
-        "也先",
-        "喜宁"
-      ],
-      "chapters": [
-        "p2-c19"
-      ]
-    },
-    {
-      "name": "朱高煦封云南耍赖留京",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "政治斗争",
-      "location": "云南",
-      "participants": [
-        "朱高煦",
-        "朱棣"
-      ],
-      "chapters": [
-        "p2-c9"
-      ]
-    },
-    {
-      "name": "李默因会试题被严嵩构陷死于狱",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "政治斗争",
-      "category": "政治斗争",
-      "location": "北京",
-      "participants": [
-        "李默",
-        "严嵩"
-      ],
-      "chapters": [
-        "p4-c21"
       ]
     },
     {
@@ -74094,105 +74404,6 @@
       ]
     },
     {
-      "name": "江彬挡虎",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "宫廷变故",
-      "location": "北京",
-      "participants": [
-        "江彬",
-        "朱厚照",
-        "钱宁"
-      ],
-      "chapters": [
-        "p3-c12"
-      ]
-    },
-    {
-      "name": "汪直崛起为海上集团首领",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "外交边务",
-      "location": "日本九州/东南亚",
-      "participants": [
-        "汪直",
-        "徐惟学"
-      ],
-      "chapters": [
-        "p4-c14"
-      ]
-    },
-    {
-      "name": "王孙察觉宁王谋反",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "政治斗争",
-      "category": "政治斗争",
-      "location": "江西",
-      "participants": [
-        "王守仁",
-        "孙燧",
-        "朱宸濠"
-      ],
-      "chapters": [
-        "p3-c14"
-      ]
-    },
-    {
-      "name": "王守仁少年出居庸关言靖难",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "人物生平",
-      "location": "居庸关",
-      "participants": [
-        "王守仁",
-        "王华"
-      ],
-      "chapters": [
-        "p3-c8"
-      ]
-    },
-    {
-      "name": "王守仁格物穷理求圣",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "人物生平",
-      "location": "",
-      "participants": [
-        "王守仁",
-        "朱熹",
-        "程颐"
-      ],
-      "chapters": [
-        "p3-c8"
-      ]
-    },
-    {
-      "name": "王守仁格竹求理染病",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "人物生平",
-      "location": "北京",
-      "participants": [
-        "王守仁",
-        "朱熹"
-      ],
-      "chapters": [
-        "p3-c9"
-      ]
-    },
-    {
       "name": "王振净身入宫教太子",
       "year": "",
       "year_start": null,
@@ -74206,53 +74417,6 @@
       ],
       "chapters": [
         "p2-c13"
-      ]
-    },
-    {
-      "name": "王振削减也先贡使",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "外交事件",
-      "category": "外交边务",
-      "location": "",
-      "participants": [
-        "王振",
-        "也先"
-      ],
-      "chapters": [
-        "p2-c13"
-      ]
-    },
-    {
-      "name": "瓦剌吞并鞑靼地盘",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "政治斗争",
-      "category": "政治斗争",
-      "location": "蒙古",
-      "participants": [
-        "马哈木",
-        "阿鲁台"
-      ],
-      "chapters": [
-        "p2-c7"
-      ]
-    },
-    {
-      "name": "知行合一悟道",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "人物生平",
-      "location": "江西",
-      "participants": [
-        "王守仁"
-      ],
-      "chapters": [
-        "p3-c14"
       ]
     },
     {
@@ -74271,74 +74435,6 @@
       ]
     },
     {
-      "name": "豹房享乐",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "宫廷变故",
-      "location": "北京",
-      "participants": [
-        "朱厚照",
-        "钱宁"
-      ],
-      "chapters": [
-        "p3-c12"
-      ]
-    },
-    {
-      "name": "金刀案构陷朱祁镇复辟",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "案件",
-      "category": "案件刑狱",
-      "location": "南宫",
-      "participants": [
-        "卢忠",
-        "李善",
-        "阮浪",
-        "王瑶",
-        "朱祁钰",
-        "朱祁镇"
-      ],
-      "chapters": [
-        "p2-c21"
-      ]
-    },
-    {
-      "name": "钱皇后哭瘸瞎眼守望朱祁镇",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "人物生平",
-      "location": "北京",
-      "participants": [
-        "钱皇后",
-        "朱祁镇"
-      ],
-      "chapters": [
-        "p2-c19"
-      ]
-    },
-    {
-      "name": "阿鲁台求明庇护",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "外交事件",
-      "category": "外交边务",
-      "location": "长城",
-      "participants": [
-        "阿鲁台",
-        "朱棣"
-      ],
-      "chapters": [
-        "p2-c7"
-      ]
-    },
-    {
       "name": "陆炳平反诏狱冤狱",
       "year": "",
       "year_start": null,
@@ -74351,38 +74447,6 @@
       ],
       "chapters": [
         "p4-c8"
-      ]
-    },
-    {
-      "name": "陈瑄疏通河道漕运畅通",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "制度科举",
-      "location": "",
-      "participants": [
-        "陈瑄"
-      ],
-      "chapters": [
-        "p2-c3"
-      ]
-    },
-    {
-      "name": "马昂献妹入宫",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "宫廷变故",
-      "location": "北京",
-      "participants": [
-        "马昂",
-        "朱厚照",
-        "杨廷和"
-      ],
-      "chapters": [
-        "p3-c12"
       ]
     }
   ],
