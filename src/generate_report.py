@@ -22,7 +22,7 @@ BASE = Path(__file__).resolve().parents[1]
 DATA_PATH = BASE / "data" / "data.json"
 RAW_PATH = BASE / "data" / "extract_raw.json"
 CHAPTERS_PATH = BASE / "data" / "chapters.json"
-OUT_PATH = BASE  # 报告直接输出到项目根：index.html（全书）+ report_p1.html（壹部）
+OUT_PATH = BASE  # 报告直接输出到项目根：index.html（全书，唯一入口）
 
 # 人名归一与 merge.py 共用同一份规则；data.json 已在聚合时归一，这里是双保险
 from clean_rules import PERSON_CANON, PERSON_CANON_BY_PART
@@ -1050,14 +1050,14 @@ def render(scope: str, output: Path):
 
 def main():
     parser = argparse.ArgumentParser(description="生成静态知识报告")
-    parser.add_argument("--scope", choices=("full", "p1"), default="full")
+    parser.add_argument("--scope", choices=("full", "p1", "p2", "p3", "p4", "p5", "p6", "p7"), default="full")
     args = parser.parse_args()
     OUT_PATH.mkdir(parents=True, exist_ok=True)
     if args.scope == "full":
+        # 全书报告（唯一根入口）；壹部不再单独生成，避免与全书包重叠造成冗余
         render("full", OUT_PATH / "index.html")
-        render("p1", OUT_PATH / "report_p1.html")
     else:
-        render("p1", OUT_PATH / "report_p1.html")
+        render(args.scope, OUT_PATH / f"report_{args.scope}.html")
 
 
 if __name__ == "__main__":

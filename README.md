@@ -8,7 +8,6 @@
 ## 在线演示（GitHub Pages）
 
 - 全七部报告：<https://CochraneK.github.io/ming/>
-- 壹部专版：<https://CochraneK.github.io/ming/report_p1.html>
 
 > 报告页面通过 CDN 加载 Leaflet 地图库与 OpenStreetMap 瓦片，需联网查看地图部分；其余内容（角色卡、时间线、章节打卡）已内联，离线可用。
 
@@ -31,8 +30,7 @@ data/                 派生数据（结构化事实，可自由使用）
   manual_relations.json 手工补的关系
   lifespans.json / reigns.json / voyages.json 生卒/在位/航行
   chapters_index.json 章节标题索引（已脱敏，仅标题无正文）
-index.html            全七部交互报告（GitHub Pages 根入口）
-report_p1.html        壹部专版
+index.html            全七部交互报告（GitHub Pages 根入口，唯一入口）
 ```
 
 ## 复现方式
