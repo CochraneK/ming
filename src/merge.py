@@ -219,6 +219,89 @@ if manual_years:
             if my.get("note"):
                 e["year_note"] = my["note"]
 
+# ===== 人工勘误（data/manual_corrections.json）：重跑 merge 不丢，覆盖抽取结果 =====
+CORRECTIONS = load_json(os.path.join(BASE, "data", "manual_corrections.json"), {})
+
+# 1) 事件年份勘误（源=记忆/通用明史，写入 year_source 保持源透明）
+for _name, _c in (CORRECTIONS.get("event_years") or {}).items():
+    _e = events.get(_name)
+    if _e is None:
+        continue
+    _e["year"] = normalize_year(_c["year"])
+    _e["year_source"] = _c.get("source", "记忆")
+    if _c.get("approx"):
+        _e["year_approx"] = True
+    if _c.get("note"):
+        _e["year_note"] = _c["note"]
+    _e["year_corrected"] = True
+
+# 2) 人物卡勘误：剔除误挂别名（不同人错当同一人）+ 势力 / 身份勘误
+for _name, _bad in (CORRECTIONS.get("character_alias_remove") or {}).items():
+    _c = characters.get(_name)
+    if _c:
+        _c["aliases"] = [a for a in _c.get("aliases", []) if a not in _bad]
+for _name, _faction in (CORRECTIONS.get("character_faction") or {}).items():
+    if _name in characters:
+        characters[_name]["faction"] = _faction
+        characters[_name]["faction_source"] = "记忆"
+for _name, _role in (CORRECTIONS.get("character_role") or {}).items():
+    if _name in characters:
+        characters[_name]["role"] = _role
+        characters[_name]["role_source"] = "记忆"
+
+# 3) 同一人物被切成多张卡 -> 并入规范名（别名 / 章节 / 事件合并）
+def merge_character_cards(src, dst):
+    s, d = characters.get(src), characters.get(dst)
+    if s is None or d is None or src == dst:
+        return False
+    aliases = set(d.get("aliases", [])) | set(s.get("aliases", [])) | {src}
+    aliases.discard(dst)
+    d["aliases"] = sorted(aliases)
+    d["chapters"] = sorted(set(d.get("chapters", [])) | set(s.get("chapters", [])))
+    if not d.get("faction") and s.get("faction"):
+        d["faction"] = s["faction"]
+    if not d.get("life") and s.get("life"):
+        d["life"] = s["life"]
+    if not d.get("birth") and s.get("birth"):
+        d["birth"] = s["birth"]
+    if len(s.get("role", "")) > len(d.get("role", "")):
+        d["role"] = s["role"]
+    del characters[src]
+    return True
+
+person_card_merges = []
+for _card, _canon in (CORRECTIONS.get("character_merges") or {}).items():
+    if merge_character_cards(_card, _canon):
+        person_card_merges.append(f"{_card}→{_canon}")
+
+# 合并后关系端点同步改指规范名，避免出现指向已删除卡的悬空关系
+_char_merges = CORRECTIONS.get("character_merges") or {}
+for r in relations:
+    for _k in ("from", "to"):
+        if r.get(_k) in _char_merges:
+            r[_k] = _char_merges[r[_k]]
+
+# 4) 地点勘误（今址等）
+for _name, _fix in (CORRECTIONS.get("location_fixes") or {}).items():
+    _l = locations.get(_name)
+    if _l:
+        _l.update(_fix)
+
+# 5) 关系勘误：亲属关系统一为「长辈 → 晚辈」；剔除矛盾重复与跨代错配
+_rel_fix = CORRECTIONS.get("relation_fixes") or {}
+rel_flipped = 0
+rel_dropped_fix = 0
+for _f in (_rel_fix.get("flip") or []):
+    for r in relations:
+        if r["from"] == _f["from"] and r["to"] == _f["to"] and r["rel"] == _f["rel"]:
+            r["from"], r["to"] = r["to"], r["from"]
+            r["rel_corrected"] = "方向归一为长辈→晚辈"
+            rel_flipped += 1
+_drop_keys = {(d["from"], d["to"], d["rel"]) for d in (_rel_fix.get("drop") or [])}
+_before = len(relations)
+relations = [r for r in relations if (r["from"], r["to"], r["rel"]) not in _drop_keys]
+rel_dropped_fix = _before - len(relations)
+
 seen, rels = set(), []
 character_names = set(characters.keys())
 for r in relations:
@@ -272,6 +355,15 @@ data = {
              "cleaning": {
                  "person_merges": len(merged_person_names),
                  "person_merged_names": sorted(merged_person_names),
+                 "person_card_merges": person_card_merges,
+                 "corrections": {
+                     "event_years": len(CORRECTIONS.get("event_years") or {}),
+                     "character_faction": len(CORRECTIONS.get("character_faction") or {}),
+                     "character_role": len(CORRECTIONS.get("character_role") or {}),
+                     "location_fixes": len(CORRECTIONS.get("location_fixes") or {}),
+                     "relation_flipped": rel_flipped,
+                     "relation_dropped": rel_dropped_fix,
+                 },
                  "location_merge_groups": {k: sorted(v) for k, v in sorted(merged_location_groups.items())},
                  "selfloop_dropped": selfloop_dropped,
                  "relation_categories": dict(sorted(relation_category_counts.items(), key=lambda kv: -kv[1])),

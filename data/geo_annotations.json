@@ -2127,11 +2127,11 @@
   {
     "ancient": "占城",
     "modern_address": "今越南中南部（归仁一带）",
-    "lng": 13.9,
-    "lat": 109.2,
+    "lng": 109.2,
+    "lat": 13.9,
     "trace_type": "起航地",
     "status": "已定位",
-    "note": "郑和下西洋首站"
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "爪哇",
@@ -2836,9 +2836,10 @@
     "ancient": "庆州",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 35.85,
-    "lat": 129.22,
-    "modern_address": "朝鲜·庆州"
+    "lng": 129.22,
+    "lat": 35.85,
+    "modern_address": "朝鲜·庆州",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "松亭关",
@@ -3817,17 +3818,19 @@
     "ancient": "日本九州",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 33.5,
-    "lat": 130.5,
-    "modern_address": "日本九州"
+    "lng": 130.5,
+    "lat": 33.5,
+    "modern_address": "日本九州",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "冲绳",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 26.2,
-    "lat": 127.7,
-    "modern_address": "琉球·冲绳"
+    "lng": 127.7,
+    "lat": 26.2,
+    "modern_address": "琉球·冲绳",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "东南亚",
@@ -4197,73 +4200,82 @@
     "ancient": "中国地方（日本）",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 35.0,
-    "lat": 132.5,
-    "modern_address": "日本·中国地方（本州西）"
+    "lng": 132.5,
+    "lat": 35.0,
+    "modern_address": "日本·中国地方（本州西）",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "贱岳",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 35.5,
-    "lat": 136.1,
-    "modern_address": "日本·贱岳（羽柴秀吉）"
+    "lng": 136.1,
+    "lat": 35.5,
+    "modern_address": "日本·贱岳（羽柴秀吉）",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "长筱",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 34.9,
-    "lat": 137.6,
-    "modern_address": "日本·长筱（织田德川）"
+    "lng": 137.6,
+    "lat": 34.9,
+    "modern_address": "日本·长筱（织田德川）",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "玉浦",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 34.88,
-    "lat": 128.68,
-    "modern_address": "朝鲜·巨济·玉浦（玉浦海战）"
+    "lng": 128.68,
+    "lat": 34.88,
+    "modern_address": "朝鲜·巨济·玉浦（玉浦海战）",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "赤珍浦",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 34.82,
-    "lat": 128.42,
-    "modern_address": "朝鲜·统营·赤珍浦"
+    "lng": 128.42,
+    "lat": 34.82,
+    "modern_address": "朝鲜·统营·赤珍浦",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "泗水港",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 35.0,
-    "lat": 128.1,
-    "modern_address": "朝鲜·泗川（泗川海战）"
+    "lng": 128.1,
+    "lat": 35.0,
+    "modern_address": "朝鲜·泗川（泗川海战）",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "唐浦",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 34.85,
-    "lat": 128.43,
-    "modern_address": "朝鲜·统营·唐浦"
+    "lng": 128.43,
+    "lat": 34.85,
+    "modern_address": "朝鲜·统营·唐浦",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "闲山岛",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 34.85,
-    "lat": 128.05,
-    "modern_address": "朝鲜·闲山岛（李舜臣闲山岛海战）"
+    "lng": 128.05,
+    "lat": 34.85,
+    "modern_address": "朝鲜·闲山岛（李舜臣闲山岛海战）",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "庆尚道",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 36.0,
-    "lat": 128.5,
-    "modern_address": "朝鲜·庆尚道"
+    "lng": 128.5,
+    "lat": 36.0,
+    "modern_address": "朝鲜·庆尚道",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "大同江",
@@ -4297,9 +4309,10 @@
     "ancient": "开城",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 37.97,
-    "lat": 126.55,
-    "modern_address": "朝鲜·开城"
+    "lng": 126.55,
+    "lat": 37.97,
+    "modern_address": "朝鲜·开城",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "马山馆",
@@ -4313,9 +4326,10 @@
     "ancient": "碧蹄馆",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 37.55,
-    "lat": 126.95,
-    "modern_address": "朝鲜·碧蹄馆（首尔北，壬辰倭乱）"
+    "lng": 126.95,
+    "lat": 37.55,
+    "modern_address": "朝鲜·碧蹄馆（首尔北，壬辰倭乱）",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "宝山",
@@ -4326,25 +4340,28 @@
     "ancient": "稷山",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 36.98,
-    "lat": 127.1,
-    "modern_address": "朝鲜·稷山（稷山之战）"
+    "lng": 127.1,
+    "lat": 36.98,
+    "modern_address": "朝鲜·稷山（稷山之战）",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "晋州",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 35.18,
-    "lat": 128.07,
-    "modern_address": "朝鲜·晋州（晋州城之战）"
+    "lng": 128.07,
+    "lat": 35.18,
+    "modern_address": "朝鲜·晋州（晋州城之战）",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "古今岛",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 34.4,
-    "lat": 126.3,
-    "modern_address": "朝鲜·古今岛（闲山岛基地）"
+    "lng": 126.3,
+    "lat": 34.4,
+    "modern_address": "朝鲜·古今岛（闲山岛基地）",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "猫岛",
@@ -4360,17 +4377,19 @@
     "ancient": "鸣梁海峡",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 34.43,
-    "lat": 126.27,
-    "modern_address": "朝鲜·鸣梁海峡（李舜臣鸣梁大捷）"
+    "lng": 126.27,
+    "lat": 34.43,
+    "modern_address": "朝鲜·鸣梁海峡（李舜臣鸣梁大捷）",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "关原",
     "trace_type": "关隘",
     "status": "坐标来自内置地名词典（待核验）",
-    "lng": 35.37,
-    "lat": 136.47,
-    "modern_address": "日本·关原（关原之战）"
+    "lng": 136.47,
+    "lat": 35.37,
+    "modern_address": "日本·关原（关原之战）",
+    "note": "经纬度顺序已校正（原录入为纬度,经度）"
   },
   {
     "ancient": "播州",
