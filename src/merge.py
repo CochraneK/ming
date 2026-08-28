@@ -325,6 +325,22 @@ _before = len(relations)
 relations = [r for r in relations if (r["from"], r["to"], r["rel"]) not in _drop_keys]
 rel_dropped_fix = _before - len(relations)
 
+# 6) 文本反查补全人物出场（data/derived_chapter_persons.json，source=文本反查）：
+#    LLM 逐章抽取对人物覆盖不全，此处按「正文出现>=阈值次」补登记，抽取章在前、推导章在后，
+#    chapters_derived 单独保存以保源透明（报告端可区分）。
+DERIVED_COVER = load_json(os.path.join(BASE, "data", "derived_chapter_persons.json"), {})
+_derived = DERIVED_COVER.get("derived") or {}
+coverage_added = 0
+for _name, _chs in _derived.items():
+    _c = characters.get(_name)
+    if _c is None:
+        continue
+    _extra = [k for k in _chs if k not in _c["chapters"]]
+    if _extra:
+        _c["chapters"] = _c["chapters"] + _extra
+        _c.setdefault("chapters_derived", []).extend(_extra)
+        coverage_added += len(_extra)
+
 seen, rels = set(), []
 character_names = set(characters.keys())
 for r in relations:
@@ -387,6 +403,7 @@ data = {
                      "relation_flipped": rel_flipped,
                      "relation_dropped": rel_dropped_fix,
                      "lifespan_added": lifespan_added,
+                     "coverage_added": coverage_added,
                  },
                  "location_merge_groups": {k: sorted(v) for k, v in sorted(merged_location_groups.items())},
                  "selfloop_dropped": selfloop_dropped,
