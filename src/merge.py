@@ -128,6 +128,7 @@ lifespans = load_json(LIFESPANS, [])
 # 年谱补录（源=记忆/通用明史）：并入 lifespans，重跑不丢；不覆盖已有条目。
 # 生年不详者用「卒年 - 估值」占位并标 life_estimated，报告端以虚线条区分，绝不冒充已知年份。
 MANUAL_LIFESPANS = os.path.join(BASE, "data", "manual_lifespans.json")
+MANUAL_PERSONS = os.path.join(BASE, "data", "manual_persons.json")
 ESTIMATED_SPAN = 55
 lifespan_added = 0
 for _ml in (load_json(MANUAL_LIFESPANS, {}).get("entries") or []):
@@ -153,6 +154,22 @@ voyages = load_json(VOYAGES, {})
 
 characters, locations, events = {}, {}, {}
 relations = []
+
+# 人工补录人物（源=书本提及+通用明史，与逐章抽取解耦，重跑不丢，不覆盖已抽取同名卡）
+for _mp in (load_json(MANUAL_PERSONS, {}).get("entries") or []):
+    _n = _mp.get("name")
+    if not _n or _n in characters:
+        continue
+    characters[_n] = {
+        "name": _n,
+        "role": _mp.get("role", ""),
+        "faction": _mp.get("faction", ""),
+        "aliases": list(_mp.get("aliases", [])),
+        "chapters": list(_mp.get("chapters", [])),
+        "life": _mp.get("life", ""),
+        "birth": _mp.get("birth", ""),
+        "source": _mp.get("source", "人工补录"),
+    }
 for mr in manual_rels:
     chapter = mr.get("chapter") or "curated"
     relations.append({"from": canonical(mr["from"]), "to": canonical(mr["to"]),
