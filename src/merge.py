@@ -128,8 +128,9 @@ voyages = load_json(VOYAGES, {})
 characters, locations, events = {}, {}, {}
 relations = []
 for mr in manual_rels:
+    chapter = mr.get("chapter") or "curated"
     relations.append({"from": canonical(mr["from"]), "to": canonical(mr["to"]),
-                      "rel": clean_arrows(mr["rel"]), "chapter": mr.get("chapter", "curated")})
+                      "rel": clean_arrows(mr["rel"]), "chapter": chapter})
 
 merged_person_names = set()
 merged_location_groups = {}
