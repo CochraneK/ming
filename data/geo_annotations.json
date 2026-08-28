@@ -2693,7 +2693,10 @@
   {
     "ancient": "五通庙",
     "trace_type": "祠堂",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 118.48,
+    "lat": 31.67,
+    "modern_address": "安徽马鞍山·采石矶（陈友谅弑徐寿辉处·五通庙）"
   },
   {
     "ancient": "燕云十六州",
@@ -2714,12 +2717,18 @@
   {
     "ancient": "全宁",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 119.0,
+    "lat": 43.0,
+    "modern_address": "内蒙古翁牛特旗（全宁路/卫，漠北远征故地）"
   },
   {
     "ancient": "大兴州",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 117.4,
+    "lat": 40.9,
+    "modern_address": "河北滦平附近（明大兴州废）"
   },
   {
     "ancient": "柳河川",
@@ -2729,7 +2738,10 @@
   {
     "ancient": "东胜州",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 111.23,
+    "lat": 40.28,
+    "modern_address": "内蒙古托克托（东胜州/卫）"
   },
   {
     "ancient": "野马川",
@@ -2742,7 +2754,10 @@
   {
     "ancient": "岭北",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 102.83,
+    "lat": 47.2,
+    "modern_address": "蒙古国·哈拉和林（岭北行省）"
   },
   {
     "ancient": "口温",
@@ -2752,12 +2767,18 @@
   {
     "ancient": "阿鲁浑河",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 103.0,
+    "lat": 47.5,
+    "modern_address": "蒙古国·鄂尔浑河（Orkhon，阿鲁浑河）"
   },
   {
     "ancient": "称海",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 89.5,
+    "lat": 48.0,
+    "modern_address": "蒙古国科布多东南·称海城"
   },
   {
     "ancient": "扫林山",
@@ -2767,7 +2788,10 @@
   {
     "ancient": "亦集乃路",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 100.9,
+    "lat": 41.83,
+    "modern_address": "内蒙古额济纳·黑水城（亦集乃路）"
   },
   {
     "ancient": "别笃山口",
@@ -2923,7 +2947,10 @@
   {
     "ancient": "化州",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 110.6,
+    "lat": 21.65,
+    "modern_address": "广东·化州"
   },
   {
     "ancient": "会通河",
@@ -2936,7 +2963,10 @@
   {
     "ancient": "大通桥",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 116.43,
+    "lat": 39.9,
+    "modern_address": "北京·大通桥（通惠河）"
   },
   {
     "ancient": "江口",
@@ -2983,17 +3013,26 @@
   {
     "ancient": "多邦",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 105.8,
+    "lat": 21.0,
+    "modern_address": "越南·多邦城（明征安南）"
   },
   {
     "ancient": "东都",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 105.85,
+    "lat": 21.03,
+    "modern_address": "越南河内（明安南东都）"
   },
   {
     "ancient": "西都",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 105.8,
+    "lat": 19.8,
+    "modern_address": "越南清化（明安南西都）"
   },
   {
     "ancient": "西藏",
@@ -3019,7 +3058,10 @@
   {
     "ancient": "胪朐河",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 115.0,
+    "lat": 48.0,
+    "modern_address": "蒙古国·克鲁伦河（Kherlen，胪朐河）"
   },
   {
     "ancient": "大伯颜山",
@@ -3037,7 +3079,10 @@
   {
     "ancient": "阔滦海子",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 117.43,
+    "lat": 49.2,
+    "modern_address": "内蒙古·呼伦湖（阔滦海子）"
   },
   {
     "ancient": "回曲津",
@@ -3060,7 +3105,10 @@
   {
     "ancient": "忽兰忽失温",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 106.9,
+    "lat": 47.8,
+    "modern_address": "蒙古国·乌兰巴托南（忽兰忽失温）"
   },
   {
     "ancient": "图拉河",
@@ -3085,7 +3133,10 @@
   {
     "ancient": "湖北石首",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 112.4,
+    "lat": 29.72,
+    "modern_address": "湖北·石首"
   },
   {
     "ancient": "青州",
@@ -3116,7 +3167,10 @@
   {
     "ancient": "达兰纳木尔河",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 106.9,
+    "lat": 47.9,
+    "modern_address": "蒙古国·土拉河（Tuul，达兰纳木尔河）"
   },
   {
     "ancient": "翠微岗",
@@ -3126,7 +3180,10 @@
   {
     "ancient": "榆木川",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 116.47,
+    "lat": 42.18,
+    "modern_address": "内蒙古多伦附近（永乐崩于榆木川）"
   },
   {
     "ancient": "哈密",
@@ -3139,7 +3196,10 @@
   {
     "ancient": "兀良哈",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 119.0,
+    "lat": 43.5,
+    "modern_address": "内蒙古·西拉木伦河/乌梁海（兀良哈）"
   },
   {
     "ancient": "朝阳门",
@@ -3205,7 +3265,10 @@
   {
     "ancient": "龙门",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 115.8,
+    "lat": 40.6,
+    "modern_address": "河北赤城·龙门所（龙门关）"
   },
   {
     "ancient": "翔凤楼",
@@ -3320,12 +3383,18 @@
   {
     "ancient": "白羊口",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 116.3,
+    "lat": 40.3,
+    "modern_address": "北京昌平·白羊口关"
   },
   {
     "ancient": "怀安",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 114.35,
+    "lat": 40.67,
+    "modern_address": "河北张家口·怀安（怀安卫）"
   },
   {
     "ancient": "沙河",
@@ -3343,12 +3412,18 @@
   {
     "ancient": "天城",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 114.07,
+    "lat": 40.43,
+    "modern_address": "山西天镇（天城卫）"
   },
   {
     "ancient": "平虏",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 112.3,
+    "lat": 39.55,
+    "modern_address": "山西平鲁（平虏卫）"
   },
   {
     "ancient": "威武",
@@ -3358,7 +3433,10 @@
   {
     "ancient": "应州",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 113.68,
+    "lat": 39.57,
+    "modern_address": "山西应县（应州）"
   },
   {
     "ancient": "五里寨",
@@ -3529,7 +3607,10 @@
   {
     "ancient": "江西贵溪",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 117.08,
+    "lat": 28.3,
+    "modern_address": "江西·贵溪"
   },
   {
     "ancient": "福建延平府",
@@ -3552,12 +3633,18 @@
   {
     "ancient": "临江府",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 115.55,
+    "lat": 28.05,
+    "modern_address": "江西樟树·临江镇（明临江府）"
   },
   {
     "ancient": "宣平",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 119.8,
+    "lat": 28.9,
+    "modern_address": "浙江武义·宣平（旧宣平县）"
   },
   {
     "ancient": "华亭",
@@ -3588,12 +3675,18 @@
   {
     "ancient": "武进",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 119.95,
+    "lat": 31.78,
+    "modern_address": "江苏常州·武进区"
   },
   {
     "ancient": "蒲州",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 110.45,
+    "lat": 34.85,
+    "modern_address": "山西永济（蒲州）"
   },
   {
     "ancient": "三边",
@@ -3606,7 +3699,10 @@
   {
     "ancient": "怀柔",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 116.63,
+    "lat": 40.32,
+    "modern_address": "北京·怀柔"
   },
   {
     "ancient": "河南新郑",
@@ -3619,12 +3715,18 @@
   {
     "ancient": "山东东牟",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 121.6,
+    "lat": 37.38,
+    "modern_address": "山东烟台·牟平（东牟）"
   },
   {
     "ancient": "狄道",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 103.85,
+    "lat": 35.38,
+    "modern_address": "甘肃临洮（狄道）"
   },
   {
     "ancient": "居庸关外",
@@ -3642,12 +3744,18 @@
   {
     "ancient": "河北容城",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 115.95,
+    "lat": 39.07,
+    "modern_address": "河北·容城"
   },
   {
     "ancient": "猫儿庄",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 113.7,
+    "lat": 40.2,
+    "modern_address": "山西阳高·猫儿庄堡"
   },
   {
     "ancient": "王江泾",
@@ -3801,7 +3909,10 @@
   {
     "ancient": "八宝山",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 116.23,
+    "lat": 39.9,
+    "modern_address": "北京·八宝山"
   },
   {
     "ancient": "处州",
@@ -3951,7 +4062,10 @@
   {
     "ancient": "延平",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 118.18,
+    "lat": 26.65,
+    "modern_address": "福建南平（延平府）"
   },
   {
     "ancient": "兴国",
@@ -4190,7 +4304,10 @@
   {
     "ancient": "马山馆",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 128.41,
+    "lat": 35.19,
+    "modern_address": "朝鲜·马山（壬辰倭乱）"
   },
   {
     "ancient": "碧蹄馆",
@@ -4266,7 +4383,10 @@
   {
     "ancient": "大峪山",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 116.1,
+    "lat": 39.92,
+    "modern_address": "北京门头沟·大峪"
   },
   {
     "ancient": "边界（明蒙边境）",
@@ -4331,7 +4451,10 @@
   {
     "ancient": "西平堡",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 122.1,
+    "lat": 41.2,
+    "modern_address": "辽宁·西平堡（明辽东）"
   },
   {
     "ancient": "三岔河",
@@ -4373,12 +4496,18 @@
   {
     "ancient": "中前所",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 119.95,
+    "lat": 40.35,
+    "modern_address": "辽宁绥中·前所镇（明中前所）"
   },
   {
     "ancient": "前屯",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 119.9,
+    "lat": 40.3,
+    "modern_address": "辽宁绥中·前屯卫"
   },
   {
     "ancient": "安徽",
@@ -4428,7 +4557,10 @@
   {
     "ancient": "右屯",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 121.4,
+    "lat": 41.1,
+    "modern_address": "辽宁凌海·右屯卫"
   },
   {
     "ancient": "塔山",
@@ -4449,7 +4581,10 @@
   {
     "ancient": "邵武",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 117.48,
+    "lat": 27.33,
+    "modern_address": "福建·邵武"
   },
   {
     "ancient": "笊篱山",
@@ -4577,7 +4712,10 @@
   {
     "ancient": "滦城",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 118.7,
+    "lat": 39.75,
+    "modern_address": "河北滦州（滦县）"
   },
   {
     "ancient": "迁安",
@@ -4688,7 +4826,10 @@
   {
     "ancient": "车厢峡",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 109.0,
+    "lat": 33.0,
+    "modern_address": "陕西·车厢峡（李自成被困处）"
   },
   {
     "ancient": "米脂",
@@ -4939,7 +5080,10 @@
   {
     "ancient": "甘孜松潘",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 103.6,
+    "lat": 32.65,
+    "modern_address": "四川·松潘"
   },
   {
     "ancient": "金沙江",
@@ -4968,7 +5112,10 @@
   {
     "ancient": "西双版纳",
     "trace_type": "地名",
-    "status": "抽取待补"
+    "status": "坐标来自内置地名词典（待核验）",
+    "lng": 100.8,
+    "lat": 22.0,
+    "modern_address": "云南·西双版纳"
   },
   {
     "ancient": "昆仑山",
