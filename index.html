@@ -53,7 +53,14 @@
 /* 力导图悬浮提示：允许换行，避免超长文本溢出 */
 .full-graph-tip-box{white-space:normal}
 .src-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:10px;background:#e9ddc6;color:#8a6a2a;font-size:11px;vertical-align:middle}
-.src-note{display:inline-block;margin-left:4px;color:var(--muted);font-size:12px}</style>
+.src-note{display:inline-block;margin-left:4px;color:var(--muted);font-size:12px}@media print{
+.character-card{height:auto!important;page-break-inside:avoid;perspective:none!important;box-shadow:none!important;overflow:visible!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.character-card .inner{transform:none!important;height:auto!important;display:block!important;transform-style:flat!important}
+.character-card .face{position:static!important;backface-visibility:visible!important;transform:none!important;height:auto!important;overflow:visible!important;margin-bottom:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.character-card .back{transform:none!important}
+.character-card .card-actions{display:none!important}
+}
+</style>
 </head>
 <body>
 <header class="app-header"><div class="header-inner">
