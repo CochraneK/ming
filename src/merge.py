@@ -360,6 +360,36 @@ for _name, _chs in _derived.items():
 
 seen, rels = set(), []
 character_names = set(characters.keys())
+location_names = set(locations.keys())
+
+# 关系端点类型判定：人物 / 地点 / 派系机构 / 其他。
+# 历史遗留：只要端点不是人物就被笼统打成「地点关联」，把东林党、浙党、阉党、后金、
+# 东厂这类派系/机构/政权误标成地点。改为按「人物优先 → 地点 → 机构派系 → 其他」判定。
+# 政权（朝代/朝廷）：与「派系机构」分开，避免把元朝、清廷标成机构。
+REGIME_EXACT = {"元朝", "明朝", "清朝", "清廷", "北元", "后金", "大顺", "大西", "西夏", "大理"}
+# 派系/机构：注意不要收录会误伤人名的后缀（如「监」，会把「太监」误判成机构）。
+ORG_EXACT = {"东厂", "西厂", "内厂", "锦衣卫", "东林党", "浙党", "阉党", "齐楚浙三党",
+             "宣党", "昆党", "楚党", "齐党", "秦党"}
+ORG_SUFFIXES = ("党", "厂", "司", "卫", "所", "营", "军", "部", "府", "局", "门",
+                "会", "社", "教", "国", "寺", "观", "院", "阁", "省", "道")
+
+
+def _endpoint_kind(name):
+    """判断单个关系端点的类型。人物优先，避免与地点/机构重名时误判。"""
+    if name in character_names:
+        return "person"
+    if name in location_names:
+        return "place"
+    if name in REGIME_EXACT:
+        return "regime"
+    if name in ORG_EXACT or name.endswith(ORG_SUFFIXES):
+        return "org"
+    # 兜底：带「军」的军事实体（如「清军（皇太极）」因结尾是括号无法走后缀匹配）
+    if "军" in name:
+        return "org"
+    return "other"
+
+
 for r in relations:
     if r["from"] == r["to"]:
         selfloop_dropped += 1
@@ -369,12 +399,22 @@ for r in relations:
         continue
     seen.add(key)
     category = canon_relation_category(r["rel"])
-    if r["from"] not in character_names or r["to"] not in character_names:
-        category = "地点关联"
+    kf, kt = _endpoint_kind(r["from"]), _endpoint_kind(r["to"])
+    if kf != "person" or kt != "person":
+        # 至少一个端点不是人物：按非人物端点里最具体的类型归类
+        kinds = {kf, kt}
+        if "place" in kinds:
+            category = "地点关联"
+        elif "org" in kinds:
+            category = "派系机构关联"
+        elif "regime" in kinds:
+            category = "政权关联"
+        else:
+            category = "其他实体关联"
     override = RELATION_PAIR_OVERRIDES.get((r["from"], r["to"]))
     if override:
         category = override
-    rels.append({**r, "category": category})
+    rels.append({**r, "category": category, "endpoint_kind": {"from": kf, "to": kt}})
 
 timeline = []
 for n, e in events.items():
