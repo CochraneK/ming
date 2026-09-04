@@ -199,6 +199,21 @@ state.showMarkers=true;// 地点标记常显（原勾选框已按需求移除）
 const mapSubnav=$('#mapSubnav');if(mapSubnav){mapSubnav.querySelectorAll('[data-map-mode]').forEach(b=>b.addEventListener('click',()=>{state.mapMode=b.dataset.mapMode;mapSubnav.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));renderMap()}))}
 // 离线缓存：注册 Service Worker（stale-while-revalidate），重复访问秒开；失败静默不影响使用。
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
+// 地图资源后台预热：首屏空闲时预载 Leaflet，并用屏外隐藏地图把初始视野的瓦片
+// 预热进浏览器缓存——用户点开地图时组件与瓦片都已就绪，基本零等待。
+function warmMap(){
+  loadLeaflet().then(()=>{
+    try{
+      const d=document.createElement('div');
+      d.style.cssText='position:fixed;left:-9999px;top:-9999px;width:400px;height:300px;';
+      document.body.appendChild(d);
+      const m=L.map(d,{attributionControl:false,zoomControl:false}).setView([34.5,113],4);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(m);
+      setTimeout(()=>{try{m.remove();}catch(_){}try{d.remove();}catch(_){}},4000);
+    }catch(_){}
+  }).catch(()=>{});
+}
+if('requestIdleCallback' in window){requestIdleCallback(warmMap,{timeout:6000});}else{setTimeout(warmMap,2500);}
 function renderOverview(){
  $('#headerStat').textContent=`${metrics.chapters}章 · ${metrics.characters}人 · ${metrics.events}件事件 · ${metrics.relations}条关系`;
  $('#overview').innerHTML=`<div class="section-head"><div><h2>知识库总览</h2><p>${esc(DATA.scopeLabel)} · 抽取结果与人工整理的统一出口</p></div><span class="status draft">结果仍需史料核验</span></div><div class="summary-hero"><div class="hero-copy"><h2>${esc(DATA.scopeLabel)}</h2><p>从章节、人物、地点、事件、关系和时间六个入口查看同一份结构化数据。每条记录都保留来源章节，未定位地点与未知年份不会被静默丢弃。</p><div class="hero-note">来源章节 ${metrics.chapters} · 已定位地点 ${metrics.locatedLocations}/${metrics.locations} · 有数值年份事件 ${metrics.timedEvents}/${metrics.events}</div></div><div class="metric-grid"><div class="metric"><span class="value">${metrics.characters}</span><span class="label">人物实体</span></div><div class="metric"><span class="value">${metrics.locations}</span><span class="label">地点实体</span></div><div class="metric"><span class="value">${metrics.events}</span><span class="label">事件实体</span></div><div class="metric"><span class="value">${metrics.relations}</span><span class="label">关系记录</span></div></div></div><div class="panel"><div class="section-head"><div><h2 style="font-size:18px">数据状态</h2><p>输出口径明确区分实体总量、已定位数量和待核验记录。</p></div></div><div class="quality-grid"><div class="quality"><strong>${metrics.locatedLocations}/${metrics.locations} 个地点已定位</strong><span>其余地点仍可在地点索引和章节视图中查看</span></div><div class="quality"><strong>${metrics.unknownEvents} 件事件年份待考</strong><span>保留在事件索引，不会从结果中消失</span></div><div class="quality"><strong>${metrics.relations} 条关系完整保留</strong><span>关系索引支持分页查看，不在人物卡中截断</span></div><div class="quality"><strong>章节来源可追溯</strong><span>人物、地点、事件和关系均关联章节标题</span></div></div></div>`;
