@@ -98,6 +98,19 @@ sha = hashlib.sha1(b'blob %d\0' % len(data) + data).hexdigest()   # data=文件�
 - 临时清单文件放 `.dump/`，别放 `/tmp`（Windows python 不认）。
 - 比对后按需跑 `.dump/_sync_docs.py`（FILES 全量清单）补齐；`明朝那些事儿.txt`/`data/chapters.json` 有意排除。
 
+### 确认 GitHub 与本地的差异（哪些没传 / 哪些过时）
+```bash
+env -u HTTPS_PROXY -u HTTP_PROXY -u https_proxy -u http_proxy -u ALL_PROXY -u all_proxy   gh api "/repos/CochraneK/ming/git/trees/HEAD?recursive=1"   --jq '.tree[] | select(.type=="blob") | .path + " " + .sha' > .dump/_remote_tree.txt
+```
+本地逐文件算 git blob sha，与线上清单对比，三类结论：仅本地（未传）/ 两边都有但 sha 不同（线上过时）/ 一致：
+```python
+import hashlib
+sha = hashlib.sha1(b'blob %d ' % len(data) + data).hexdigest()   # data=文件字节
+```
+- 输出对照时注意 `os.path.join` 结果用 `os.sep` 规范化，勿用 `lstrip('./')`（会把 `.dump`/`.workbuddy` 的首字符剥掉造成假差异）。
+- 临时清单文件放 `.dump/`，别放 `/tmp`（Windows python 不认）。
+- 比对后按需跑 `.dump/_sync_docs.py`（FILES 全量清单）补齐；`明朝那些事儿.txt`/`data/chapters.json` 有意排除。
+
 ## 洞察报告子流水线（19 节 = 18 学科 + 综合收束）
 - 内容源：`src/insight_content.py` 导出 `INSIGHT_SECTIONS`（{id,title,discipline,html}）+ `INSIGHT_REFS`（APA 7，**71 条全部经 WebSearch 核实**）；`generate_report.py` 注入 `INSIGHT_DATA`，`renderInsight()` 渲染（目录=编号彩色卡片，DISC_COLORS 按 id 取色，综合节金色收束于末）。
 - **学科最常用叫法（2026-09-04 定稿）**：历史学/心理学/博物馆学/政治学/社会学/人类学/系统科学/经济学/地理学/法学/军事学/叙事学/性别研究/思想史/国际关系/科学史/艺术/传播学。改名动三处：`discipline` 字段、综合节收束清单、README 学科列表（id 不变）。
@@ -130,6 +143,7 @@ sha = hashlib.sha1(b'blob %d\0' % len(data) + data).hexdigest()   # data=文件�
 | 内容没更新 | SWR 拿到 HTTP 缓存旧响应 | `fetch(req,{cache:'no-cache'})`；bump CACHE |
 | 地图灰底红点 | OSM 挂起 + SW 拦跨域 img | Esri 主源 + SW 不拦跨域（见地图节） |
 | 页面主区全空 / `Unexpected identifier '$'` | HTML_TEMPLATE 游离反引号 | 改 JS 前先 grep 紧邻反引号；`node -e "new Function(...)"` 校验 |
+| 需确认 GitHub 与本地差异（哪些没传） | 无现成命令，git 不可用 | blob sha 全量比对法（见「确认 GitHub 与本地的差异」节） |
 | 需确认 GitHub 与本地差异（哪些没传） | 无现成命令，git 不可用 | blob sha 全量比对法（见「确认 GitHub 与本地的差异」节） |
 | agent-browser eval 报 `Invalid regular expression` | 代码串含 `?` 或 `[attr]` 被误解析成正则 | 用 `getElementById`/`getElementsByTagName`/`dataset`；视口用 `set viewport <w> <h>` |
 
