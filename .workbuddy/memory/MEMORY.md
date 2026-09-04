@@ -28,5 +28,13 @@
 ## 伪遗留（勿再当 bug 排查）
 - `reigns` 3 处年份重叠（1457/1567/1620）是史实（夺门之变、两位驾崩同年改元）；`renderPrint` 游离反引号已根治；OmniRoute 重抽已放弃（用户明确），勿再推进。
 
+## 未完成工作清单（换电脑接续指南，详见 README「待办与下一步」）
+1. **人物卡语录扩面**（高）：`data/character_quotes.json` 仅 13 人；候选语录先在原书 txt 命中原文再收，规范名入 JSON，重跑 generate。
+2. **洞察实体联动**（高）：洞察 19 节文本中的人物/事件/地点做可点击（复用 showCharacter/showEvent/showLocation），反向详情弹窗加"相关洞察"入口。
+3. **41 个未定位地点考据**（中）：audit_final.py 出清单，确认后进 enrich_geo.py GAZ 或 event_places.json。
+4. **7 件未知年份事件考证**（中）：查实写入 manual_corrections.json 的 event_years。
+5. **数据清洁**（低）：端点别名归一、mentioned_as 串味、张瑾→张軏方向；43.6% 无关系人物不建议强补。
+完成后跑「交付检查」四步 + `.dump/_deploy_index_now.py` 部署 + `.dump/_sync_docs.py` 同步文档。
+
 ## 历史明细
 详见 `.workbuddy/memory/YYYY-MM-DD.md` 日志（2026-08-24 起逐日）与 `2026-08-28.md`（第十一轮交叉审计：4 P0 + 15 史实勘误 + 6 人物合并 + 17 关系归一）。

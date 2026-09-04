@@ -95,6 +95,38 @@ python src/audit_final.py
 - 少数关系端点（应天、洪都、建文帝）因规范名与别名未完全归一，落入「其他实体」。
 - 部分地点 `mentioned_as` 存在跨卡串味（部分为有意的别名扇出）。
 
+## 待办与下一步（接续开发指南）
+
+> 换电脑 clone 本仓库后，按下面清单可继续未完成的工作。工程细节与踩坑见 `.workbuddy/skills/ming-report-engineering/SKILL.md`，历史过程见 `.workbuddy/memory/`。所有改动完成后运行「交付检查」四步，再用 `.dump/_deploy_index_now.py` 部署、`.dump/_sync_docs.py` 同步文档。
+
+### 1. 人物卡语录扩面（优先级：高，工作量：中）
+- 现状：`data/character_quotes.json` 仅 13 人（朱元璋/方孝孺/姚广孝/于谦/杨慎/唐寅/王守仁/戚继光/杨继盛/杨涟/袁崇焕/李自成/朱由检），其余 1218 人无语录（卡上不显示该行）。
+- 扩面方法：候选人物的名言/诗句/口号先在 `明朝那些事儿.txt` 用关键词**命中原文**（0 命中即弃用，绝不凭记忆编造），确认后按现有格式写入 JSON（name 用 `data.json` 的规范名，如"姚广孝"不是"道衍"、"朱由检"不是"崇祯"），重跑 generate_report.py 即可，无需改前端。
+- 候选人物建议：朱棣/张居正/海瑞/卢象昇/孙传庭/杨廷和/夏言/徐阶/高拱/申时行/李成梁/努尔哈赤/皇太极/蓝玉/常遇春/徐达/解缙/于谦外的高频人物（先在原书检索，有原句才收）。
+
+### 2. 洞察实体联动（优先级：高，工作量：中）
+- 现状：洞察 19 节是纯文本，与图谱数据（1231 人物 / 1106 事件 / 581 地点）无跳转。
+- 目标：把各节提到的关键人物/事件/地点变为可点击（点击弹出对应详情卡，复用 `showCharacter/showEvent/showLocation`）；反向在人物/地点详情弹窗加"相关洞察"入口。
+- 实现思路：构建时对每节 html 做实体匹配（按 DATA 人名/事件名/地点古名+别名建索引），命中的替换为 `<button class="link-button" data-xxx>`；注意与 `esc()` 转义顺序。
+
+### 3. 41 个未定位地点考据（优先级：中，工作量：大）
+- 保持「待核验」不硬填坐标（巡礼场景错误坐标比缺失更有害）。清单跑 `python src/audit_final.py` 可见（按提及章数排序，优先补高频）。
+- 每确认一个：进 `src/enrich_geo.py` 的 GAZ（元组顺序 `(lng, lat, 今址, 类型)`，**经度在前**），或 `data/event_places.json` 的 coords，重跑 generate。
+
+### 4. 7 件未知年份事件考证（优先级：中，工作量：小）
+- 清单见时间轴「年份待考」组。查实的写入 `data/manual_corrections.json` 的 `event_years` 分块（注明来源），重跑 merge+generate。
+
+### 5. 数据清洁（优先级：低）
+- 少数关系端点（应天/洪都/建文帝）别名未归一 → `manual_corrections.json` 的 `character_merges`/`location_fixes`。
+- 部分地点 `mentioned_as` 跨卡串味（部分为有意别名扇出，需逐条人工判断）→ `location_fixes`。
+- `父子 张瑾→张軏` 方向存疑 → `relation_fixes.flip`。
+- 约 43.6% 人物无关系：**不建议强行补**（多为仅 1 章出场的次要人物）。
+
+### 6. 工程提醒
+- 部署/同步脚本：`.dump/_deploy_index_now.py`（index.html+sw.js+README.md）、`.dump/_sync_docs.py`（skill+memory+readme）。
+- 权限：沙箱内跑部署报 401 时用管理员豁免；`gh` 前清代理变量。
+- 本地查看：`serve_report.bat` 或 `python -m http.server 8765`。
+
 ## 交付检查
 
 ```powershell
