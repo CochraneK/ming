@@ -49,7 +49,7 @@ GitHub Pages：`https://cochranek.github.io/ming/`（根目录 `index.html` 即�
 python -m http.server 8765 --bind 127.0.0.1
 ```
 
-然后打开 `http://127.0.0.1:8765/index.html`，或双击根目录的 `serve_report.bat`。端口被占用时换一个即可。
+然后打开 `http://127.0.0.1:8765/index.html`。端口被占用时换一个即可。
 
 > 报告是单文件静态 HTML，也可以直接双击打开；但建议用本地 HTTP 服务，避免个别浏览器对 `file://` 的限制。
 
@@ -131,7 +131,7 @@ python src/audit_final.py
 ### 7. 工程提醒
 - 部署/同步脚本：`.dump/_deploy_index_now.py`（index.html+sw.js+README.md）、`.dump/_sync_docs.py`（skill+memory+readme）。
 - 权限：沙箱内跑部署报 401 时用管理员豁免；`gh` 前清代理变量。
-- 本地查看：`serve_report.bat` 或 `python -m http.server 8765`。
+- 本地查看：`python -m http.server 8765`（或任意静态服务器）。
 
 ## 交付检查
 
