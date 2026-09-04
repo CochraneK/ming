@@ -79,6 +79,16 @@ SYSTEM_PROMPT = (
     "6. 输出必须是合法 JSON，且不含代码块符号。"
 )
 
+DENSE_ADDENDUM = (
+    "\n\n【高密度抽取模式】本章在既往抽取中密度偏低。请逐句精读正文，最大化召回：\n"
+    "1) 不漏掉任何出场人物，包括仅一笔带过、作为背景被提及的历史人物；\n"
+    "2) 不漏掉任何古地名/今地对应，哪怕是过渡性叙述中的地点；\n"
+    "3) 不漏掉任何事件（含小规模冲突、任免、制度变动）；\n"
+    "4) 尽最大可能补全人物之间、人物与地点之间的关系（君臣/亲属/师生/政敌/上下级/同僚等）；\n"
+    "5) 若正文中出现年月或年号，务必填入 year 字段。\n"
+    "目标：把本章能被结构化的内容尽可能抽干净，而不是仅抽主线。"
+)
+
 def load_json(path):
     if not os.path.exists(path):
         return []
@@ -106,12 +116,15 @@ def chapter_keys_to_do(chapters, done, force):
             keys.append(k)
     return keys
 
-def call_model(chapter_title, body):
+def call_model(chapter_title, body, dense=False):
+    user_content = f"章节标题：{chapter_title}\n\n章节正文：\n{body}"
+    if dense:
+        user_content += DENSE_ADDENDUM
     payload = {
         "model": CONFIG["MODEL"],
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user",   "content": f"章节标题：{chapter_title}\n\n章节正文：\n{body}"}
+            {"role": "user",   "content": user_content}
         ],
         "max_tokens": CONFIG["MAX_TOKENS"],
         "temperature": 0.2,
@@ -152,6 +165,7 @@ def main():
     args = sys.argv[1:]
     limit = None
     force = set()
+    dense = False
     i = 0
     while i < len(args):
         if args[i] == "--limit" and i+1 < len(args):
@@ -162,6 +176,8 @@ def main():
             while j < len(args) and not args[j].startswith("--"):
                 force.add(args[j]); j += 1
             i = j
+        elif args[i] == "--dense":
+            dense = True; i += 1
         else:
             i += 1
 
