@@ -14,7 +14,7 @@
 
 ## 关键方法学约定（跨会话有效）
 - **写作纪律（用户明确）**：不硬凑字数、言之有物；观点挂文献，新文献必须 WebSearch 核实；书内情节/语录必须先在原书 txt 关键词命中原文（0 命中即弃用）。
-- **版权硬约束**：`明朝那些事儿.txt` 与 `data/chapters.json`（全书正文）**绝不发布**。
+- **版权硬约束**：`明朝那些事儿.txt` 与 `data/chapters.json`（全书正文）**绝不发布**（网络免费阅读授权≠可公开再分发，公开仓库分发全文属侵权）；换电脑时这两个文件**私下手动拷贝**（U 盘/私密网盘），README 接续指南已写明步骤。
 - **发布**：`.dump/_deploy_index_now.py` 部署 index.html+sw.js+README.md 三文件（Git Database API，`gh` 前必须 `env -u` 清全部代理）；新增数据文件记得加部署 FILES 清单。
 - **增量勘误层**（重跑 merge 不丢）：`manual_corrections.json` / `manual_lifespans.json`（卒年-55 占位标估算）/ `manual_persons.json` / `derived_chapter_persons.json` / `event_places.json`（注入须在归一化循环**之前**）/ `geo_annotations.json`（GAZ 元组恒 `(lng,lat,今址,类型)`）。
 - **关系约定**：亲属「长辈→晚辈」；端点类型按 人物→地点→政权→派系机构→其他 判定。

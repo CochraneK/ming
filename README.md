@@ -122,7 +122,12 @@ python src/audit_final.py
 - `父子 张瑾→张軏` 方向存疑 → `relation_fixes.flip`。
 - 约 43.6% 人物无关系：**不建议强行补**（多为仅 1 章出场的次要人物）。
 
-### 6. 工程提醒
+### 6. 私有文件手动拷贝（重要：永不入库）
+- 两个文件**故意不在仓库里**：`明朝那些事儿.txt`（原书全文）、`data/chapters.json`（含正文的抽取底稿）。本书版权在作者/出版社手中，网络免费阅读授权不等于可公开再分发，公开仓库分发全文属侵权。
+- 换电脑接续工作前，先用 **U 盘 / 私密网盘 / 局域网**把这两个文件手动拷到新机的相同路径（`明朝那些事儿.txt` 在根目录、`chapters.json` 在 `data/`）——语录核验、召回探测、充分性审计都依赖它们。
+- 除这两个文件外，仓库其余内容即完整工作区。
+
+### 7. 工程提醒
 - 部署/同步脚本：`.dump/_deploy_index_now.py`（index.html+sw.js+README.md）、`.dump/_sync_docs.py`（skill+memory+readme）。
 - 权限：沙箱内跑部署报 401 时用管理员豁免；`gh` 前清代理变量。
 - 本地查看：`serve_report.bat` 或 `python -m http.server 8765`。
