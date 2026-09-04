@@ -1,7 +1,10 @@
 // 明朝知识报告 · Service Worker
 // 策略：导航与同源资源 stale-while-revalidate（先返缓存、后台更新），
 // 重复访问秒开；跨域（unpkg Leaflet）尽力缓存。任何失败都回退到网络，绝不返回错误页。
-const CACHE = 'ming-report-v1';
+// 注意：后台更新用 cache:'no-cache' 绕过浏览器 HTTP 缓存——否则 GitHub Pages 的
+// max-age=600 会让 SWR 拿到陈旧响应，滞后被拉长到多个访问周期。
+// CACHE 名 bump（v2）会在 activate 时清空旧缓存，强制老用户下次刷新立即得到新版。
+const CACHE = 'ming-report-v2';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 
@@ -18,12 +21,12 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // 同源：导航与资源走 stale-while-revalidate
+  // 同源：导航与资源走 stale-while-revalidate；后台更新绕过 HTTP 缓存
   if (url.origin === self.location.origin) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
       const cached = await cache.match(req);
-      const network = fetch(req).then(res => {
+      const network = fetch(req, { cache: 'no-cache' }).then(res => {
         if (res && res.status === 200 && res.type === 'basic') cache.put(req, res.clone());
         return res;
       }).catch(() => cached);
