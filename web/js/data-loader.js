@@ -1,44 +1,91 @@
-/* ===== V6 在线数据加载器：boot 首屏 / search 检索 / full 深度数据 =====
-   仅用于 web target。standalone.html 仍把完整 DATA / INSIGHT_DATA 内联，不加载本文件。 */
+/* ===== V7 在线数据加载器：boot / search / view-domain chunks =====
+   standalone.html 不加载本文件；在线版的最终 DATA 被拆成互斥领域块，页面按需组合。 */
 (function(){
 'use strict';
 if(typeof DATA==='undefined')return;
 
 const root=document.documentElement;
-let fullPromise=null,searchPromise=null;
+const ALL_CHUNKS=['characters','events','space','relations','time','graphs','insight','meta'];
+const VIEW_CHUNKS={
+  overview:[],distribution:[],
+  visuals:['graphs'],
+  locations:['space','events','insight'],
+  map:['space','events'],
+  characters:['characters'],
+  events:['events'],
+  relations:['relations'],
+  timeline:['time','events'],
+  dynasty:['time','events'],
+  chronicle:['time','characters'],
+  insight:['insight']
+};
+const ENTITY_CHUNKS={
+  person:['characters','events','insight'],
+  place:['space','events','insight'],
+  event:['events','space','insight']
+};
+const chunkPromises=Object.create(null);
+let searchPromise=null,fullPromise=null,_fullEventSent=false;
+window.__MING_DATA_CHUNKS__=window.__MING_DATA_CHUNKS__||{};
 
-function deepHashNeedsFull(){
-  const raw=String(location.hash||'').replace(/^#/,'');
-  if(!raw)return false;
-  const params={};
-  raw.split('&').forEach(part=>{
-    if(!part)return;
-    const i=part.indexOf('=');
-    const k=i<0?part:part.slice(0,i);
-    params[k]=i<0?'':decodeURIComponent(part.slice(i+1));
-  });
-  if(params.view&&params.view!=='overview')return true;
-  return ['person','event','place','detail','map','era','net','from','to','q'].some(k=>params[k]!==undefined&&params[k]!=='');
-}
-
-function mark(mode,reason){
-  root.dataset.mingData=mode;
-  if(reason)root.dataset.mingDataReason=reason;
-  else delete root.dataset.mingDataReason;
-}
+function uniq(items){return [...new Set((items||[]).filter(x=>ALL_CHUNKS.includes(x)))];}
+function ready(name){return !!window.__MING_DATA_CHUNKS__[name];}
+function readyNames(){return ALL_CHUNKS.filter(ready);}
 function markSearch(mode,reason){
   root.dataset.mingSearch=mode;
-  if(reason)root.dataset.mingSearchReason=reason;
-  else delete root.dataset.mingSearchReason;
+  if(reason)root.dataset.mingSearchReason=reason;else delete root.dataset.mingSearchReason;
+}
+function syncDataState(reason){
+  const names=readyNames();
+  root.dataset.mingChunks=names.join(',');
+  window.__MING_FULL_DATA_READY=names.length===ALL_CHUNKS.length;
+  root.dataset.mingData=window.__MING_FULL_DATA_READY?'full':(names.length?'partial':'boot');
+  if(reason)root.dataset.mingDataReason=reason;else delete root.dataset.mingDataReason;
+  if(window.__MING_FULL_DATA_READY&&!_fullEventSent){
+    _fullEventSent=true;
+    document.dispatchEvent(new CustomEvent('ming:data-full'));
+  }
 }
 
-window.__MING_FULL_DATA_READY=window.__MING_FULL_DATA_READY===true;
 window.__MING_SEARCH_INDEX_READY=window.__MING_SEARCH_INDEX_READY===true;
-mark(window.__MING_FULL_DATA_READY?'full':'boot');
+syncDataState();
 markSearch(window.__MING_SEARCH_INDEX_READY?'ready':'idle');
 
+function loadChunk(name,reason){
+  if(ready(name))return Promise.resolve(name);
+  if(chunkPromises[name])return chunkPromises[name];
+  chunkPromises[name]=new Promise((resolve,reject)=>{
+    const script=document.createElement('script');
+    script.src='assets/data-'+name+'.js';
+    script.dataset.mingDataChunk=name;
+    script.onload=()=>{
+      if(!ready(name)){reject(new Error('data-'+name+'.js 已加载但未标记 ready'));return;}
+      syncDataState(reason||('chunk:'+name));
+      resolve(name);
+    };
+    script.onerror=()=>reject(new Error('领域数据加载失败：'+name));
+    document.head.appendChild(script);
+  }).catch(err=>{delete chunkPromises[name];syncDataState('error:'+name);throw err;});
+  return chunkPromises[name];
+}
+
+window.__MING_ENSURE_DATA_CHUNKS=function(names,reason){
+  const wanted=uniq(names);
+  if(!wanted.length){syncDataState(reason);return Promise.resolve(DATA);}
+  root.dataset.mingData='loading';
+  root.dataset.mingDataReason=reason||'interaction';
+  return Promise.all(wanted.map(name=>loadChunk(name,reason))).then(()=>{
+    syncDataState(reason);
+    try{if(typeof window.__MING_AFTER_DATA_CHUNKS==='function')window.__MING_AFTER_DATA_CHUNKS(wanted);}catch(_){}
+    return DATA;
+  });
+};
+window.__MING_VIEW_CHUNKS=VIEW_CHUNKS;
+window.__MING_ENTITY_CHUNKS=ENTITY_CHUNKS;
+window.__MING_ENSURE_VIEW_DATA=function(view,reason){return window.__MING_ENSURE_DATA_CHUNKS(VIEW_CHUNKS[view]||ALL_CHUNKS,reason||('view:'+view));};
+window.__MING_ENSURE_ENTITY_DATA=function(kind,reason){return window.__MING_ENSURE_DATA_CHUNKS(ENTITY_CHUNKS[kind]||ALL_CHUNKS,reason||('entity:'+kind));};
+
 window.__MING_ENSURE_SEARCH_INDEX=function(reason){
-  if(window.__MING_FULL_DATA_READY)return Promise.resolve(null);
   if(window.__MING_SEARCH_INDEX_READY)return Promise.resolve(window.__MING_SEARCH_INDEX__||null);
   if(searchPromise)return searchPromise;
   markSearch('loading',reason||'command');
@@ -47,51 +94,47 @@ window.__MING_ENSURE_SEARCH_INDEX=function(reason){
     script.src='assets/search-index.js';
     script.dataset.mingSearchChunk='index';
     script.onload=()=>{
-      if(!window.__MING_SEARCH_INDEX_READY){
-        reject(new Error('search-index.js 已加载但未标记 ready'));
-        return;
-      }
-      markSearch('ready',reason||'command');
-      resolve(window.__MING_SEARCH_INDEX__||null);
+      if(!window.__MING_SEARCH_INDEX_READY){reject(new Error('search-index.js 已加载但未标记 ready'));return;}
+      markSearch('ready',reason||'command');resolve(window.__MING_SEARCH_INDEX__||null);
     };
     script.onerror=()=>reject(new Error('搜索索引加载失败'));
     document.head.appendChild(script);
-  }).catch(err=>{
-    searchPromise=null;markSearch('error',reason||'command');throw err;
-  });
+  }).catch(err=>{searchPromise=null;markSearch('error',reason||'command');throw err;});
   return searchPromise;
 };
 
 window.__MING_ENSURE_FULL_DATA=function(reason){
   if(window.__MING_FULL_DATA_READY)return Promise.resolve(DATA);
   if(fullPromise)return fullPromise;
-  mark('loading',reason||'interaction');
-  fullPromise=new Promise((resolve,reject)=>{
-    const script=document.createElement('script');
-    script.src='assets/data-full.js';
-    script.dataset.mingDataChunk='full';
-    script.onload=()=>{
-      if(!window.__MING_FULL_DATA_READY){
-        reject(new Error('data-full.js 已加载但未标记 ready'));
-        return;
-      }
-      try{if(typeof window.__MING_AFTER_FULL_DATA==='function')window.__MING_AFTER_FULL_DATA();}catch(_){}
-      resolve(DATA);
-    };
-    script.onerror=()=>reject(new Error('完整数据加载失败'));
-    document.head.appendChild(script);
-  }).catch(err=>{
-    fullPromise=null;mark('error',reason||'interaction');throw err;
-  });
+  fullPromise=window.__MING_ENSURE_DATA_CHUNKS(ALL_CHUNKS,reason||'full').then(data=>{
+    try{if(typeof window.__MING_AFTER_FULL_DATA==='function')window.__MING_AFTER_FULL_DATA();}catch(_){}
+    return data;
+  }).catch(err=>{fullPromise=null;throw err;});
   return fullPromise;
 };
 
-/* 深链必须在 app.js 执行前拥有完整数据。当前脚本是 parser-blocking classic script，
-   因而在 document 仍处于 loading 时用 document.write 插入同源 full chunk，可保证
-   后面的 app.js 看到的是完整 DATA；普通首页与仅打开全局搜索都不会走这条路径。 */
-if(!window.__MING_FULL_DATA_READY&&document.readyState==='loading'&&deepHashNeedsFull()){
-  mark('loading','deep-link');
-  document.write('<script src="assets/data-full.js" data-ming-data-chunk="full"><\/script>');
-  if(window.__MING_FULL_DATA_READY)mark('full','deep-link');
+function readHash(){
+  const raw=String(location.hash||'').replace(/^#/,'');const out={};if(!raw)return out;
+  raw.split('&').forEach(part=>{if(!part)return;const i=part.indexOf('=');const k=i<0?part:part.slice(0,i);out[k]=i<0?'':decodeURIComponent(part.slice(i+1));});
+  return out;
+}
+function deepPlan(){
+  const p=readHash();
+  if(p.person)return ENTITY_CHUNKS.person;
+  if(p.event)return ENTITY_CHUNKS.event;
+  if(p.place)return ENTITY_CHUNKS.place;
+  if(p.view&&p.view!=='overview')return VIEW_CHUNKS[p.view]||ALL_CHUNKS;
+  return [];
+}
+
+/* deep link 必须在 app.js 之前拥有其视图所需的数据。classic parser-blocking script 中
+   document.write 的同源脚本会按顺序执行；因此只预载 deep link 的领域依赖，而非全库。 */
+if(document.readyState==='loading'){
+  const plan=uniq(deepPlan()).filter(name=>!ready(name));
+  if(plan.length){
+    root.dataset.mingData='loading';root.dataset.mingDataReason='deep-link';
+    plan.forEach(name=>document.write('<script src="assets/data-'+name+'.js" data-ming-data-chunk="'+name+'"><\/script>'));
+    syncDataState('deep-link');
+  }
 }
 })();
