@@ -3,19 +3,42 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#29241f">
+<meta name="color-scheme" content="light">
 <title>明朝那些事儿 · __TITLE__</title>
 <!-- Leaflet 改为「打开地图视图才按需加载」（见 loadLeaflet），避免首屏被 unpkg 阻塞 -->
 <style>
 /*{{INLINE_CSS}}*/</style>
+<style>
+/* ===== Visual polish 2026-09 · Ming digital-humanities skin ===== */
+:root{--paper-deep:#fbf6ea;--ink-soft:#544b43;--radius-lg:14px;--radius-md:10px;--shadow:0 10px 28px rgba(54,42,30,.075);--shadow-hover:0 16px 38px rgba(54,42,30,.12);--focus-ring:0 0 0 3px rgba(184,139,53,.28)}
+html{background:#ece5da}body{background:radial-gradient(circle at 12% -8%,rgba(184,139,53,.13),transparent 34rem),radial-gradient(circle at 92% 8%,rgba(141,48,37,.07),transparent 28rem),linear-gradient(180deg,#f5f0e7 0,#eee8de 100%);background-attachment:fixed}::selection{background:#d9bf83;color:#2b251f}
+.skip-link{position:fixed;left:16px;top:10px;z-index:100;transform:translateY(-180%);padding:8px 12px;border-radius:8px;background:#fffdf8;color:var(--accent);border:1px solid #cdbd9e;box-shadow:var(--shadow);font-weight:700;text-decoration:none}.skip-link:focus{transform:translateY(0)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid #b88b35;outline-offset:2px;box-shadow:var(--focus-ring)}
+.app-header{background:linear-gradient(135deg,rgba(37,31,26,.985),rgba(55,45,37,.985));border-bottom-color:#59493b;box-shadow:0 5px 20px rgba(31,24,18,.16)}@supports (backdrop-filter:blur(12px)){.app-header{background:linear-gradient(135deg,rgba(37,31,26,.93),rgba(55,45,37,.93));backdrop-filter:blur(12px) saturate(115%)}}
+.header-inner{min-height:64px}.brand{font-family:'Songti SC','STSong','SimSun','Noto Serif CJK SC',serif;letter-spacing:.075em;text-shadow:0 1px 0 rgba(0,0,0,.2)}.header-stat{color:#cfc1ae}.tabs{scrollbar-width:thin;scrollbar-color:#655548 transparent}.tabs button,.subnav button{transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease,box-shadow .16s ease}.tabs button{border-radius:999px;background:rgba(255,255,255,.055);color:#eadfd2}.tabs button:hover{background:rgba(255,255,255,.1);transform:translateY(-1px)}.tabs button.active{background:linear-gradient(180deg,#9b3a2d,#81281f);border-color:#b05244;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 5px 14px rgba(80,26,20,.2)}
+.shell{max-width:1380px;padding-top:28px}.section-head{margin-bottom:18px}.section-head h2{position:relative;font-family:'Songti SC','STSong','SimSun','Noto Serif CJK SC',serif;font-weight:700;letter-spacing:.055em;color:#302820}.section-head h2::after{content:'';display:block;width:34px;height:2px;margin-top:7px;background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:999px}.section-head p{max-width:78ch;color:#746a61}
+.panel{border-color:#ddd3c4;border-radius:var(--radius-lg);box-shadow:var(--shadow)}.hero-copy{position:relative;overflow:hidden;background:radial-gradient(circle at 88% 15%,rgba(184,139,53,.22),transparent 22rem),linear-gradient(135deg,#302821,#45382d);border:1px solid #5a493b;border-radius:var(--radius-lg);box-shadow:0 14px 36px rgba(49,36,25,.14)}.hero-copy::after{content:'';position:absolute;right:-54px;bottom:-76px;width:220px;height:220px;border:1px solid rgba(222,190,121,.14);border-radius:50%;box-shadow:0 0 0 22px rgba(222,190,121,.025),0 0 0 48px rgba(222,190,121,.018);pointer-events:none}.hero-copy h2{font-family:'Songti SC','STSong','SimSun','Noto Serif CJK SC',serif;letter-spacing:.065em}
+.metric,.distribution-stat,.location-card,.dynasty-card,.clean-card,.insight-toc-card{transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}.metric{border-color:#e2d8c8;border-radius:var(--radius-md);box-shadow:0 3px 12px rgba(54,42,30,.035)}.metric:hover,.distribution-stat:hover{transform:translateY(-2px);border-color:#cfbea3;box-shadow:0 10px 22px rgba(54,42,30,.08)}.metric .value,.distribution-stat strong{font-variant-numeric:tabular-nums}.quality-grid .quality{border-radius:0 9px 9px 0;background:linear-gradient(90deg,#fbf6ea,#fffdf8)}
+.toolbar input,.toolbar select,.visual-toolbar select,.network-controls select{border-color:#d1c4b2;box-shadow:inset 0 1px 2px rgba(55,43,32,.025);transition:border-color .15s ease,box-shadow .15s ease,background .15s ease}.toolbar input:focus,.toolbar select:focus,.visual-toolbar select:focus,.network-controls select:focus{border-color:#b88b35;background:#fffdf9}
+.location-card{border-color:#dfd5c6;border-radius:12px;box-shadow:0 4px 14px rgba(50,40,30,.045)}.location-card:hover{transform:translateY(-2px);border-color:#cdbb9f;box-shadow:var(--shadow-hover)}.card-title{font-family:'Songti SC','STSong','SimSun','Noto Serif CJK SC',serif;letter-spacing:.025em}.tag,.source-chip,.ep-tag{border-radius:999px}
+.table-wrap{border-color:#d9cdbc;border-radius:12px;box-shadow:0 6px 18px rgba(54,42,30,.04)}.data-table th{background:linear-gradient(180deg,#faf6ed,#f3ede3);color:#5f5348}.data-table tr:nth-child(even) td{background:rgba(248,244,236,.42)}.data-table tr:hover td{background:#fff8ec}
+.map-box,.network-svg,.full-graph-canvas{border-color:#d3c7b7;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}.loc-dock{border-radius:12px;border-color:#d9cdbc}.character-card{border-radius:12px;box-shadow:0 5px 16px rgba(50,40,30,.07)}.character-card:hover{box-shadow:0 14px 30px rgba(50,40,30,.14)}.dynasty-card{border-radius:12px}.insight-toc,.insight-sec,.insight-refs{box-shadow:0 6px 18px rgba(60,45,25,.04)}
+dialog{border:1px solid #cfc2b1;border-radius:14px;box-shadow:0 24px 78px rgba(20,15,10,.34)}dialog::backdrop{background:rgba(27,22,18,.56);backdrop-filter:blur(2px)}.dialog-head{position:sticky;top:-22px;z-index:2;background:var(--paper);padding-top:22px}.dialog-close,.loc-dock .dock-close{transition:background .15s ease,color .15s ease,transform .15s ease}.dialog-close:hover,.loc-dock .dock-close:hover{background:#e7ddcf;color:var(--accent)}.app-footer{text-align:center;padding:4px 24px 30px;font-size:12px;letter-spacing:.02em;color:#81776d}
+@media(max-width:640px){body{background-attachment:scroll}.header-inner{align-items:flex-start}.tabs{scroll-snap-type:x proximity;padding-bottom:4px}.tabs button{flex:0 0 auto;scroll-snap-align:start}.shell{padding-top:20px}.section-head h2::after{margin-top:5px}.panel{border-radius:11px}.metric:hover,.distribution-stat:hover,.location-card:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+@media print{.skip-link{display:none!important}}
+</style>
 </head>
 <body>
+<a class="skip-link" href="#mainContent">跳到主要内容</a>
 <header class="app-header"><div class="header-inner">
   <h1 class="brand">明朝那些事儿 · __TITLE__</h1><div id="headerStat" class="header-stat"></div>
   <nav class="tabs" aria-label="报告视图">
     <button data-view="overview" class="active">总览</button><button data-view="distribution">分布</button><button data-view="visuals">图谱</button><button data-view="locations">地点</button><button data-view="map">地图</button><button data-view="characters">人物</button><button data-view="events">事件</button><button data-view="relations">关系</button><button data-view="timeline">时间轴</button><button data-view="dynasty">帝王</button><button data-view="chronicle">年谱</button><button data-view="insight">洞察</button>
   </nav>
 </div></header>
-<main class="shell">
+<main class="shell" id="mainContent" tabindex="-1">
   <section id="overview" class="view active"></section>
   <section id="distribution" class="view"></section>
   <section id="visuals" class="view"></section>
@@ -30,7 +53,7 @@
   <section id="insight" class="view"></section>
 </main>
 <dialog id="detailDialog"><div class="dialog-body"><div class="dialog-head"><h2 id="dialogTitle"></h2><button class="dialog-close" id="dialogClose">关闭</button></div><div id="dialogContent"></div></div></dialog>
-<footer class="muted" style="text-align:center;padding:0 24px 28px;font-size:12px">数据来自章节抽取与人工整理；地点、年份及关系均保留核验状态。</footer>
+<footer class="muted app-footer">数据来自章节抽取与人工整理；地点、年份及关系均保留核验状态。</footer>
 <script>
 /* 启动守卫（P3-03）：主脚本内联了整份数据，一旦数据被裁剪或脚本执行抛错，
    页面会停在空白骨架且毫无提示。这里独立于主脚本先埋一个检查点：
