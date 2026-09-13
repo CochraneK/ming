@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V6 在线交付体积与结构门禁。
-
-V5 把 DATA 拆为 boot / full；V6 再加入独立 search-index，让打开全局搜索不必下载 full。
-这里同时守：HTML/首访壳、boot、搜索索引、full，以及三者的加载边界。
-"""
+"""V7 在线交付结构、领域块与视图传输预算门禁。"""
 from __future__ import annotations
 
 import sys
@@ -11,32 +7,43 @@ from pathlib import Path
 
 MIB = 1024 * 1024
 KIB = 1024
+INDEX_WARN, INDEX_HARD = 48 * KIB, 80 * KIB
+SHELL_WARN, SHELL_HARD = 384 * KIB, 512 * KIB
+BOOT_WARN, BOOT_HARD = 72 * KIB, 112 * KIB
+SEARCH_WARN, SEARCH_HARD = 512 * KIB, 768 * KIB
 
-INDEX_WARN = 48 * KIB
-INDEX_HARD = 80 * KIB
-SHELL_WARN = 384 * KIB
-SHELL_HARD = 512 * KIB
-BOOT_WARN = 64 * KIB
-BOOT_HARD = 96 * KIB
-SEARCH_WARN = 512 * KIB
-SEARCH_HARD = 768 * KIB
-FULL_WARN = int(5.5 * MIB)
-FULL_HARD = 6 * MIB
+CHUNK_BUDGETS = {
+    "characters": (2 * MIB, int(2.25 * MIB)),
+    "events": (450 * KIB, 512 * KIB),
+    "space": (1024 * KIB, int(1.15 * MIB)),
+    "relations": (800 * KIB, 900 * KIB),
+    "time": (500 * KIB, 600 * KIB),
+    "graphs": (800 * KIB, 900 * KIB),
+    "insight": (220 * KIB, 256 * KIB),
+    "meta": (130 * KIB, 160 * KIB),
+}
+VIEW_CHUNKS = {
+    "overview": (), "distribution": (),
+    "visuals": ("graphs",),
+    "locations": ("space", "events", "insight"),
+    "map": ("space", "events"),
+    "characters": ("characters",),
+    "events": ("events",),
+    "relations": ("relations",),
+    "timeline": ("time", "events"),
+    "dynasty": ("time", "events"),
+    "chronicle": ("time", "characters"),
+    "insight": ("insight",),
+}
+VIEW_WARN, VIEW_HARD = int(2.5 * MIB), 3 * MIB
 
-REQUIRED = (
-    "index.html",
-    "assets/app.css",
-    "assets/theme.css",
-    "assets/experience.css",
-    "assets/boot-data.js",
-    "assets/search-index.js",
-    "assets/data-full.js",
-    "assets/data-loader.js",
-    "assets/app.js",
-    "assets/lazy-data.js",
-    "assets/experience.js",
-    "sw.js",
+REQUIRED_BASE = (
+    "index.html", "assets/app.css", "assets/theme.css", "assets/experience.css",
+    "assets/boot-data.js", "assets/search-index.js", "assets/data-loader.js",
+    "assets/app.js", "assets/lazy-data.js", "assets/experience.js", "sw.js",
 )
+REQUIRED_CHUNKS = tuple("assets/data-%s.js" % name for name in CHUNK_BUDGETS)
+REQUIRED = REQUIRED_BASE + REQUIRED_CHUNKS
 
 
 def human(n: int) -> str:
@@ -65,14 +72,14 @@ def main(argv=None) -> int:
     index = root / "index.html"
     boot = root / "assets" / "boot-data.js"
     search = root / "assets" / "search-index.js"
-    full = root / "assets" / "data-full.js"
     index_size = index.stat().st_size
-    # 首访 shell：search/full 均是按需 chunk，sw 也不参与首屏解析。
-    shell_paths = [
-        root / name for name in REQUIRED
-        if name not in ("index.html", "assets/search-index.js", "assets/data-full.js", "sw.js")
+    # 首访 shell 不含 search / 领域块 / sw。
+    shell_names = [
+        name for name in REQUIRED_BASE
+        if name not in ("index.html", "assets/search-index.js", "sw.js")
     ]
-    shell_size = index_size + sum(p.stat().st_size for p in shell_paths)
+    shell_size = index_size + sum((root / name).stat().st_size for name in shell_names)
+    chunk_sizes = {name: (root / "assets" / ("data-%s.js" % name)).stat().st_size for name in CHUNK_BUDGETS}
 
     html = index.read_text(encoding="utf-8")
     structural_errors = []
@@ -88,11 +95,12 @@ def main(argv=None) -> int:
     ):
         if asset not in html:
             structural_errors.append("index.html 未引用 %s" % asset)
-    for lazy_asset in ("assets/search-index.js", "assets/data-full.js"):
+    for lazy_asset in ("assets/search-index.js",) + REQUIRED_CHUNKS:
         if lazy_asset in html:
-            structural_errors.append("index.html 直接引用 %s，按需加载边界失效" % lazy_asset)
-    if (root / "assets" / "data.js").exists():
-        structural_errors.append("仍生成旧 assets/data.js，可能回退到 V4 全量首访")
+            structural_errors.append("index.html 直接引用 %s，按需边界失效" % lazy_asset)
+    for obsolete in ("assets/data.js", "assets/data-full.js"):
+        if (root / obsolete).exists():
+            structural_errors.append("仍生成旧 %s" % obsolete)
 
     passed = True
     for label, value, warn, hard in (
@@ -100,16 +108,22 @@ def main(argv=None) -> int:
         ("online first-load shell", shell_size, SHELL_WARN, SHELL_HARD),
         ("boot-data.js", boot.stat().st_size, BOOT_WARN, BOOT_HARD),
         ("lazy search-index.js", search.stat().st_size, SEARCH_WARN, SEARCH_HARD),
-        ("lazy data-full.js", full.stat().st_size, FULL_WARN, FULL_HARD),
     ):
         passed = _report_budget(label, value, warn, hard) and passed
 
+    for name, (warn, hard) in CHUNK_BUDGETS.items():
+        passed = _report_budget("domain %s" % name, chunk_sizes[name], warn, hard) and passed
+
+    print("视图首次数据传输（不计已缓存块）：")
+    for view, chunks in VIEW_CHUNKS.items():
+        size = sum(chunk_sizes[name] for name in chunks)
+        passed = _report_budget("  view %s [%s]" % (view, "+".join(chunks) or "boot"), size, VIEW_WARN, VIEW_HARD) and passed
+
     for msg in structural_errors:
-        print("[FAIL] %s" % msg)
-        passed = False
+        print("[FAIL] %s" % msg);passed = False
     if not passed:
         return 1
-    print("V6 在线 boot/search/full 按需交付结构与体积预算通过。")
+    print("V7 在线 boot/search/domain-chunks 交付结构与体积预算通过。")
     return 0
 
 
