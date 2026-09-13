@@ -68,6 +68,8 @@ FILES = [
     (".dump/_split_template.py", ".dump/_split_template.py"),
     (".dump/_migrate_template.py", ".dump/_migrate_template.py"),
     (".dump/_check_split.py", ".dump/_check_split.py"),
+    # 无头浏览器自检（CI 里由 .github/workflows/ci.yml 调用，必须在仓库里）
+    (".dump/_browser_check.py", ".dump/_browser_check.py"),
     # 前端资源（Phase 4：模板/CSS/JS 从 Python 字面量拆出，构建时内联）
     ("web/template/index.html", "web/template/index.html"),
     ("web/css/app.css", "web/css/app.css"),
