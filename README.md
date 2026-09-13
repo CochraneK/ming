@@ -1,10 +1,10 @@
 # 明朝那些事儿知识库
 
-基于《明朝那些事儿》七部 156 章全文抽取整理的单文件静态知识库报告。以「圣地巡礼」为第一使用场景：把书中提到的地点落到真实坐标上，并保留每条记录的来源章节与核验状态。
+基于《明朝那些事儿》七部 156 章全文抽取整理的静态知识库。在线版采用分离资源交付（轻量 `index.html` + `assets/`，便于浏览器独立缓存），同时保留 `standalone.html` 单文件离线版；以「圣地巡礼」为第一使用场景，把书中提到的地点落到真实坐标上，并保留每条记录的来源章节与核验状态。
 
 ## 在线查看
 
-GitHub Pages：`https://cochranek.github.io/ming/`（根目录 `index.html` 即入口）
+GitHub Pages：`https://cochranek.github.io/ming/`（根目录 `index.html` 为在线分离资源入口；`standalone.html` 为可下载 / 双击打开的离线单文件版）
 
 ## 当前规模
 
@@ -19,7 +19,7 @@ GitHub Pages：`https://cochranek.github.io/ming/`（根目录 `index.html` 即�
 | 年谱 | 165 人 | 主要人物生卒横向展开，与年号对位 |
 
 <!-- README_STATS_SYNC -->
-> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme.py` 从最终模型自动刷新；发布同步工作流会与根目录 `index.html` 一起维护。
+> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme.py` 从最终模型自动刷新；发布同步工作流会同时维护在线 `index.html + assets/` 与离线 `standalone.html`。
 
 ## 报告视图（12 个）
 
@@ -65,7 +65,7 @@ python -m http.server 8765 --bind 127.0.0.1
 
 ```powershell
 python src/merge.py                 # 聚合（增量勘误层不会被覆盖）
-python src/build.py                 # 构建全书单文件 index.html
+python src/build.py                 # 构建全书单文件 standalone.html
 python src/build.py --check         # 只校验不落盘（构建前的门禁）
 python tests/run_tests.py           # 单元测试（无第三方依赖，可直接跑）
 ```
@@ -75,12 +75,12 @@ python tests/run_tests.py           # 单元测试（无第三方依赖，可直
 | 参数 | 说明 |
 |---|---|
 | `--scope full\|p1..p7` | 构建全书或某一部（分部产物为 `report_pN.html`） |
-| `--target standalone\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联的单文件；`web`＝输出到 `dist/<scope>/`，拆成 `assets/app.css`、`assets/app.js`、`assets/data.js` 并复制 `sw.js`，便于本地逐文件调试 |
+| `--target standalone\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联到 `standalone.html`；`web`＝输出到 `dist/<scope>/`，拆成 `assets/app.css`、`assets/theme.css`、`assets/experience.css`、`assets/app.js`、`assets/data.js`、`assets/experience.js` 并复制 `sw.js`，用于在线发布与独立缓存 |
 | `--out 路径` | 覆盖输出位置 |
 | `--check` | 跑完聚合与全部校验后不写文件，ERROR 时以退出码 2 中止 |
 | `--json 路径` | 把校验结论导出为 JSON |
 
-构建时会把 `web/template/index.html`（骨架）＋ `web/css/app.css` ＋ `web/js/app.js` 内联回单文件；三者拼回来的结果与拆分前的模板**逐字节一致**，由 `tests/test_template.py` 守着。
+`standalone` 构建会把模板、基础样式、主题层、V3 体验层、业务脚本与 DATA 全部内联成一个文件；`web` 构建则把同一份源拆成可缓存资源。两种产物共享同一 payload 与回归测试，不维护两套业务逻辑。
 
 - `data/data.json` 是聚合后的单一数据源。
 - `data/geo_annotations.json`（地点坐标/类型标注）、`data/manual_relations.json`（人工关系）、`data/manual_corrections.json`（勘误）、`data/manual_lifespans.json`（年谱）、`data/manual_persons.json`（补录人物）、`data/derived_chapter_persons.json`（文本反查出场）**重跑聚合不会丢失**，是可持续维护的增量层。
