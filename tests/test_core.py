@@ -181,3 +181,34 @@ def test_reign_start_map_ignores_incomplete_rows():
 
     table = F.reign_start_map([{"era": "万历", "start": 1573}, {"era": "缺年份"}, {"start": 1400}])
     assert table == {"万历": 1573}
+
+
+def test_place_mentions_splits_alias_from_context():
+    """mentioned_as 分级：真别称留下，说明片段转 context（不丢数据）。"""
+    from core.place_mentions import split_mentions
+
+    # 真实调用方传的是「人物 + 事件 + 地点」全部规范名
+    known = {"洪承畴", "袁崇焕", "戚继光", "宁远"}
+    alt, ctx = split_mentions(
+        ["塔山", "沈阳", "两广", "延平府",                      # 真别称
+         "洪承畴籍贯", "袁崇焕驻守，高第撤防时唯一不撤之城",     # 说明片段
+         "今辽宁兴城", "戚继光", "塔山"],                        # 今址 / 人名 / 重复
+        self_name="松山", known_names=known)
+    assert alt == ["塔山", "沈阳", "两广", "延平府"], alt
+    assert "洪承畴籍贯" in ctx and "今辽宁兴城" in ctx
+    assert "戚继光" in ctx
+    # 保序去重：塔山只出现一次，且不重复出现在 context
+    assert ctx.count("塔山") == 0
+
+
+def test_place_mentions_is_lossless():
+    """分级只能搬迁、不能吞掉任何一条 mentioned_as。"""
+    from core.place_mentions import split_mentions
+
+    raw = ["塔山", "洪承畴籍贯", "", "  ", "塔山", "宁远"]
+    alt, ctx = split_mentions(raw, self_name="松山", known_names={"洪承畴"})
+    # 空串被丢掉、塔山只留一份；其余一条不少地落在某一侧
+    assert set(alt) | set(ctx) == {"塔山", "洪承畴籍贯", "宁远"}
+    assert sum(len(x) for x in (alt, ctx)) == 3
+    assert not (set(alt) & set(ctx))
+

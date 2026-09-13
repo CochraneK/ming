@@ -2295,12 +2295,13 @@
     "status": "已定位"
   },
   {
-    "ancient": "延安府",
+    "ancient": "延安府（朝鲜）",
     "modern_address": "今朝鲜黄海南道延安",
-    "lng": 126.55,
-    "lat": 37.95,
+    "lng": 126.0833,
+    "lat": 37.9167,
     "trace_type": "古战场",
-    "status": "近似定位"
+    "status": "已定位",
+    "note": "原记 126.55 疑误，按 126°05′E 订正"
   },
   {
     "ancient": "东莱",
@@ -2886,16 +2887,6 @@
     "status": "抽取待补"
   },
   {
-    "ancient": "月漾桥",
-    "trace_type": "地名",
-    "status": "抽取待补"
-  },
-  {
-    "ancient": "娄桑",
-    "trace_type": "地名",
-    "status": "抽取待补"
-  },
-  {
     "ancient": "滑口",
     "trace_type": "地名",
     "status": "抽取待补"
@@ -3440,11 +3431,6 @@
     "modern_address": "山西应县（应州）"
   },
   {
-    "ancient": "五里寨",
-    "trace_type": "地名",
-    "status": "抽取待补"
-  },
-  {
     "ancient": "庐陵",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
@@ -3544,11 +3530,6 @@
     "lng": 119.0,
     "lat": 33.6,
     "modern_address": "江苏淮安·清江浦（漕运枢纽）"
-  },
-  {
-    "ancient": "南安",
-    "trace_type": "地名",
-    "status": "抽取待补"
   },
   {
     "ancient": "天泉桥",
@@ -3871,11 +3852,6 @@
     "lng": 122.0,
     "lat": 30.0,
     "modern_address": "浙江舟山·岑港"
-  },
-  {
-    "ancient": "龙山",
-    "trace_type": "地名",
-    "status": "抽取待补"
   },
   {
     "ancient": "雁门岭",
@@ -4445,11 +4421,6 @@
     "modern_address": "清河（北京北）"
   },
   {
-    "ancient": "六堡",
-    "trace_type": "地名",
-    "status": "抽取待补"
-  },
-  {
     "ancient": "阿布达里岗",
     "trace_type": "地名",
     "status": "坐标来自内置地名词典（待核验）",
@@ -4459,11 +4430,6 @@
   },
   {
     "ancient": "慈宁宫",
-    "trace_type": "地名",
-    "status": "抽取待补"
-  },
-  {
-    "ancient": "暖阁",
     "trace_type": "地名",
     "status": "抽取待补"
   },
@@ -4506,11 +4472,6 @@
     "lng": 120.72,
     "lat": 40.73,
     "modern_address": "辽宁兴城（宁远卫）"
-  },
-  {
-    "ancient": "镇江堡",
-    "trace_type": "地名",
-    "status": "抽取待补"
   },
   {
     "ancient": "中前所",
@@ -4604,11 +4565,6 @@
     "lng": 117.48,
     "lat": 27.33,
     "modern_address": "福建·邵武"
-  },
-  {
-    "ancient": "笊篱山",
-    "trace_type": "地名",
-    "status": "抽取待补"
   },
   {
     "ancient": "大凌河城",
@@ -4759,11 +4715,6 @@
     "lng": 106.27,
     "lat": 38.47,
     "modern_address": "宁夏银川"
-  },
-  {
-    "ancient": "登莱",
-    "trace_type": "地名",
-    "status": "抽取待补"
   },
   {
     "ancient": "吴桥",
@@ -5026,11 +4977,6 @@
     "lng": 115.97,
     "lat": 29.52,
     "modern_address": "江西庐山"
-  },
-  {
-    "ancient": "乳峰山",
-    "trace_type": "地名",
-    "status": "抽取待补"
   },
   {
     "ancient": "笔架山",

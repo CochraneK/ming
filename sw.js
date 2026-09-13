@@ -10,7 +10,7 @@
 //     虽只改数据、前端未动，但 bump 可让老用户免于「SWR 首次返旧缓存」的一拍延迟，立即拿到新版数据。
 // v8：洞察实体联动 + 书内语录扩面（app.js / app.css 有变更，属前端改动，必须 bump）。
 const CACHE_PREFIX = 'ming-report-';
-const CACHE = CACHE_PREFIX + 'v8';
+const CACHE = CACHE_PREFIX + 'v9';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 

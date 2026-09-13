@@ -50,6 +50,8 @@ FILES = [
     ("src/core/graph_layout.py", "src/core/graph_layout.py"),
     # 共享核心（洞察实体联动：正向/反向索引，构建期生成）
     ("src/core/insight_link.py", "src/core/insight_link.py"),
+    # 共享核心（地点「别称」与「书中提及」分级）
+    ("src/core/place_mentions.py", "src/core/place_mentions.py"),
     # 数据（增量层 + 成品）
     ("data/data.json", "data/data.json"),
     ("data/extract_raw.json", "data/extract_raw.json"),
@@ -97,6 +99,7 @@ FILES = [
     # 文档
     ("report/Ming_全面重构方案.txt", "report/Ming_全面重构方案.txt"),
     ("report/Ming_重构验收清单.md", "report/Ming_重构验收清单.md"),
+    ("report/Ming_自查报告_2026-09-14.md", "report/Ming_自查报告_2026-09-14.md"),
     (".workbuddy/skills/ming-report-engineering/SKILL.md", ".workbuddy/skills/ming-report-engineering/SKILL.md"),
     (".workbuddy/memory/MEMORY.md", ".workbuddy/memory/MEMORY.md"),
     (".workbuddy/memory/2026-08-14.md", ".workbuddy/memory/2026-08-14.md"),

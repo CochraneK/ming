@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parents[1]
@@ -156,6 +157,17 @@ CASES = [
         "yes": [r'<dialog id="detailDialog" open', r'相关洞察', r'class="ins-chip"[^>]*data-ins-goto="'],
         "no": [],
     },
+    {
+        "name": "地点卡 · 别称与书中提及分级（宁远）",
+        # 缺陷回归闸：mentioned_as 里混着「熊廷弼不守、努尔哈赤退兵错过之关键据点」这类
+        # 说明片段，原先统一挂在「别称」下展示。现在必须拆成两块，且描述不许出现在别称里。
+        "hash": "#view=locations&place=%E5%AE%81%E8%BF%9C",
+        "yes": [r'<dialog id="detailDialog" open', r'id="dialogTitle">宁远',
+                r'<strong>别称</strong>',
+                r'<strong>书中提及（\d+）</strong>',
+                r'袁崇焕驻守'],
+        "no": [r'别称</strong><p>[^<]*熊廷弼', r'别称</strong><p>[^<]*袁崇焕'],
+    },
 
 ]
 
@@ -203,20 +215,33 @@ def check_boot_guard():
     return 1 if problems else 0
 
 
-def dump(hash_, budget=9000):
+def dump(hash_, budget=9000, attempts=3):
+    """跑一次 Chrome --dump-dom 拿渲染后的 DOM。
+
+    实测 Chrome（headless=new）偶发返回 0 字符（临时 profile 竞态 / 启动抖动），
+    与页面本身无关。原先直接判失败，表现为「同一个场景第一次挂、重跑就过」的假警报，
+    会让真回归淹没在噪声里——所以空结果一律重试，只在连续 attempts 次都空时才作数。
+    """
     url = TARGET.as_uri() + hash_
-    with tempfile.TemporaryDirectory() as prof:
-        cmd = [
-            CHROME, "--headless=new", "--disable-gpu", "--no-first-run",
-            "--no-default-browser-check", "--disable-extensions",
-            "--user-data-dir=" + prof, "--virtual-time-budget=%d" % budget,
-            "--dump-dom", url,
-        ]
-        # 容器里以 root 跑 Chrome 会拒绝启动，需要显式关沙箱
-        if hasattr(os, "geteuid") and os.geteuid() == 0:
-            cmd.insert(1, "--no-sandbox")
-        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
-        return r.stdout or ""
+    out = ""
+    for i in range(attempts):
+        with tempfile.TemporaryDirectory() as prof:
+            cmd = [
+                CHROME, "--headless=new", "--disable-gpu", "--no-first-run",
+                "--no-default-browser-check", "--disable-extensions",
+                "--user-data-dir=" + prof, "--virtual-time-budget=%d" % budget,
+                "--dump-dom", url,
+            ]
+            # 容器里以 root 跑 Chrome 会拒绝启动，需要显式关沙箱
+            if hasattr(os, "geteuid") and os.geteuid() == 0:
+                cmd.insert(1, "--no-sandbox")
+            r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+            out = r.stdout or ""
+        if len(out) >= 20000:
+            return out
+        if i + 1 < attempts:
+            time.sleep(0.6)
+    return out
 
 
 def main():

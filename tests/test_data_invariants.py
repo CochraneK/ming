@@ -49,6 +49,23 @@ def test_graph_scheme_a_only_persons():
     assert graph["stats"]["excludedNonPerson"] > 0, "应当确实排除掉一些非人物端点关系"
 
 
+def test_graph_excluded_nonperson_matches_relation_kinds():
+    """「排除多少条含非人物端点的关系」只允许有一个口径。
+
+    R-GRAPH-00 用 stats.excludedNonPerson，审计 R-REL-00 用 endpointKind 现算，
+    两者曾经漂移（审计那侧是个恒为 0 的死表达式），这里钉死它们必须相等。
+    """
+    payload = _support.payload("full")
+    stats = payload["relationGraphFull"]["stats"]
+    bad = 0
+    for r in payload["relations"]:
+        k = r.get("endpointKind") or {}
+        if (k.get("from") or "person") != "person" or (k.get("to") or "person") != "person":
+            bad += 1
+    assert bad == stats["excludedNonPerson"], \
+        "现算 %d 条 vs stats %d 条" % (bad, stats["excludedNonPerson"])
+
+
 def test_graph_isolated_arithmetic():
     """connected + isolated == persons（曾经把孤立人数算错的回归点）。"""
     stats = _support.payload("full")["relationGraphFull"]["stats"]
@@ -206,3 +223,124 @@ def test_insight_index_is_symmetric():
         for sid in sids:
             surfaces = (sections.get(sid) or {}).get("p") or []
             assert any(alias.get(s, s) == canonical for s in surfaces),                 "反向 %s→%s，正向该节却查不到这个人的任何表面形式" % (canonical, sid)
+
+
+def test_insight_place_event_index_is_symmetric():
+    """地点/事件联动索引同样必须正反映射互逆。
+
+    原测试只守了 byPerson，地点与事件的反向索引一旦漂移，
+    地点卡/事件卡上的「相关洞察」就会整块消失或指向不存在的章节。
+    """
+    payload = _support.payload("full")
+    ix = payload.get("insightIndex") or {}
+    assert ix, "payload 缺少 insightIndex"
+    sections = ix.get("sections") or {}
+    place_alias = ix.get("placeAlias") or {}
+
+    for kind, key, rev, ali in (("l", "l", "byPlace", place_alias),
+                                ("e", "e", "byEvent", {})):
+        by = ix.get(rev) or {}
+        for sid, hits in sections.items():
+            for surface in hits.get(key, []):
+                canonical = ali.get(surface, surface)
+                assert sid in (by.get(canonical) or []),                     "正向有 %s/%s，反向 %s 却查不到该节" % (sid, surface, rev)
+        for canonical, sids in by.items():
+            for sid in sids:
+                surfaces = (sections.get(sid) or {}).get(key) or []
+                assert any(ali.get(s, s) == canonical for s in surfaces),                     "反向 %s→%s，正向该节却查不到该%s的任何表面形式" % (canonical, sid, kind)
+
+    # 反向索引的键必须都是实体表里的规范名，否则详情永远查不到
+    loc_names = {x.get("ancient") for x in payload.get("locations", [])}
+    ev_names = {x.get("name") for x in payload.get("events", [])}
+    for k in ix.get("byPlace", {}):
+        assert k in loc_names, "byPlace 键 %r 不是地点规范名" % k
+    for k in ix.get("byEvent", {}):
+        assert k in ev_names, "byEvent 键 %r 不是事件名称" % k
+
+
+def test_insight_alias_targets_canonical():
+    """alias / placeAlias 的值必须是规范名——前端拿它当 data-ins-* 直接查人物/地点表。
+
+    值若是别名或通称，点击后 showPerson/showLocation 会静默 return false，
+    表现为「链接点了没反应」。
+    """
+    payload = _support.payload("full")
+    ix = payload.get("insightIndex") or {}
+    char_names = {x.get("name") for x in payload.get("characters", [])}
+    loc_names = {x.get("ancient") for x in payload.get("locations", [])}
+
+    for surface, canonical in (ix.get("alias") or {}).items():
+        assert canonical in char_names, "alias %r→%r 不是人物规范名" % (surface, canonical)
+    for surface, canonical in (ix.get("placeAlias") or {}).items():
+        assert canonical in loc_names, "placeAlias %r→%r 不是地点规范名" % (surface, canonical)
+
+
+def _geo_annotations():
+    import json
+    from pathlib import Path
+    p = Path(__file__).resolve().parents[1] / "data" / "geo_annotations.json"
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+def test_geo_annotations_no_stale_placeholders():
+    """同一地名不能既已有坐标条目、又留着「抽取待补」的占位条目。
+
+    占位条目没有 lat/lng，审计里 float(缺省 0) 会把它算成 (0,0)，
+    与真坐标凑成「两个候选坐标」→ 同名异地误报，把真冲突淹没在噪声里。
+    """
+    by = {}
+    for g in _geo_annotations():
+        by.setdefault(g.get("ancient"), []).append(g)
+    bad = []
+    for name, items in by.items():
+        located = [x for x in items if x.get("lat") is not None and x.get("lng") is not None]
+        if located and len(located) != len(items):
+            bad.append(name)
+    assert not bad, "这些地名同时有坐标条目与占位条目（应删占位）：%s" % "、".join(sorted(bad))
+
+
+def test_geo_annotations_no_coord_conflict():
+    """同一地名在标注表里不允许出现两套不同坐标——那意味着还有同名异地没拆。"""
+    by = {}
+    for g in _geo_annotations():
+        if g.get("lat") is None or g.get("lng") is None:
+            continue
+        by.setdefault(g.get("ancient"), set()).add(
+            (round(float(g["lat"]), 2), round(float(g["lng"]), 2)))
+    bad = sorted(n for n, s in by.items() if len(s) > 1)
+    assert not bad, "同名异地未拆分：%s" % "、".join(bad)
+
+
+def test_place_mentions_partition_is_lossless():
+    """altNames / mentionContext 只能是 mentionedAs 的一个划分：不多、不少、不重。
+
+    前端「别称」块只吃 altNames、「书中提及」块只吃 mentionContext，
+    两者合起来必须等于原字段——否则要么别称凭空多出来，要么原文提及被吞掉。
+    """
+    bad = []
+    for l in _support.payload("full").get("locations", []):
+        raw = list(dict.fromkeys(l.get("mentionedAs") or []))
+        alt = l.get("altNames") or []
+        ctx = l.get("mentionContext") or []
+        if set(alt) & set(ctx) or set(alt) | set(ctx) != set(raw):
+            bad.append(l.get("ancient"))
+    assert not bad, "mention 划分与原字段不一致：%s" % "、".join(bad[:20])
+
+
+def test_place_alt_names_are_place_like():
+    """altNames 必须都像「另一个叫法」——说明片段（含标点/描述词/人名）不许混进来。
+
+    这是「别称：熊廷弼不守、努尔哈赤退兵错过之关键据点…」那次缺陷的回归闸。
+    """
+    from core.place_mentions import is_context_fragment
+
+    payload = _support.payload("full")
+    known = {l.get("ancient") for l in payload.get("locations", [])}
+    known |= {c.get("name") for c in payload.get("characters", [])}
+    known |= {e.get("name") for e in payload.get("events", [])}
+    bad = []
+    for l in payload.get("locations", []):
+        for a in l.get("altNames") or []:
+            if is_context_fragment(a, l.get("ancient"), known):
+                bad.append("%s: %s" % (l.get("ancient"), a))
+    assert not bad, "这些串被误判成别称：%s" % "；".join(bad[:15])

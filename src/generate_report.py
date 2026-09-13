@@ -55,6 +55,7 @@ from core.graph_layout import (
 # 共享核心：洞察报告的「实体 ↔ 章节」双向索引（人物/地点/事件可点击 + 反向入口）。
 # 只在构建期算一次，前端按节命中的表面形式做文本替换，不做运行时全量扫描。
 from core.insight_link import build_insight_index
+from core.place_mentions import split_mentions
 PARTS = {
     "p1": "壹部 · 洪武大帝",
     "p2": "贰部 · 万国来朝",
@@ -751,6 +752,12 @@ def build_scope(scope: str):
                 "note": "事件引用地点，由内置地名词典补坐标（待核验）",
             })
 
+    # 别称 / 说明片段分级所需的「已知实体名」（人、地、事件）。
+    # 依据：真别称不会包含**别的**实体名，而「洪承畴籍贯」「袁崇焕凌迟刑场」会。
+    _known_names = {l.get("ancient") for l in raw_locations if l.get("ancient")}
+    _known_names |= {e.get("name") for e in events if e.get("name")}
+    _known_names |= {c.get("name") for c in data.get("characters", []) if c.get("name")}
+
     locations = []
     for location in raw_locations:
         keys = sorted(set(location.get("chapters", [])) & selected_set, key=chapter_key)
@@ -784,6 +791,10 @@ def build_scope(scope: str):
         related_people = related_people[:20]
         coordinates = location.get("lng") is not None and location.get("lat") is not None
         status = location.get("status") or ("已定位" if coordinates else "待定位")
+        # mentioned_as 同时装了两样东西：真别称（塔山/两广）与说明片段（洪承畴籍贯）。
+        # 这里拆开，前端「别称」只吃 altNames，说明片段另起一块「书中提及」。
+        # mentionedAs 原样保留：深链 ?place= 与列表搜索都依赖它。
+        _alt, _ctx = split_mentions(location.get("mentioned_as", []), ancient, _known_names)
         locations.append({
             "id": f"location-{len(locations) + 1:04d}",
             "entityId": entity_id("place", ancient),   # Phase 3：跨模块稳定 ID（同地名永远同 ID）
@@ -791,6 +802,8 @@ def build_scope(scope: str):
             "ancient": ancient,
             "modern": location.get("modern_address") or "地址待考",
             "mentionedAs": location.get("mentioned_as", []),
+            "altNames": _alt,
+            "mentionContext": _ctx,
             "lng": location.get("lng"),
             "lat": location.get("lat"),
             "trace": location.get("trace_type") or "地名",

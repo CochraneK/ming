@@ -353,7 +353,22 @@ function setupFullInteractions(canvas){
   canvas.addEventListener('pointerleave',()=>{const tp=document.getElementById('fullTip');if(tp)tp.style.display='none';},__sg);
 }
 let fullCanvas=null,fullCtx=null,fullDpr=1,fullCssW=0,fullCssH=0,fullHighlight=null,_fgCache=null;
-function locationCard(item){const coords=item.lat!=null?`${Number(item.lat).toFixed(2)}, ${Number(item.lng).toFixed(2)}`:'未定位';return `<article class="location-card"><div class="card-head"><div><span class="card-title">${esc(item.ancient)}</span> <span class="tag">${esc(item.trace)}</span></div><span class="status ${item.status==='已定位'?'':'draft'}">${esc(shortStatus(item.status))}</span></div><div class="meta">今址：${esc(item.modern)}${item.mentionedAs?.length?`<br>别称：${esc(item.mentionedAs.join('、'))}`:''}</div><div class="meta">坐标：${esc(coords)} · ${esc(item.region)}</div>${(item.directEvents||[]).length?`<div class="meta"><b>直接关联事件：</b><ul class="event-list">${(item.directEvents||[]).slice(0,6).map(x=>`<li><button class="link-button" data-event-name="${esc(x)}">${esc(x)}</button></li>`).join('')}</ul></div>`:`<div class="meta">当前章节仅提及，未确认具体事件落点。</div>`}${item.relatedEventCount?`<div class="meta muted">同章另提及 ${item.relatedEventCount} 件事件（未直接落点于本地点）。</div>`:''}<div class="source-row">${chapterChips(item.chapters)}<button class="action" data-location-id="${item.id}">详情</button></div></article>`}
+/* mentionedAs 里同时装了两样东西：真别称（塔山/两广/延平府）与说明片段（洪承畴籍贯、
+   袁崇焕凌迟刑场）。构建期已拆成 altNames / mentionContext 两个字段，这里分别渲染——
+   原先统一挂「别称：」会把「今辽宁兴城，'山'字型城墙，宁远之战主战场」当成别称列出来。*/
+function mentionMeta(item){
+  const alt=item.altNames||[],ctx=item.mentionContext||[];
+  let s='';
+  if(alt.length)s+=`<br>别称：${esc(alt.join('、'))}`;
+  if(ctx.length)s+=`<br>书中提及：${esc(ctx.slice(0,3).join(' · '))}${ctx.length>3?` 等 ${ctx.length} 处`:''}`;
+  return s;
+}
+function mentionBlock(item){
+  const alt=item.altNames||[],ctx=item.mentionContext||[];
+  return `<div class="detail-block"><strong>别称</strong><p>${esc(alt.join('、')||'无')}</p></div>`
+    +`<div class="detail-block"><strong>书中提及（${ctx.length}）</strong><p>${esc(ctx.join(' · ')||'—')}</p></div>`;
+}
+function locationCard(item){const coords=item.lat!=null?`${Number(item.lat).toFixed(2)}, ${Number(item.lng).toFixed(2)}`:'未定位';return `<article class="location-card"><div class="card-head"><div><span class="card-title">${esc(item.ancient)}</span> <span class="tag">${esc(item.trace)}</span></div><span class="status ${item.status==='已定位'?'':'draft'}">${esc(shortStatus(item.status))}</span></div><div class="meta">今址：${esc(item.modern)}${mentionMeta(item)}</div><div class="meta">坐标：${esc(coords)} · ${esc(item.region)}</div>${(item.directEvents||[]).length?`<div class="meta"><b>直接关联事件：</b><ul class="event-list">${(item.directEvents||[]).slice(0,6).map(x=>`<li><button class="link-button" data-event-name="${esc(x)}">${esc(x)}</button></li>`).join('')}</ul></div>`:`<div class="meta">当前章节仅提及，未确认具体事件落点。</div>`}${item.relatedEventCount?`<div class="meta muted">同章另提及 ${item.relatedEventCount} 件事件（未直接落点于本地点）。</div>`:''}<div class="source-row">${chapterChips(item.chapters)}<button class="action" data-location-id="${item.id}">详情</button></div></article>`}
 function bindPaging(root,callback){root.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>{if(!b.disabled){callback(b.dataset.page==='next'?1:-1)}}))}
 function renderLocations(){
  const all=DATA.locations.filter(x=>(!state.locQuery||`${x.ancient} ${x.modern} ${x.region} ${(x.mentionedAs||[]).join(' ')}`.toLowerCase().includes(state.locQuery.toLowerCase()))&&(!state.locRegion||state.locRegion==='全部区域'||x.region===state.locRegion));
@@ -374,7 +389,7 @@ function locationDetailHTML(x, evtAttr){
   const relPeople=x.relatedPeople||[];
   const ph=people.length?esc(people.slice(0,15).join('、')):(relPeople.length?esc(relPeople.slice(0,15).join('、')):'无（或未标注）');
   const phNote=people.length?'':'<span class="muted">（来自同章上下文事件）</span>';
-  return `<div class="detail-grid">${insightBlock('place',x.ancient)}<div class="detail-block"><strong>今址</strong><p>${esc(x.modern)}</p></div><div class="detail-block"><strong>书中身份</strong><p>${esc(x.trace)}</p></div><div class="detail-block"><strong>别称</strong><p>${esc((x.mentionedAs||[]).join('、')||'无')}</p></div><div class="detail-block"><strong>坐标</strong><p>${x.lat==null?'未定位':`${x.lat}, ${x.lng}`}</p></div><div class="detail-block detail-wide"><strong>书中直接关联事件（${evs.length}）</strong>${eventsHtml}${relatedHtml}</div><div class="detail-block detail-wide"><strong>书中涉及人物 ${phNote}</strong><p>${ph}</p></div><div class="detail-block detail-wide"><strong>来源章节</strong><div class="source-row">${chapterChips(x.chapters)}</div></div><div class="detail-block detail-wide"><strong>核验备注</strong><p>${esc(x.note||'暂无')}</p></div></div>`;
+  return `<div class="detail-grid">${insightBlock('place',x.ancient)}<div class="detail-block"><strong>今址</strong><p>${esc(x.modern)}</p></div><div class="detail-block"><strong>书中身份</strong><p>${esc(x.trace)}</p></div>${mentionBlock(x)}<div class="detail-block"><strong>坐标</strong><p>${x.lat==null?'未定位':`${x.lat}, ${x.lng}`}</p></div><div class="detail-block detail-wide"><strong>书中直接关联事件（${evs.length}）</strong>${eventsHtml}${relatedHtml}</div><div class="detail-block detail-wide"><strong>书中涉及人物 ${phNote}</strong><p>${ph}</p></div><div class="detail-block detail-wide"><strong>来源章节</strong><div class="source-row">${chapterChips(x.chapters)}</div></div><div class="detail-block detail-wide"><strong>核验备注</strong><p>${esc(x.note||'暂无')}</p></div></div>`;
 }
 function bindEventNameClicks(){const dlg=$('#detailDialog');if(!dlg)return;dlg.querySelectorAll('[data-event-name],[data-loc-event]').forEach(b=>b.addEventListener('click',()=>{const nm=b.dataset.eventName||b.dataset.locEvent;const ev=DATA.events.find(e=>e.name===nm);if(ev)showEvent(ev)}))}
 function showLocation(x){// 非地图视图（例如从事件详情、地点卡片点入）时，dock 位于隐藏面板内，内容看不见；改用弹窗展示
@@ -717,10 +732,14 @@ function insightBlock(kind,key){
   return '<div class="detail-block detail-wide"><strong>相关洞察</strong><p class="ins-chips">'+chips+'</p></div>';
 }
 function gotoInsight(sid){
+  // 从详情弹窗里点「相关洞察」时，弹窗是 top-layer，会把滚动后的正文完全挡住
+  // ——必须先关掉弹窗，否则用户点了像没反应。
+  const _dlg=$('#detailDialog');if(_dlg&&_dlg.open)_dlg.close();
   if(state.view!=='insight'){setView('insight');rerender('insight')}
   writeHash({view:'insight'});
   const el=document.getElementById('ins-'+sid);
-  if(el){el.scrollIntoView({behavior:'smooth',block:'start'});el.classList.add('ins-hl');setTimeout(function(){el.classList.remove('ins-hl')},1800)}
+  if(!el){failBar('ins-goto','未找到洞察章节：'+sid,{level:'warn'});return}
+  el.scrollIntoView({behavior:'smooth',block:'start'});el.classList.add('ins-hl');setTimeout(function(){el.classList.remove('ins-hl')},1800)
 }
 function linkifyInsight(){
   const IX=insightIdx();if(!IX||!IX.sections)return;
@@ -770,9 +789,11 @@ document.addEventListener('click',function(e){
   const t=e.target;
   const lnk=t&&t.closest?t.closest('.ins-link'):null;
   if(lnk){
-    if(lnk.getAttribute('data-ins-p')){showPerson(lnk.getAttribute('data-ins-p'));return}
-    if(lnk.getAttribute('data-ins-l')){const loc=DATA.locations.find(function(l){return l.ancient===lnk.getAttribute('data-ins-l')});if(loc)showLocation(loc);return}
-    if(lnk.getAttribute('data-ins-e')){const ev=DATA.events.find(function(x){return x.name===lnk.getAttribute('data-ins-e')});if(ev)showEvent(ev);return}
+    // 找不到目标时必须给出可见反馈——静默 return 会让用户以为链接是死的。
+    const _p=lnk.getAttribute('data-ins-p'),_l=lnk.getAttribute('data-ins-l'),_e=lnk.getAttribute('data-ins-e');
+    if(_p){if(!showPerson(_p))failBar('ins-p','未找到人物：'+_p,{level:'warn'});return}
+    if(_l){const loc=DATA.locations.find(function(l){return l.ancient===_l});if(loc)showLocation(loc);else failBar('ins-l','未找到地点：'+_l,{level:'warn'});return}
+    if(_e){const ev=DATA.events.find(function(x){return x.name===_e});if(ev)showEvent(ev);else failBar('ins-e','未找到事件：'+_e,{level:'warn'});return}
     return;
   }
   const chip=t&&t.closest?t.closest('.ins-chip'):null;

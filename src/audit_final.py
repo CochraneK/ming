@@ -77,12 +77,16 @@ def check_relations(model):
         rule(ERROR, "R-REL-01", "标为人物但不在人物表的关系端点 %d 处" % len(dangling), dangling[:10])
     if selfloop:
         rule(ERROR, "R-REL-02", "自环关系 %d 条" % len(selfloop), selfloop[:10])
-    rule(INFO, "R-REL-00", "关系 %d 条（其中含非人物端点 %d 条）" % (
-        len(model["relations"]),
-        sum(1 for r in model["relations"]
-            if "person" not in ((r.get("endpointKind") or {}).get("from"),
-                                (r.get("endpointKind") or {}).get("to"),
-                                "person"))))
+    # 注意：原写法是 `"person" not in (k_from, k_to, "person")`——把 "person" 混进元组后
+    # 条件**恒为假**，这条统计永远是 0，还和 R-GRAPH-00 的「排除 72 条」互相矛盾。
+    # 正确口径：**任一端点**的类型不是 person（`"person" not in kinds` 会误判成「两端都非人物」）。
+    def _kinds(r):
+        k = r.get("endpointKind") or {}
+        return (k.get("from") or "person", k.get("to") or "person")
+
+    nonperson = sum(1 for r in model["relations"] if _kinds(r) != ("person", "person"))
+    rule(INFO, "R-REL-00", "关系 %d 条（其中任一端点非人物 %d 条，与 R-GRAPH-00 排除数应一致）" % (
+        len(model["relations"]), nonperson))
 
 
 def check_graph(model):
@@ -195,9 +199,16 @@ def check_geo_stale(model):
     for name, items in by_geo.items():
         if name not in by_name:
             continue
-        coords = {(round(float(x.get("lat", 0)), 2), round(float(x.get("lng", 0)), 2)) for x in items}
+        # 占位标注（status=抽取待补）没有坐标字段，float(缺省 0) 会被算成 (0,0)，
+        # 与真正的坐标凑成「两个候选」——纯噪声，必须先滤掉再比坐标。
+        located = [x for x in items
+                   if has_coords(x.get("lat"), x.get("lng"))
+                   and not (float(x.get("lat")) == 0.0 and float(x.get("lng")) == 0.0)]
+        if len(located) < 2:
+            continue
+        coords = {(round(float(x.get("lat", 0)), 2), round(float(x.get("lng", 0)), 2)) for x in located}
         if len(coords) > 1:
-            detail = " / ".join("%s,%s（%s）" % (x.get("lat"), x.get("lng"), x.get("modern_address", "?")) for x in items)
+            detail = " / ".join("%s,%s（%s）" % (x.get("lat"), x.get("lng"), x.get("modern_address", "?")) for x in located)
             conflict.append("%s 有 %d 个候选坐标：%s；地点表采用 %s,%s" % (
                 name, len(coords), detail, by_name[name].get("lat"), by_name[name].get("lng")))
     if conflict:
