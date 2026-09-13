@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V4 分离资源在线版的真实 Chrome 冒烟。"""
+"""V5 在线按需数据版的真实 Chrome 冒烟。"""
 from __future__ import annotations
 
 import os
@@ -52,19 +52,22 @@ def assert_has(dom: str, *patterns: str):
             raise AssertionError("缺少渲染结果：%s" % pattern)
 
 
-def check_home():
+def check_home_stays_boot_only():
     dom = chrome_dump(TARGET)
     assert_has(
         dom,
+        r'<html[^>]*data-ming-data="boot"',
         r'<button type="button" class="command-trigger"',
         r'<section class="v3-story panel"',
         r'地点已定位',
         r'事件可纪年',
     )
-    print("ok   split web 首页 + V3 增强层")
+    if 'data-ming-data-chunk="full"' in dom:
+        raise AssertionError("普通首页意外加载了 full data chunk")
+    print("ok   V5 首页仅 boot 数据 + V3 增强层")
 
 
-def check_command_palette():
+def check_command_palette_loads_full():
     doc = TARGET.read_text(encoding="utf-8")
     probe = """<script>
 setTimeout(function(){
@@ -73,31 +76,38 @@ setTimeout(function(){
   if(i){i.value='于谦';i.dispatchEvent(new Event('input',{bubbles:true}));}
 },120);
 </script>\n"""
-    probe_path = TARGET.parent / ".v4-command-probe.html"
+    probe_path = TARGET.parent / ".v5-command-probe.html"
     try:
         probe_path.write_text(doc.replace("</body>", probe + "</body>", 1), encoding="utf-8")
-        dom = chrome_dump(probe_path, budget=8500)
+        dom = chrome_dump(probe_path, budget=9000)
     finally:
         probe_path.unlink(missing_ok=True)
-    assert_has(dom, r'<div id="commandPalette" class="command-shell">', r'<strong>于谦</strong>')
-    print("ok   split web Ctrl+K → 于谦")
+    assert_has(
+        dom,
+        r'<html[^>]*data-ming-data="full"',
+        r'data-ming-data-chunk="full"',
+        r'<div id="commandPalette" class="command-shell">',
+        r'<strong>于谦</strong>',
+    )
+    print("ok   V5 Ctrl+K 触发 full → 于谦")
 
 
-def check_graph_reader():
+def check_deep_link_loads_full_before_app():
     dom = chrome_dump(TARGET, "#view=visuals&net=full", 9500)
     assert_has(
         dom,
+        r'<html[^>]*data-ming-data="full"',
         r'id="visuals" class="view active"',
         r'<div class="v3-graph-reader" data-mode="full"[^>]*>',
         r'人物总图怎么读',
         r'data-v3-node-search',
     )
-    print("ok   split web 人物总图阅读器")
+    print("ok   V5 deep link → full → 人物总图阅读器")
 
 
 if __name__ == "__main__":
     if not TARGET.exists():
         raise SystemExit("目标文件不存在：%s" % TARGET)
-    check_home()
-    check_command_palette()
-    check_graph_reader()
+    check_home_stays_boot_only()
+    check_command_palette_loads_full()
+    check_deep_link_loads_full_before_app()
