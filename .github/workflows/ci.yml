@@ -42,10 +42,17 @@ jobs:
           python src/normalize_frontend.py
           python src/normalize_frontend.py --check
 
+      - name: V5 lazy-data 钩子同步
+        run: |
+          python src/sync_lazy_data.py
+          python src/sync_lazy_data.py --check
+
       - name: 前端脚本语法检查
         run: |
           node --check web/js/app.js
           node --check web/js/experience.js
+          node --check web/js/data-loader.js
+          node --check web/js/lazy-data.js
 
       - name: 基础 CSS 历史去重冒烟
         run: |
@@ -86,10 +93,10 @@ jobs:
       - name: 离线版体积预算
         run: python src/check_budget.py .ci/standalone.html
 
-      - name: 构建在线分离资源产物
+      - name: 构建在线按需数据产物
         run: python src/build.py --scope full --target web --out .ci/site --quiet
 
-      - name: 在线交付结构与体积预算
+      - name: 在线按需交付结构与体积预算
         run: python src/check_delivery.py .ci/site
 
       - name: 单文件无头浏览器自检
@@ -98,5 +105,5 @@ jobs:
       - name: V3 单文件产品体验浏览器自检
         run: python .dump/_experience_browser_check.py .ci/standalone.html
 
-      - name: V4 在线分离资源浏览器自检
+      - name: V5 在线按需数据浏览器自检
         run: python .dump/_web_browser_check.py .ci/site/index.html
