@@ -10,6 +10,9 @@ REPO  = "ming"
 API   = f"/repos/{OWNER}/{REPO}"
 BASE  = "D:/2026/WB项目/明朝"
 
+# 本次同步的提交说明（每次同步前改这一行，或用环境变量覆盖）
+MESSAGE = os.environ.get("MING_SYNC_MESSAGE") or "Docs sync: 源码 / 数据 / 文档"
+
 # (本地路径, 仓库路径)
 # 全量同步清单（源码+数据+文档）。**有意排除**：明朝那些事儿.txt、data/chapters.json（版权）
 FILES = [
@@ -18,6 +21,9 @@ FILES = [
     ("sw.js", "sw.js"),
     # 源码
     ("src/generate_report.py", "src/generate_report.py"),
+    # 构建入口 + 校验（Phase 4/5）
+    ("src/build.py", "src/build.py"),
+    ("src/validators.py", "src/validators.py"),
     ("src/insight_content.py", "src/insight_content.py"),
     ("src/merge.py", "src/merge.py"),
     ("src/enrich_geo.py", "src/enrich_geo.py"),
@@ -58,6 +64,22 @@ FILES = [
     (".dump/_sync_docs.py", ".dump/_sync_docs.py"),
     (".dump/_diff_remote.py", ".dump/_diff_remote.py"),
     (".dump/_remove_book_text.py", ".dump/_remove_book_text.py"),
+    # Phase 4 模板拆分工具（可复现 web/ 的由来）
+    (".dump/_split_template.py", ".dump/_split_template.py"),
+    (".dump/_migrate_template.py", ".dump/_migrate_template.py"),
+    (".dump/_check_split.py", ".dump/_check_split.py"),
+    # 前端资源（Phase 4：模板/CSS/JS 从 Python 字面量拆出，构建时内联）
+    ("web/template/index.html", "web/template/index.html"),
+    ("web/css/app.css", "web/css/app.css"),
+    ("web/js/app.js", "web/js/app.js"),
+    # 测试与 CI（Phase 5）
+    ("tests/conftest.py", "tests/conftest.py"),
+    ("tests/_support.py", "tests/_support.py"),
+    ("tests/run_tests.py", "tests/run_tests.py"),
+    ("tests/test_core.py", "tests/test_core.py"),
+    ("tests/test_data_invariants.py", "tests/test_data_invariants.py"),
+    ("tests/test_template.py", "tests/test_template.py"),
+    (".github/workflows/ci.yml", ".github/workflows/ci.yml"),
     # 工程文件（2026-09-13 从线上取回本地）
     (".gitignore", ".gitignore"),
     ("requirements.txt", "requirements.txt"),
@@ -147,7 +169,7 @@ tree_sha = gh("POST", f"{API}/git/trees", {"base_tree": base_tree, "tree": tree_
 
 # 4) commit + 指针
 commit_sha = gh("POST", f"{API}/git/commits", {
-    "message": "Docs sync: src/core 共享核心 + 审计重写 + skill/memory（重构 Phase 1+2）",
+    "message": MESSAGE,
     "tree": tree_sha,
     "parents": [head_sha],
 })["sha"]

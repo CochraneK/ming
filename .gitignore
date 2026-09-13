@@ -10,3 +10,10 @@ venv/
 明朝那些事儿.txt
 data/chapters.json
 _publish/
+# web target 的分离资源产物（可随时由 src/build.py 重新生成）
+dist/
+# CI 构建中间产物
+.ci/
+# 脚本运行期的临时输出与本地镜像
+.dump/_*_out.txt
+.dump/git-sync/

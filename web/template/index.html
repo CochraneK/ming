@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>明朝那些事儿 · __TITLE__</title>
+<!-- Leaflet 改为「打开地图视图才按需加载」（见 loadLeaflet），避免首屏被 unpkg 阻塞 -->
+<style>
+/*{{INLINE_CSS}}*/</style>
+</head>
+<body>
+<header class="app-header"><div class="header-inner">
+  <h1 class="brand">明朝那些事儿 · __TITLE__</h1><div id="headerStat" class="header-stat"></div>
+  <nav class="tabs" aria-label="报告视图">
+    <button data-view="overview" class="active">总览</button><button data-view="distribution">分布</button><button data-view="visuals">图谱</button><button data-view="locations">地点</button><button data-view="map">地图</button><button data-view="characters">人物</button><button data-view="events">事件</button><button data-view="relations">关系</button><button data-view="timeline">时间轴</button><button data-view="dynasty">帝王</button><button data-view="chronicle">年谱</button><button data-view="insight">洞察</button>
+  </nav>
+</div></header>
+<main class="shell">
+  <section id="overview" class="view active"></section>
+  <section id="distribution" class="view"></section>
+  <section id="visuals" class="view"></section>
+  <section id="locations" class="view"></section>
+  <section id="map" class="view"><div class="section-head"><div><h2>地图</h2><p>圣地巡礼地图聚焦书中已定位地点；郑和下西洋航线为独立子视图，仅绘制航线与停靠点。</p></div></div><div class="subnav" id="mapSubnav"><button class="active" data-map-mode="pilgrim">圣地巡礼地图</button><button data-map-mode="voyage">郑和下西洋航线</button></div><div class="panel map-wrap" id="pilgrimPanel"><div class="toolbar"><span class="muted grow" id="mapNote"></span></div><div class="map-layout"><div class="map-main"><div id="mapBox" class="map-box"></div></div><aside id="locDock" class="loc-dock" hidden></aside></div></div><div class="panel map-wrap" id="voyagePanel" style="display:none"><div class="toolbar"><span class="muted grow" id="voyageNote"></span></div><div class="map-layout"><div class="map-main"><div id="voyageBox" class="map-box"></div></div><aside id="voyageDock" class="loc-dock" hidden></aside></div></div></section>
+  <section id="characters" class="view"></section>
+  <section id="events" class="view"></section>
+  <section id="relations" class="view"></section>
+  <section id="timeline" class="view"></section>
+  <section id="dynasty" class="view"></section>
+  <section id="chronicle" class="view"></section>
+  <section id="insight" class="view"></section>
+</main>
+<dialog id="detailDialog"><div class="dialog-body"><div class="dialog-head"><h2 id="dialogTitle"></h2><button class="dialog-close" id="dialogClose">关闭</button></div><div id="dialogContent"></div></div></dialog>
+<footer class="muted" style="text-align:center;padding:0 24px 28px;font-size:12px">数据来自章节抽取与人工整理；地点、年份及关系均保留核验状态。</footer>
+<script>
+/*{{INLINE_JS}}*/</script>
+</body></html>

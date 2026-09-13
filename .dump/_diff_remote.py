@@ -10,9 +10,9 @@ import os, sys, json, hashlib, subprocess
 BASE = r"D:\2026\WB项目\明朝"
 API = "/repos/CochraneK/ming"
 
-EXCLUDE_DIRS = {".git", "__pycache__", "_archive", "outputs", "dist"}
+EXCLUDE_DIRS = {".git", "__pycache__", "_archive", "outputs", "dist", "git-sync"}
 EXCLUDE_NAMES = {"明朝那些事儿.txt", "chapters.json"}
-EXCLUDE_SUFFIX = (".pyc", ".tmp", ".log", ".html.tmp")
+EXCLUDE_SUFFIX = (".pyc", ".tmp", ".log", ".html.tmp", "_out.txt")
 
 
 def local_sha(path):

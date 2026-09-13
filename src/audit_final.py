@@ -221,6 +221,23 @@ def check_geo_stale(model):
         len(geo), len(geo) - len(merged) - len(stale_hard), len(merged), len(stale_hard), len(conflict)))
 
 
+def check_invariants(model):
+    """复用 src/validators.py 的结构不变量（构建门禁用的同一份规则）。
+
+    只吸收 ERROR：WARNING/INFO 已在上面按业务语义讲过一遍，重复打印只会淹没
+    真正的问题。这样 ``audit_final.py`` 一条命令即覆盖「深审 + 构建门禁」。
+    """
+    import validators as V
+
+    findings = V.validate_payload(model)
+    hard = [f for f in findings if f.severity == V.ERROR]
+    others = V.count_by_severity(findings)
+    for f in hard:
+        rule(ERROR, f.rule, f.message, f.items)
+    rule(INFO, "R-INV-00", "结构不变量（validators.py）：ERROR %d / WARNING %d / INFO %d" % (
+        others.get(V.ERROR, 0), others.get(V.WARNING, 0), others.get(V.INFO, 0)))
+
+
 def check_reigns():
     """在位年表：重叠/断档作为 INFO 提示（部分重叠是史实，例如夺门之变）。"""
     try:
@@ -281,6 +298,7 @@ def main():
     check_locations(model)
     check_geo_stale(model)
     check_reigns()
+    check_invariants(model)
     if not args.quick:
         check_scopes()
 

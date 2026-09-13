@@ -2,7 +2,7 @@
 # 部署当前本地 index.html 到 CochraneK/ming 根目录（main 分支），
 # 走 Git Database API（4MB 超 Contents API 1MB 限制）。
 # 仅更新 index.html，base_tree 保留其余文件。沙箱 gh 需清代理。
-import os, json, base64, subprocess, tempfile
+import os, json, base64, subprocess, tempfile, time
 
 OWNER = "CochraneK"
 REPO  = "ming"
@@ -11,26 +11,36 @@ SW    = "D:/2026/WB项目/明朝/sw.js"
 README_MD = "D:/2026/WB项目/明朝/README.md"
 API   = f"/repos/{OWNER}/{REPO}"
 
+# 本次部署的提交说明（可用环境变量覆盖）
+MESSAGE = os.environ.get("MING_DEPLOY_MESSAGE") or "Phase 4+5+6：统一构建入口 + 测试与 CI + URL deep link / 搜索高亮 / tab 语义"
+
 ENV = {k: v for k, v in os.environ.items()}
 for k in list(ENV):
     if k.upper() in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY") or k.lower() in ("http_proxy", "https_proxy", "all_proxy", "no_proxy"):
         del ENV[k]
 
 def gh(method, path, input_obj=None):
-    cmd = ["gh", "api", "--method", method, path]
-    tmp = None
-    if input_obj is not None:
-        tmp = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
-        json.dump(input_obj, tmp, ensure_ascii=False)
-        tmp.close()
-        cmd += ["--input", tmp.name]
-    r = subprocess.run(cmd, capture_output=True, text=True, env=ENV)
-    if tmp:
-        try: os.unlink(tmp.name)
-        except: pass
-    if r.returncode != 0:
-        raise RuntimeError(f"gh {method} {path} failed:\n{r.stderr}\n{r.stdout}")
-    return json.loads(r.stdout) if r.stdout.strip() else {}
+    """带重试：沙箱到 api.github.com 偶发 401 / TLS 超时。"""
+    last = None
+    for attempt in range(3):
+        cmd = ["gh", "api", "--method", method, path]
+        tmp = None
+        if input_obj is not None:
+            tmp = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
+            json.dump(input_obj, tmp, ensure_ascii=False)
+            tmp.close()
+            cmd += ["--input", tmp.name]
+        r = subprocess.run(cmd, capture_output=True, text=True, env=ENV)
+        if tmp:
+            try: os.unlink(tmp.name)
+            except: pass
+        if r.returncode == 0:
+            return json.loads(r.stdout) if r.stdout.strip() else {}
+        last = f"gh {method} {path} failed:\n{r.stderr}\n{r.stdout}"
+        if attempt < 2:
+            print(f"  重试 {attempt+1}/2")
+            time.sleep(2 + attempt * 3)
+    raise RuntimeError(last)
 
 # 1) blob (index.html)
 with open(LOCAL, "rb") as fh:
@@ -71,7 +81,7 @@ tree_sha = gh("POST", f"{API}/git/trees", {
 
 # 4) commit
 commit_sha = gh("POST", f"{API}/git/commits", {
-    "message": "Perf+fix: 移除 Python 力导布局（109.7s→2.3s）· 人物关系图只含人物（686人/1403边/孤立545）· 分部关系诱导子图 · 审计对齐最终模型+ERROR 退出码 · SW waitUntil · README 同步",
+    "message": MESSAGE,
     "tree": tree_sha,
     "parents": [head_sha],
 })["sha"]
