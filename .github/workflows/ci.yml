@@ -37,6 +37,11 @@ jobs:
       - name: Python 语法检查
         run: python -m compileall -q src tests
 
+      - name: 前端动态统计口径规范化
+        run: |
+          python src/normalize_frontend.py
+          python src/normalize_frontend.py --check
+
       - name: 前端脚本语法检查
         run: |
           node --check web/js/app.js
@@ -74,6 +79,9 @@ jobs:
 
       - name: 构建单文件产物
         run: python src/build.py --scope full --out .ci/index.html --quiet
+
+      - name: 前端体积预算
+        run: python src/check_budget.py .ci/index.html
 
       - name: 无头浏览器自检
         run: python .dump/_browser_check.py .ci/index.html
