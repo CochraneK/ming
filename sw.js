@@ -3,9 +3,9 @@
 // 跨域资源（地图瓦片、unpkg Leaflet）一律不拦截，直接走原生网络。
 // 注意：后台更新用 cache:'no-cache' 绕过浏览器 HTTP 缓存——否则 GitHub Pages 的
 // max-age=600 会让 SWR 拿到陈旧响应，滞后被拉长到多个访问周期。
-// CACHE 名 bump（v3）会在 activate 时清空旧缓存，强制老用户下次刷新立即得到新版。
+// CACHE 名 bump（v4）会在 activate 时清空旧缓存，强制老用户下次刷新立即得到新版。
 const CACHE_PREFIX = 'ming-report-';
-const CACHE = CACHE_PREFIX + 'v3';
+const CACHE = CACHE_PREFIX + 'v4';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 
@@ -26,7 +26,9 @@ self.addEventListener('fetch', (event) => {
   // no-cors 图片请求永久 pending（表现为灰底红点）。跨域资源直接走原生网络。
   if (url.origin !== self.location.origin) return;
 
-  // 同源：导航与资源走 stale-while-revalidate；后台更新绕过 HTTP 缓存
+  // 同源：导航与资源走 stale-while-revalidate。
+  // 关键点：后台更新必须用 event.waitUntil() 保活——若只 return cached，
+  // worker 生命周期可能在 fetch 完成前就结束，更新被中断，用户会长期看到旧版。
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const cached = await cache.match(req);
@@ -34,6 +36,15 @@ self.addEventListener('fetch', (event) => {
       if (res && res.status === 200 && res.type === 'basic') cache.put(req, res.clone());
       return res;
     }).catch(() => cached);
-    return cached || network || fetch(req);
+
+    if (cached) {
+      event.waitUntil(network.catch(() => {}));
+      return cached;
+    }
+    try {
+      return await network;
+    } catch (err) {
+      return fetch(req);   // 网络与缓存都失败时的最后兜底
+    }
   })());
 });
