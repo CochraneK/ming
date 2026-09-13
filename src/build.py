@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """统一构建入口（Phase 4 / V4 双交付）。
 
-     python src/build.py                          # 全书 → index.html（单文件）
+     python src/build.py                          # 全书 → standalone.html（单文件）
      python src/build.py --scope p3               # 叁部 → report_p3.html
      python src/build.py --target web             # 分离资源版 → dist/full/
      python src/build.py --check                  # 只校验不落盘
@@ -13,7 +13,7 @@
 
 两个 target 的差别：
 - ``standalone``（默认）：CSS/JS/DATA 全部内联，产物是可直接双击打开的单文件，
-  作为离线携带 / 归档版本；
+  作为离线携带 / 归档版本；默认全书文件名为 ``standalone.html``，避免误覆盖在线入口；
 - ``web``：基础样式、主题、体验层、业务 JS 与 DATA 全部拆进 ``assets/``，
   用于在线发布和浏览器缓存。两种产物来自同一份 payload，内容等价。
 """
@@ -170,7 +170,7 @@ def _default_out(scope: str, target: str) -> Path:
     if target == "web":
         return DIST_DIR / scope
     if scope == "full":
-        return BASE / "index.html"
+        return BASE / "standalone.html"
     return BASE / ("report_%s.html" % scope)
 
 
