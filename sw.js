@@ -15,8 +15,9 @@
 // v11：V2 信息架构：12 个视图按全局/实体/探索分组；首页加入三条探索路径并统一地图/图谱/时间类视图语言。
 // v12：V3 产品体验：全局快捷搜索、首页数据叙事、图谱阅读器与邻域聚焦入口。
 // v13：V4 双交付：Pages 根入口切为分离资源版，standalone.html 保留离线单文件；CSS/JS/DATA 可独立缓存。
+// v14：V5 在线按需数据：首屏只加载 boot-data.js，深度视图 / 搜索 / 深链再取 data-full.js。
 const CACHE_PREFIX = 'ming-report-';
-const CACHE = CACHE_PREFIX + 'v13';
+const CACHE = CACHE_PREFIX + 'v14';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 
@@ -37,8 +38,8 @@ self.addEventListener('fetch', (event) => {
   // no-cors 图片请求永久 pending（表现为灰底红点）。跨域资源直接走原生网络。
   if (url.origin !== self.location.origin) return;
 
-  // 同源：导航与资源走 stale-while-revalidate。V4 后 data.js / app.js / CSS
-  // 都是独立资源，因此重复访问不需要重新解析一个 5MB+ 的 HTML 文档。
+  // 同源导航与资源走 stale-while-revalidate。V5 后 boot-data.js 与 data-full.js
+  // 各自独立缓存：普通首页不会请求 full chunk，深度操作首次加载后则可重复命中缓存。
   // 关键点：后台更新必须用 event.waitUntil() 保活——若只 return cached，
   // worker 生命周期可能在 fetch 完成前就结束，更新被中断，用户会长期看到旧版。
   event.respondWith((async () => {
@@ -56,7 +57,7 @@ self.addEventListener('fetch', (event) => {
     try {
       return await network;
     } catch (err) {
-      return fetch(req);   // 网络与缓存都失败时的最后兜底
+      return fetch(req);
     }
   })());
 });

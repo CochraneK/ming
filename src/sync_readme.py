@@ -3,11 +3,7 @@
 
 README 是项目首页，但其中地点/事件等数字以及交付说明过去靠人工维护，数据勘误或
 发布架构调整后容易滞后。本脚本直接复用 ``generate_report.build_scope("full")`` 的
-最终模型口径，并同步少数明确标记的导航与 V4 双交付说明，不碰长篇说明正文。
-
-用法：
-    python src/sync_readme.py          # 原地更新 README.md
-    python src/sync_readme.py --check  # 只检查；不一致时退出码 1
+最终模型口径，并同步少数明确标记的导航与 V5 双交付 / 按需数据说明，不碰长篇正文。
 """
 from __future__ import annotations
 
@@ -72,29 +68,18 @@ def render_readme(source: str) -> str:
         "**实体索引**：`人物` `地点` `事件` `关系`　·　"
         "**探索分析**：`图谱` `地图` `洞察`"
     )
-    text = _replace_one(
-        text,
-        r"^(?:`总览` .*`洞察`|\*\*全局叙事\*\*：.*)$",
-        nav,
-        "V2 导航摘要",
-    )
+    text = _replace_one(text, r"^(?:`总览` .*`洞察`|\*\*全局叙事\*\*：.*)$", nav, "V2 导航摘要")
 
     if "<!-- README_V2_JOURNEYS -->" not in text:
         text = text.replace(
             nav + "\n",
-            nav
-            + "\n\n<!-- README_V2_JOURNEYS -->\n"
+            nav + "\n\n<!-- README_V2_JOURNEYS -->\n"
             + "> V2 首页另提供三条问题导向的探索路径：**人物脉络**、**时间脉络**、**空间与结构**；"
             + "顶部导航与深链仍使用原有 12 个 view id。\n",
             1,
         )
 
-    text = _replace_one(
-        text,
-        r"^- \*\*地点\*\*：\d+ 张地点卡",
-        "- **地点**：%d 张地点卡" % locations,
-        "地点视图数量",
-    )
+    text = _replace_one(text, r"^- \*\*地点\*\*：\d+ 张地点卡", "- **地点**：%d 张地点卡" % locations, "地点视图数量")
     text = _replace_one(
         text,
         r"（\d+ 位(?:核心)?人物的语录均经原文核实，见 `data/character_quotes\.json`）",
@@ -102,10 +87,9 @@ def render_readme(source: str) -> str:
         "人物语录覆盖",
     )
 
-    # V4：在线版与离线版分开交付。这里兼容 V3 旧文案与已同步过的 V4 文案，保持幂等。
     text = re.sub(
         r"^基于《明朝那些事儿》七部 156 章全文抽取整理的.*$",
-        "基于《明朝那些事儿》七部 156 章全文抽取整理的静态知识库。在线版采用分离资源交付（轻量 `index.html` + `assets/`，便于浏览器独立缓存），同时保留 `standalone.html` 单文件离线版；以「圣地巡礼」为第一使用场景，把书中提到的地点落到真实坐标上，并保留每条记录的来源章节与核验状态。",
+        "基于《明朝那些事儿》七部 156 章全文抽取整理的静态知识库。在线版采用 V5 按需数据交付：轻量 `index.html` + 可缓存 `assets/`，首页只加载 `boot-data.js`，进入深度视图、使用全局搜索或打开深链时再加载 `data-full.js`；同时保留 `standalone.html` 单文件离线版。",
         text,
         count=1,
         flags=re.MULTILINE,
@@ -113,8 +97,8 @@ def render_readme(source: str) -> str:
     text = _replace_one(
         text,
         r"^GitHub Pages：.*$",
-        "GitHub Pages：`https://cochranek.github.io/ming/`（根目录 `index.html` 为在线分离资源入口；`standalone.html` 为可下载 / 双击打开的离线单文件版）",
-        "V4 在线入口",
+        "GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V5 在线按需版；`standalone.html` 为可下载 / 双击打开的完整离线版）",
+        "V5 在线入口",
     )
     text = text.replace(
         "python src/build.py                 # 构建全书单文件 index.html",
@@ -122,20 +106,23 @@ def render_readme(source: str) -> str:
     )
     text = re.sub(
         r"^\| `--target standalone\\\|web` \|.*$",
-        "| `--target standalone\\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联到 `standalone.html`；`web`＝输出到 `dist/<scope>/`，拆成 `assets/app.css`、`assets/theme.css`、`assets/experience.css`、`assets/app.js`、`assets/data.js`、`assets/experience.js` 并复制 `sw.js`，用于在线发布与独立缓存 |",
+        "| `--target standalone\\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联到 `standalone.html`；`web`＝输出到 `dist/<scope>/`，首页用 `assets/boot-data.js`，深度操作按需加载 `assets/data-full.js`，并拆分 CSS、业务 JS、V3/V5 体验脚本与 `sw.js` |",
         text,
         count=1,
         flags=re.MULTILINE,
     )
-    text = text.replace(
-        "构建时会把 `web/template/index.html`（骨架）＋ `web/css/app.css` ＋ `web/js/app.js` 内联回单文件；三者拼回来的结果与拆分前的模板**逐字节一致**，由 `tests/test_template.py` 守着。",
-        "`standalone` 构建会把模板、基础样式、主题层、V3 体验层、业务脚本与 DATA 全部内联成一个文件；`web` 构建则把同一份源拆成可缓存资源。两种产物共享同一 payload 与回归测试，不维护两套业务逻辑。",
+    text = re.sub(
+        r"^`standalone` 构建会把.*$",
+        "`standalone` 构建继续把模板、样式、业务脚本、体验层与完整 DATA 内联成一个文件；`web` 构建使用同一最终 payload 拆成 boot / full 两级数据与独立前端资源。两种产物共享同一业务模型和浏览器回归，不维护两套内容逻辑。",
+        text,
+        count=1,
+        flags=re.MULTILINE,
     )
 
     marker = "<!-- README_STATS_SYNC -->"
     note = (
         "> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme.py` 从最终模型自动刷新；"
-        "发布同步工作流会同时维护在线 `index.html + assets/` 与离线 `standalone.html`。"
+        "发布同步工作流会同时维护在线 V5 `index.html + assets/` 与离线 `standalone.html`。"
     )
     if marker not in text:
         anchor = "| 年谱 | 165 人 | 主要人物生卒横向展开，与年号对位 |\n"
@@ -147,7 +134,7 @@ def render_readme(source: str) -> str:
             text,
             r"^> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme\.py`.*$",
             note,
-            "V4 发布说明",
+            "V5 发布说明",
         )
 
     return text
@@ -161,10 +148,10 @@ def main(argv=None) -> int:
     source = README.read_text(encoding="utf-8")
     updated = render_readme(source)
     if updated == source:
-        print("README 已与最终模型和交付架构一致")
+        print("README 已与最终模型和 V5 交付架构一致")
         return 0
     if args.check:
-        print("README 与最终模型或交付架构不一致；请运行 python src/sync_readme.py", file=sys.stderr)
+        print("README 与最终模型或 V5 交付架构不一致；请运行 python src/sync_readme.py", file=sys.stderr)
         return 1
     README.write_text(updated, encoding="utf-8")
     print("README 已同步：%d → %d 字符" % (len(source), len(updated)))

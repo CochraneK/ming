@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""统一构建入口（Phase 4 / V4 双交付）。
+"""统一构建入口（Phase 4 / V5 双交付 + 在线按需数据）。
 
      python src/build.py                          # 全书 → standalone.html（单文件）
      python src/build.py --scope p3               # 叁部 → report_p3.html
@@ -14,8 +14,9 @@
 两个 target 的差别：
 - ``standalone``（默认）：CSS/JS/DATA 全部内联，产物是可直接双击打开的单文件，
   作为离线携带 / 归档版本；默认全书文件名为 ``standalone.html``，避免误覆盖在线入口；
-- ``web``：基础样式、主题、体验层、业务 JS 与 DATA 全部拆进 ``assets/``，
-  用于在线发布和浏览器缓存。两种产物来自同一份 payload，内容等价。
+- ``web``：项目 CSS/JS 分离，DATA 再拆成 boot / full 两级。首页只加载约几十 KiB
+  的 boot 数据，进入深度视图 / 全局搜索 / 深链时再加载 full chunk；两种产物仍来自
+  同一份最终 payload，业务内容等价。
 """
 
 from __future__ import annotations
@@ -38,6 +39,11 @@ SW_PATH = BASE / "sw.js"
 THEME_CSS_PATH = BASE / "web" / "css" / "theme.css"
 EXPERIENCE_CSS_PATH = BASE / "web" / "css" / "experience.css"
 EXPERIENCE_JS_PATH = BASE / "web" / "js" / "experience.js"
+DATA_LOADER_JS_PATH = BASE / "web" / "js" / "data-loader.js"
+LAZY_DATA_JS_PATH = BASE / "web" / "js" / "lazy-data.js"
+
+# 首页真正消费的最终模型字段。其余字段进入 data-full.js。
+WEB_BOOT_KEYS = ("scope", "scopeLabel", "metrics", "cleaning", "distribution")
 
 # web target 下骨架里的两个主锚点整块替换（含外层标签），需要与骨架逐字一致。
 _STYLE_ANCHOR = "<style>\n/*{{INLINE_CSS}}*/</style>"
@@ -47,8 +53,34 @@ _INSIGHT_CONST = "const INSIGHT_DATA=__INSIGHT_DATA__;\n"
 
 
 def _json_for_script(obj) -> str:
-    """把 Python 对象序列化成可安全嵌进 <script> 的 JSON。"""
-    return json.dumps(obj, ensure_ascii=False).replace("</", "<\\/")
+    """把 Python 对象序列化成紧凑、可安全嵌进 <script> 的 JSON。"""
+    return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+
+
+def split_web_payload(payload: dict) -> tuple[dict, dict]:
+    """把最终模型拆成首屏 boot 与延迟 full；不复制业务实体。"""
+    boot = {key: payload[key] for key in WEB_BOOT_KEYS if key in payload}
+
+    # app.js 在定义阶段会建立地点索引并做完整性存在性检查。这里给重字段放空壳，
+    # 让首页可直接启动；full chunk 用 Object.assign 替换成真实数组 / 字典。
+    boot.update({
+        "characters": [],
+        "locations": [],
+        "events": [],
+        "relations": [],
+        "chapters": {},
+    })
+
+    # V3 首页数据故事只需要一个关系网络入口，不值得为此首访加载 203 KiB 全图。
+    nodes = list((payload.get("relationGraphFull") or {}).get("nodes") or [])
+    hub = max(nodes, key=lambda x: (x.get("degree", 0), x.get("name", "")), default=None)
+    boot["relationGraphFull"] = {
+        "nodes": ([{"name": hub.get("name"), "degree": hub.get("degree", 0)}] if hub else []),
+        "links": [],
+    }
+
+    full = {key: value for key, value in payload.items() if key not in WEB_BOOT_KEYS}
+    return boot, full
 
 
 def _externalize_generated_block(source: str, *, tag: str, generated_from: str, replacement: str) -> str:
@@ -70,13 +102,15 @@ def render_standalone(payload: dict) -> str:
 
 
 def render_web(payload: dict, out_dir: Path) -> dict:
-    """分离资源形态：HTML 只保留骨架，所有项目 CSS/JS/DATA 均写入 assets/。"""
+    """在线形态：HTML / CSS / JS 分离，DATA 再拆成 boot + lazy full。"""
     skeleton = G.TEMPLATE_PATH.read_text(encoding="utf-8")
     css = G.CSS_PATH.read_text(encoding="utf-8")
     js = G.JS_PATH.read_text(encoding="utf-8")
     theme_css = THEME_CSS_PATH.read_text(encoding="utf-8")
     experience_css = EXPERIENCE_CSS_PATH.read_text(encoding="utf-8")
     experience_js = EXPERIENCE_JS_PATH.read_text(encoding="utf-8")
+    data_loader_js = DATA_LOADER_JS_PATH.read_text(encoding="utf-8")
+    lazy_data_js = LAZY_DATA_JS_PATH.read_text(encoding="utf-8")
 
     for anchor, name in ((_STYLE_ANCHOR, "css"), (_SCRIPT_ANCHOR, "js")):
         if anchor not in skeleton:
@@ -89,17 +123,30 @@ def render_web(payload: dict, out_dir: Path) -> dict:
         "theme.css": theme_css,
         "experience.css": experience_css,
         "experience.js": experience_js,
+        "data-loader.js": data_loader_js,
+        "lazy-data.js": lazy_data_js,
     }
     for name, content in files.items():
         (assets / name).write_text(content, encoding="utf-8")
 
     body = js.replace(_DATA_CONST, "", 1).replace(_INSIGHT_CONST, "", 1)
     (assets / "app.js").write_text(body, encoding="utf-8")
-    data_js = (
-        "const DATA=%s;\nconst INSIGHT_DATA=%s;\n"
-        % (_json_for_script(payload), _json_for_script(G.INSIGHT_PAYLOAD))
+
+    boot_payload, full_payload = split_web_payload(payload)
+    boot_js = (
+        "const DATA=%s;\nconst INSIGHT_DATA={\"sections\":[],\"refs\":[]};\n"
+        % _json_for_script(boot_payload)
     )
-    (assets / "data.js").write_text(data_js, encoding="utf-8")
+    full_js = (
+        "Object.assign(DATA,%s);\n"
+        "Object.assign(INSIGHT_DATA,%s);\n"
+        "window.__MING_FULL_DATA_READY=true;\n"
+        "document.documentElement.dataset.mingData='full';\n"
+        "document.dispatchEvent(new CustomEvent('ming:data-full'));\n"
+        % (_json_for_script(full_payload), _json_for_script(G.INSIGHT_PAYLOAD))
+    )
+    (assets / "boot-data.js").write_text(boot_js, encoding="utf-8")
+    (assets / "data-full.js").write_text(full_js, encoding="utf-8")
 
     # app.js 注册的是相对于页面根目录的 sw.js。这里必须按 bytes 原样复制：
     # read_text/write_text 会把 CRLF 规范化成 LF，使发布工作流的逐字节一致性检查误报。
@@ -121,7 +168,10 @@ def render_web(payload: dict, out_dir: Path) -> dict:
     )
     html = html.replace(
         _SCRIPT_ANCHOR,
-        '<script src="assets/data.js"></script>\n<script src="assets/app.js"></script>',
+        '<script src="assets/boot-data.js"></script>\n'
+        '<script src="assets/data-loader.js"></script>\n'
+        '<script src="assets/app.js"></script>\n'
+        '<script src="assets/lazy-data.js"></script>',
     )
     html = _externalize_generated_block(
         html,
@@ -137,7 +187,10 @@ def render_web(payload: dict, out_dir: Path) -> dict:
         "assets/theme.css": len(theme_css),
         "assets/experience.css": len(experience_css),
         "assets/app.js": len(body),
-        "assets/data.js": len(data_js),
+        "assets/boot-data.js": len(boot_js),
+        "assets/data-full.js": len(full_js),
+        "assets/data-loader.js": len(data_loader_js),
+        "assets/lazy-data.js": len(lazy_data_js),
         "assets/experience.js": len(experience_js),
         "sw.js": len(sw_bytes),
     }
