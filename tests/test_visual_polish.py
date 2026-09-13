@@ -40,7 +40,7 @@ def test_v2_information_architecture_hooks_exist():
     assert "MutationObserver" in skeleton
     assert "function setView" not in skeleton
     for view in ("characters", "relations", "visuals", "timeline", "dynasty", "chronicle", "map", "distribution", "insight"):
-        assert 'data-open-view=\\"%s\\"' % view in skeleton
+        assert 'data-open-view=\"%s\"' % view in skeleton
 
 
 def test_v2_visual_language_is_shared_across_views():
