@@ -12,8 +12,9 @@
 // v9：自查轮修前端 2 处（详情弹窗里跳洞察要先关弹窗，否则被 top-layer 挡住；洞察链接找不到目标改为可见提示）
 //     + 地点卡把「别称」与「书中提及」拆成两块渲染（app.js 有变更，必须 bump）。
 // v10：统一视觉层级与键盘焦点/跳转链接；web target 补齐 sw.js 并完整报告 data.js / sw.js 产物。
+// v11：V2 信息架构：12 个视图按全局/实体/探索分组；首页加入三条探索路径并统一地图/图谱/时间类视图语言。
 const CACHE_PREFIX = 'ming-report-';
-const CACHE = CACHE_PREFIX + 'v10';
+const CACHE = CACHE_PREFIX + 'v11';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 
