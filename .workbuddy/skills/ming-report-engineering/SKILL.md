@@ -34,6 +34,7 @@ allowed-tools: Bash,Read,Write,Edit,Grep,Glob
 - **路径用 `D:/` 风格绝对路径**：Windows 原生 python 不认 `/d/` POSIX 前缀。
 - **中文必须 UTF-8**：调用前 `export PYTHONUTF8=1`，否则中文报 `SyntaxError: invalid character`。
 - **中文命令行字面量乱码**：`-c "..."` 里直接写中文会损坏。逻辑写进 `.py` 文件维护，Bash 只负责调用。
+- **反引号会被 shell 吃掉（2026-09-13 实测）**：`python -c "长文本含 \`反引号\`"` 时 bash 会先做命令替换，写进文件的正文会变成空串出乱子（本次把一篇中文日志写坏重写）。**凡是含反引号/大段中文的文本，一律用 Write/Edit 工具写文件**，不要用 `python -c` 拼。
 - **2026-09-13 实测：本会话 Bash 的 PATH 被裁过**——`ls / tail / dirname / find / agent-browser` 全部 `command not found`，但 `cd`、`echo`、绝对路径调用的 exe 仍可用。
   - 对策：一切外部程序都用**绝对路径**调用（python / node 见上；需要 shell 工具时用 python 的 `os.listdir` / `Path.glob` 代替 `ls`、用 `io.open(...).read()` 代替 `cat`）。
   - `agent-browser` 此会话不可用 → 前端验证改用 **Node 直跑渲染函数 + 数据不变量断言**（见「前端验证（无浏览器时）」）。

@@ -19,6 +19,8 @@
 ## 关键方法学约定（跨会话有效）
 - **写作纪律（用户明确）**：不硬凑字数、言之有物；观点挂文献，新文献必须 WebSearch 核实；书内情节/语录必须先在原书 txt 关键词命中原文（0 命中即弃用）。
 - **版权硬约束**：`明朝那些事儿.txt` 与 `data/chapters.json` **绝不发布**；换电脑私下手动拷贝，README 接续指南已写明步骤与不拷的后果。
+  - **2026-09-13 事故**：`data/chapters.json`（4.5MB 全文本）其实早在 2026-09-04 就混进了公开仓库（`.gitignore` 只挡 `git add`，挡不住 API 上传）。已从 main 移除（commit `470918be`），但**历史 commit `7190215d` 仍可访问该 blob**——彻底清除需重写历史（孤儿 commit + force refs），**待用户决定**。
+  - 部署/同步后必跑合规巡检：`gh api "/repos/CochraneK/ming/git/trees/main?recursive=1" --jq '.tree[]|select(.type=="blob")|.path' | grep -Ei 'chapters\.json|明朝那些事儿'`，期望无输出。
 - **发布**：`.dump/_deploy_index_now.py`（index.html+sw.js+README.md，Git Database API，`gh` 前 `env -u` 清代理）；新增数据文件记得加 FILES 清单。差异检查：`.dump/_sync_docs.py` + blob sha 全量比对法（见 skill 节）。
 - **增量勘误层**（重跑 merge 不丢）：`manual_corrections.json` / `manual_lifespans.json` / `manual_persons.json` / `derived_chapter_persons.json` / `event_places.json`（注入须在归一化循环**之前**）/ `geo_annotations.json`（条=dict，含 ancient/modern_address/lng/lat/…）。
 - **关系约定**：亲属「长辈→晚辈」；端点类型按 人物→地点→政权→派系机构→其他 判定。
