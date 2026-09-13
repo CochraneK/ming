@@ -3,7 +3,7 @@
 // 跨域资源（地图瓦片、unpkg Leaflet）一律不拦截，直接走原生网络。
 // 注意：后台更新用 cache:'no-cache' 绕过浏览器 HTTP 缓存——否则 GitHub Pages 的
 // max-age=600 会让 SWR 拿到陈旧响应，滞后被拉长到多个访问周期。
-// CACHE 名 bump（v6）会在 activate 时清空旧缓存，强制老用户下次刷新立即得到新版。
+// CACHE 名 bump 会在 activate 时清空旧缓存，强制老用户下次刷新立即得到新版。
 // v5：Phase 3~6 落地（统一实体 ID、模板拆分、deep link、搜索高亮、tab 语义）。
 // v6：P2-03 势力结构化 / Phase 6 双模式图 / P2-10 时间轴区间 / P3-03 统一错误 UI / P3-01 体积压缩。
 // v7：第六轮内容勘误（同名异地两级拆分：延安府 陕西/朝鲜、龙山 浙江/朝鲜；事件补年 7→2；地点定位 41→30）。
@@ -14,8 +14,9 @@
 // v10：统一视觉层级与键盘焦点/跳转链接；web target 补齐 sw.js 并完整报告 data.js / sw.js 产物。
 // v11：V2 信息架构：12 个视图按全局/实体/探索分组；首页加入三条探索路径并统一地图/图谱/时间类视图语言。
 // v12：V3 产品体验：全局快捷搜索、首页数据叙事、图谱阅读器与邻域聚焦入口。
+// v13：V4 双交付：Pages 根入口切为分离资源版，standalone.html 保留离线单文件；CSS/JS/DATA 可独立缓存。
 const CACHE_PREFIX = 'ming-report-';
-const CACHE = CACHE_PREFIX + 'v12';
+const CACHE = CACHE_PREFIX + 'v13';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 
@@ -36,7 +37,8 @@ self.addEventListener('fetch', (event) => {
   // no-cors 图片请求永久 pending（表现为灰底红点）。跨域资源直接走原生网络。
   if (url.origin !== self.location.origin) return;
 
-  // 同源：导航与资源走 stale-while-revalidate。
+  // 同源：导航与资源走 stale-while-revalidate。V4 后 data.js / app.js / CSS
+  // 都是独立资源，因此重复访问不需要重新解析一个 5MB+ 的 HTML 文档。
   // 关键点：后台更新必须用 event.waitUntil() 保活——若只 return cached，
   // worker 生命周期可能在 fetch 完成前就结束，更新被中断，用户会长期看到旧版。
   event.respondWith((async () => {
