@@ -42,6 +42,11 @@ jobs:
       - name: 前端脚本语法检查
         run: node --check web/js/app.js
 
+      - name: 主题 CSS 镜像同步冒烟
+        run: |
+          python src/sync_theme.py
+          git diff --check -- web/template/index.html
+
       # 测试与构建都不依赖 data/chapters.json（不入库的版权文件）：
       # 章节标题来自 data/extract_raw.json，缺 chapters.json 只会少字数统计。
       - name: 单元测试（共享核心 + 数据不变量 + 模板）

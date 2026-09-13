@@ -7,6 +7,7 @@ from pathlib import Path
 
 import _support
 import build as B
+import sync_theme as ST
 
 
 def test_visual_polish_and_a11y_hooks_exist():
@@ -19,6 +20,19 @@ def test_visual_polish_and_a11y_hooks_exist():
     assert "Visual polish 2026-09" in skeleton
     assert ":focus-visible" in skeleton
     assert "prefers-reduced-motion:reduce" in skeleton
+
+
+def test_theme_css_is_single_source_for_template_mirror():
+    skeleton = B.G.TEMPLATE_PATH.read_text(encoding="utf-8")
+    theme = ST.THEME.read_text(encoding="utf-8")
+    # 首次迁移时模板可能还是 legacy 独立 style；同步后必须变成带来源标记的生成镜像。
+    converted = ST.render_template(skeleton, theme)
+    assert theme.rstrip() in converted
+    assert converted.count(ST.SOURCE_ATTR) == 1
+    assert converted.count(ST.START) == 1
+    assert converted.count(ST.END) == 1
+    # 同步器必须幂等，否则发布工作流会不断制造无意义提交。
+    assert ST.render_template(converted, theme) == converted
 
 
 def test_v2_information_architecture_hooks_exist():
@@ -44,13 +58,13 @@ def test_v2_information_architecture_hooks_exist():
 
 
 def test_v2_visual_language_is_shared_across_views():
-    skeleton = B.G.TEMPLATE_PATH.read_text(encoding="utf-8")
+    theme = ST.THEME.read_text(encoding="utf-8")
     for token in (
         ".v2-journey-grid", ".visuals-panel::before", ".map-wrap::before",
         ".timeline{", ".chronicle-wrap{", ".dynasty-band{",
     ):
-        assert token in skeleton, token
-    assert "scroll-margin-top:122px" in skeleton
+        assert token in theme, token
+    assert "scroll-margin-top:122px" in theme
 
 
 def test_web_target_copies_service_worker_and_reports_all_assets():
