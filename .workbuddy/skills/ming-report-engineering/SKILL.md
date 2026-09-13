@@ -2,13 +2,15 @@
 name: ming-report-engineering
 description: >
   明朝知识图交互报告（基于《明朝那些事儿》）的构建、合并、部署与数据审计工程 skill。
-  覆盖从 data/*.json → index.html 的生成流水线，以及本沙箱内 GitHub Pages 发布、洞察报告
-  子流水线、手动数据补录、抽取充分性核查等全部工程环节与历史踩坑。务必在以下场景使用：
-  用户说"重生成报告""重新构建""部署""推送""发布到 pages""补录人物/地点/关系"
+  覆盖从 data/*.json → web/ → index.html 的生成流水线（src/build.py 统一入口），以及本沙箱内
+  GitHub Pages 发布、测试与 CI（validators/tests/GitHub Actions/无头 Chrome 自检）、
+  URL deep link 与搜索高亮、洞察报告子流水线、手动数据补录、抽取充分性核查等全部工程环节与历史踩坑。
+  务必在以下场景使用：用户说"重生成报告""重新构建""部署""推送""发布到 pages""补录人物/地点/关系"
+  "跑测试""CI 挂了""deep link""分享链接""搜索高亮""拆分模板""build.py""web/""重排前端"
   "抽取是否充分""还能抽取吗""召回探测""检查 CSS/前端""合并数据""manual_*.json"
   "洞察""学科""为什么报告没更新""地图灰了""gh 报错 tls""python 中文乱码"；
   或任何涉及 D:/2026/WB项目/明朝 仓库的构建/发布/数据质量任务。
-version: 2.0.0
+version: 3.0.0
 agent_created: true
 allowed-tools: Bash,Read,Write,Edit,Grep,Glob
 ---
@@ -27,7 +29,9 @@ allowed-tools: Bash,Read,Write,Edit,Grep,Glob
 
 数据流水线：
 `chapters.json`(章节正文) → `extract_raw.json`(LLM 抽取，OmniRoute 网关方案已弃用)
-→ `data.json`(merge.py 聚合并注入 manual_*) → `index.html`(generate_report.py 单文件 HTML，内联 CSS/JS，~4MB)
+→ `data.json`(merge.py 聚合并注入 manual_*) → `index.html`(build.py ← web/{template,css,js} 内联，单文件 HTML ~5MB)
+
+关键目录：`src/`（Python 流水线 + `src/core/` 共享核心）· `web/`（前端三件套，**改前端只动这里**）· `tests/`（28 例）· `.github/workflows/ci.yml` · `.dump/`（部署/同步/迁移/自检脚本）。
 
 ### 运行环境（Windows 沙箱·硬约束）
 - **用托管的 Python**：`C:/Users/cunyi/.workbuddy/binaries/python/versions/3.13.12/python.exe`（绝不用系统 `python`）。
@@ -64,8 +68,10 @@ $PY src/audit_final.py                              # 终态审计（有 ERROR �
 - 关系方向约定：**亲属为长辈→晚辈**（父→子、祖→孙）。
 - 关系端点类型：`merge.py` 的 `_endpoint_kind` 按 **人物→地点→政权→派系机构→其他** 判定，报告加 `.ep-tag` 徽标。
 
-### 报告生成（src/generate_report.py）
-- 单文件 HTML，CSS/JS 全在 f-string 模板内联，无构建工具。
+### 报告生成（Phase 4 起：web/ 拆分 + src/build.py）
+- **只改 `web/`，不要在 Python 里再写一份模板**：`web/template/index.html`（骨架，含 `/*{{INLINE_CSS}}*/` 与 `/*{{INLINE_JS}}*/` 两个锚点）＋ `web/css/app.css` ＋ `web/js/app.js`，`generate_report.load_template()` 在导入时把它们拼回 `HTML_TEMPLATE`。`const DATA=__DATA__;` / `const INSIGHT_DATA=__INSIGHT_DATA__;` 在 **app.js 首两行**（不在骨架里）——查占位符要查 JS 文件。
+- **拆分验收铁律**：`skeleton.replace(...).replace(...)` 必须与 `HTML_TEMPLATE` **逐字节相同**（`tests/test_template.py::test_split_is_lossless`）。骨架锚点与 `</style>`/`</script>` 之间**不能多一个换行**，CSS/JS 文件自身以 `\n` 结尾，靠这个把换行对齐。
+- **统一入口**：`python src/build.py [--scope full|p1..p7] [--target standalone|web] [--out 路径] [--check] [--json 路径]`。`render_standalone()` 直接调 `generate_report.compose_document()`——**注入逻辑只有一份**，两条路径不可能产出不同文件（有测试守着）。
 - **生成后必查 CSS 括号平衡**：`css.count('{') - css.count('}') == 0`。单行模板缺一个 `}` 会静默吞掉其后全部规则。
 - **搜索框必须走 bindSearch()**：直接监听 `input` 会全量重渲染销毁输入框，中文输入法无法连续输入（封装防抖 220ms + 合成期保护 + 焦点还原）。
 - **`load_json()` 只接受 Path 对象**：传 str 报 `'str' object has no attribute 'exists'`；用 `BASE / "data" / "x.json"`。
@@ -73,6 +79,7 @@ $PY src/audit_final.py                              # 终态审计（有 ERROR �
 - **GAZ 坐标元组顺序恒为 `(lng, lat, 今址, 类型)`**；校验：`[l['ancient'] for l in data['locations'] if l.get('lat') and abs(l['lat'])>90]` 应为空。
 - 人物卡势力字段由前端 `cleanCardFields()` 做显示层清洁（不改源数据）；卡面主题 `state.cardTheme` 切换。
 - 统计口径：`data.json` 地点 561（定位 520），报告显示 581/540——差值来自 `event_places.json` 构建时注入，属预期非 bug。
+- **没有 `data/chapters.json` 也能构建**（章节标题来自 `extract_raw.json`，仅缺字数统计）——所以 CI 不需要那本禁书也能全绿。
 
 ### 人物卡语录（2026-09-04）
 - `data/character_quotes.json`：name→语录（13 位核心人物，**全部在原书 txt 命中原文**；无语录的卡不显示该行）。
@@ -86,18 +93,38 @@ $PY src/audit_final.py                              # 终态审计（有 ERROR �
 - **后台预热 `warmMap()`**：`requestIdleCallback` → `loadLeaflet()` → 屏外隐藏 div（400×300，left:-9999px）建 L.map([34.5,113],4) 预热瓦片 → 4s 后 remove。点开地图零等待；预热失败静默（SVG 点图兜底仍在）。
 
 ## 全面重构落地（2026-09-13，对应 `report/Ming_全面重构方案.txt`）
-已完成 **Phase 1 正确性热修 + Phase 2 移除 Python 力导布局**；Phase 3~6（统一 ID 模型 / 拆分 generate_report / 测试 CI / deep link）待排期。
+**Phase 1~6 已全部落地**（Phase 6 除「人物图/实体图双模式」外）。逐阶段要点：
 
+- **Phase 3 统一数据模型**：`entity_id(kind,name)` → `person:朱由检` / `place:鄱阳湖`；`relation_id(from,to,rel,source)` = `relation:<sha1[:12]>`（**内容寻址**，重跑稳定，是 deep link 的基础）；characters 增 `id/type/factions/factionRaw`，relations 增 `id/sourceId/targetId/sourceType/targetType`；payload 增 `model: {schemaVersion:2, entityTypes, idIndex(2918)}`。`parse_factions()` 用 `FACTION_TOKENS`（「东林」与「东林党」归并）。
+- **Phase 4 拆分单体脚本**：`generate_report.py` 1606 → 1155 行（10.8 万字符模板移出），模板/CSS/JS 落 `web/`，拼回逐字节等价；新增 `src/build.py` 统一入口（standalone/web 双 target、`--check`、`--json`）。`.dump/_split_template.py`（抽取）+ `_migrate_template.py`（换掉字面量）+ `_check_split.py`（等价性复核）三件套可复现全过程（均幂等）。
+- **Phase 5 测试与 CI**：`src/validators.py` 是**唯一**的结构不变量真源（ERROR/WARNING/INFO 三档），被 `build.py --check`、`audit_final.py`（只吸收其 ERROR，避免重复刷屏）、`tests/`、CI 四处共用。`tests/run_tests.py` 是零依赖运行器（28 例），同时兼容 `pytest tests`。`.github/workflows/ci.yml`：版权合规巡检 → py/js 语法 → 单元测试 → 构建门禁 → 深审 → 构建产物 + 无头浏览器自检。**CI 实测 green（run 34749970430）**。
+- **Phase 6 体验**：URL deep link（`view/person/detail/event/place/era/map/q`，见 README 表）、搜索命中高亮（`MutationObserver` 监测 `main` + `mark.hl`，靠 `_hlSuppress` 时间窗避免自触发死循环）、tabs `role=tablist/tab/tabpanel` + 方向键导航。打开详情会把实体写回地址栏（`history.replaceState`）。两处重复的人物详情模板收敛成 `personDetailHTML()`/`showPerson()`。
 - **构建提速 47 倍**：删掉 `build_relation_graph_full` 里 numpy 的 800 轮 O(n²) FR 布局，改为确定性廉价初始坐标（势力分扇区 + 扇区内螺旋，`math` 即可，无随机）；真正的力导向交给浏览器端 `fullStep()`（网格加速斥力 + 弹簧 + 中心引力）。**全量构建 109.7s → 2.3s**，且 numpy 依赖彻底移除（旧代码在 numpy 缺失时静默返回 `links: []`，构建"成功"但图是坏的）。
 - **人物关系图口径（方案 A）**：节点只允许 `chars` 里的人；`deg` 只在人物内部统计；`stats` 现为 `{nodes, edges, persons, connected, isolated, excludedNonPerson}`。实测 741 端点中 47 个非人物（东林党/东厂/内阁/后金/北京/明朝/黄河…）被排除 → **686 人 / 1403 边 / 孤立 545（44.3%）/ 排除 72 条含非人物端点的关系**。页面文案由 `fullSummaryHTML(g)` 单点生成（renderFullGraph 与 resetFullHighlight 共用），避免两处再漂移。
 - **分部关系 scope**：`build_scope()` 里 `relation_scope = "all" if scope=="full" else "induced"`，induced = 两端都在 `scope_names`（= 该部范围内至少有一章的人物）内。修复前 p1 有 754 条两边人物都不属于 p1 的串范围关系；修复后 p1~p7 全部"关系诱导子图干净"（审计 `R-SCOPE-00/01` 逐部验证）。payload 新增 `relationScope`，关系视图顶部如实标注。
+  - **判据别写错**：诱导子图的判据是「关系两端的人物在不在本范围」，**不是**「关系的 source 章节在不在本范围」——`source` 可能是 `curated`/`推导` 这类非章节值（p1 有 140 条），拿它当判据会误报。
 - **审计重写**：`audit_final.py` 现在**直接 `import generate_report as G` 调 `G.build_scope("full")`** 审最终模型（不再读中间文件另算口径），分级 INFO/WARNING/ERROR，有 ERROR `sys.exit(1)`。旧版 `[9]` 规则是 `for ...: pass` 的假实现，已换成真 stale 检查。
 - **误报陷阱**：geo_annotations 里 93 条"不在地点表"其实都是**旧称**（应天→南京、濠州→凤阳、平江→苏州），已由 `mentioned_as` 别名关联合并——判定 stale 必须"先查原名、再查别名"，否则虚报 93 条。只有同名的**朝鲜延安 vs 陕西延安**是真正待拆的同名异地。
-- **SW**：后台更新改为 `event.waitUntil(network)` 保活（原先 `return cached || network` 会让 worker 生命周期在 fetch 完成前结束）；`CACHE` bump 到 `v4`。
+- **SW**：后台更新改为 `event.waitUntil(network)` 保活（原先 `return cached || network` 会让 worker 生命周期在 fetch 完成前结束）；**大版本改动记得 bump CACHE**（Phase 3~6 已到 `v5`）——bump 后新缓存为空，用户首次访问必走网络，立刻拿到新版。
 - **前端小修**：`setupFullInteractions` 的 AbortController 提升为模块级 `_fgAbort`（原先挂在会被 innerHTML 替换的 canvas 上，window 级监听会累积泄漏）；`loadLeaflet()` 失败时 `_leafletPromise=null` 允许重试。
 
-### 前端验证（无浏览器时）
-`agent-browser` 不可用（或 PATH 被裁）时，用 Node 直接跑渲染函数 + 断言数据不变量，比肉眼看截图更靠谱：
+### 前端验证：先用无头 Chrome，再退到 Node
+**`.dump/_browser_check.py` 是本项目首选的前端验真手段**（不需要 agent-browser / jsdom）：
+
+```powershell
+python src/build.py --scope full --out .ci/index.html --quiet
+python .dump/_browser_check.py .ci/index.html        # 7 个场景，含 deep link / 高亮 / 地图
+```
+
+原理：`chrome --headless=new --virtual-time-budget=9000 --dump-dom <file-url>#hash` 把渲染后的 DOM 打出来；脚本报错则 DOM 为空，所以「断言渲染结果里该出现什么」同时验「没崩」与「功能对」。要点：
+
+- **断言必须用正则匹配真实标签**（如 `<mark class="hl">`、`class="character-card [^"]*flash"`、`<dialog id="detailDialog" open`）。产物把 JS 内联在同文件里，`'flash' in dom`、`'detail-grid' in dom` 这类裸串**永远为真**——那些词在脚本源码里本来就有，会假通过。
+- **带超时自摘的类要短预算抓**：卡片定位的 `flash` 类 2.6s 后自己摘掉，用 `--virtual-time-budget=1500` 才抓得到。
+- `Path.as_uri()` **只接受绝对路径**；CI 里传 `.ci/index.html` 必须先 `.resolve()`，否则 `ValueError`。
+- 容器里以 root 跑 Chrome 会拒绝启动，脚本会在 `geteuid()==0` 时自动加 `--no-sandbox`；找不到 Chrome 时**跳过并返回 0**（不误判 CI 失败）。
+- 需要 CHROME_BIN 时：`CHROME_BIN=google-chrome python .dump/_browser_check.py 产物`。
+
+没有浏览器时的退路：Node 抽 DATA + eval 渲染函数 + 断言不变量。
 ```javascript
 // node: 从 index.html 抽 DATA 与目标函数，eval 后断言
 const DATA = JSON.parse(html.match(/const DATA=(\{[\s\S]*?\});\s*\n/)[1]);
@@ -194,9 +221,30 @@ sha = hashlib.sha1(b'blob %d\0' % len(data) + data).hexdigest()   # data=文件�
 | 编辑工具报成功但文件内容没变 | 写入偶发未落盘 | 改完立刻 grep/读取复核，别只信返回值 |
 | 审计数字与页面差 1（6 vs 7 未知年份） | 审计自己另写一套判定 | 统一走 `src/core/`（见共享核心节） |
 | 构建要等两分钟 | Python 端 800 轮 numpy 力导布局 | 已移除；Python 只给确定性初始坐标（见重构节） |
+| `--check` 报 `ValueError: relative path can't be expressed` | `Path.as_uri()` 只吃绝对路径 | 用前 `.resolve()` |
+| CI 报 `can't open file .../_browser_check.py` | 新脚本没进 `_sync_docs.py` 的 FILES 清单（`.gitignore` 只挡本地提交，挡不住"忘了加清单"） | 新增 `.dump/` 脚本后立刻补 FILES 并重跑 `_sync_docs.py` |
+| 浏览器自检"通过"但功能其实坏了 | 断言用了裸字符串，命中的是内联 JS 源码 | 改成正则匹配渲染出的标签（见前端验证节） |
+| 浏览器自检抓不到 `flash` 之类的高亮类 | 该类 2.6s 后自摘，dump 时已消失 | 该条用例单独设 `budget`（如 1500） |
+| 容器/CI 里 Chrome 不启动 | root 身份默认拒绝沙箱 | `--no-sandbox`（脚本已按 `geteuid()==0` 自动加） |
+| 拆分后 `__DATA__` 查不到 | 占位符随脚本落在 `web/js/app.js`，不在骨架 | 查 JS 文件；骨架只查 `/*{{INLINE_CSS}}*/`、`/*{{INLINE_JS}}*/`、`__TITLE__` |
+| 拆分后模板多了两个换行 | 骨架锚点与 `</style>`/`</script>` 之间那个 `\n` 与文件自带换行叠加 | 锚点后**不要**留换行（`/*{{INLINE_CSS}}*/</style>`） |
+| 页面仍是旧版 | SW 缓存 | bump `sw.js` 的 CACHE（当前 `v5`）后重部署 |
 
 ## 典型任务脚本
-- 补录人物：`manual_persons.json` 写卡 → merge 注入 → `manual_relations.json` 加关系 → merge+generate → 部署。
-- **JS 改完必跑解析校验**：提取 index.html 末段 `<script>`（`rfind('</script>')`），`node -e "new Function(...)"`；只动 CSS 可省。
+- **改动后的标准收尾（四步全绿 → 部署 → 同步）**：
+  ```powershell
+  python -m compileall -q src tests
+  python tests/run_tests.py            # 28 例
+  python src/build.py                  # ERROR 0 才继续
+  python src/audit_final.py            # ERROR 0
+  python .dump/_browser_check.py       # 7/7（要 Chrome）
+  python .dump/_deploy_index_now.py    # index.html + sw.js + README（有 3 次重试）
+  python .dump/_sync_docs.py           # 源码/数据/web/tests/.github/文档 全量
+  python .dump/_diff_remote.py         # 期望「过时 0」
+  ```
+  提交说明可临时覆盖：`MING_DEPLOY_MESSAGE="..."` / `MING_SYNC_MESSAGE="..."`（在 bash 里 `VAR=值 python 脚本.py` 即可，**不要**用 `env -u`，本会话 `env` 不可用）。
+- 补录人物：`manual_persons.json` 写卡 → merge 注入 → `manual_relations.json` 加关系 → merge+build → 部署。
+- **JS 改完必跑解析校验**：`node --check web/js/app.js`（拆分后直接对文件，不再需要从 HTML 抽 `<script>`）；只动 CSS 可省，但要查花括号平衡。
+- **新增 `.dump/` 脚本后**：立刻加进 `_sync_docs.py` 的 FILES 清单并重跑同步——CI 会调用 `.dump/_browser_check.py`，漏传就会红。
 - 对同一文件连续多次脚本替换时，**每次替换前重新 grep 实文**（锚点可能已被上一轮替换改变）。
 - 充分性核查：`discover_persons.py` 三信号 → 表字信号兜底 → 抽查 → 结论。

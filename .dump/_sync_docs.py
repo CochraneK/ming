@@ -68,6 +68,8 @@ FILES = [
     (".dump/_split_template.py", ".dump/_split_template.py"),
     (".dump/_migrate_template.py", ".dump/_migrate_template.py"),
     (".dump/_check_split.py", ".dump/_check_split.py"),
+    # Phase 6 前置重构：两处重复的人物详情模板收敛为 showPerson()
+    (".dump/_refactor_person_detail.py", ".dump/_refactor_person_detail.py"),
     # 无头浏览器自检（CI 里由 .github/workflows/ci.yml 调用，必须在仓库里）
     (".dump/_browser_check.py", ".dump/_browser_check.py"),
     # 前端资源（Phase 4：模板/CSS/JS 从 Python 字面量拆出，构建时内联）
