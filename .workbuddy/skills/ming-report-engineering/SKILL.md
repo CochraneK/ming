@@ -310,7 +310,9 @@ sha = hashlib.sha1(b'blob %d\0' % len(data) + data).hexdigest()   # data=文件�
 | 容器/CI 里 Chrome 不启动 | root 身份默认拒绝沙箱 | `--no-sandbox`（脚本已按 `geteuid()==0` 自动加） |
 | 拆分后 `__DATA__` 查不到 | 占位符随脚本落在 `web/js/app.js`，不在骨架 | 查 JS 文件；骨架只查 `/*{{INLINE_CSS}}*/`、`/*{{INLINE_JS}}*/`、`__TITLE__` |
 | 拆分后模板多了两个换行 | 骨架锚点与 `</style>`/`</script>` 之间那个 `\n` 与文件自带换行叠加 | 锚点后**不要**留换行（`/*{{INLINE_CSS}}*/</style>`） |
-| 页面仍是旧版 | SW 缓存 | bump `sw.js` 的 CACHE（当前 `v9`）后重部署 |
+| 页面仍是旧版 | SW 缓存 | bump `sw.js` 的 CACHE（当前 `v9`）后重部署；**纯数据勘误轮也要 bump** |
+| 刚部署完就核验线上，读到的却是上一版 | Pages 边缘 `max-age=600` | 用**时间戳 cache-buster**（`?ts=<now>`）或读 `raw.githubusercontent.com/…/main/<path>`；**固定查询串会被按该 URL 缓存住**（`?v=8` 曾拿到 v7 字节） |
+| 想确认线上产物到底是不是本地这份 | 只比文件大小、或只看 diff | 跑 `.dump/_post_publish_check.py`：逐字节 sha1 比对 + 解出 `CACHE` 名 + 合规巡检 + CI 结论 |
 | **单文件体积莫名翻倍**（5.6 MB → 11.4 MB） | 骨架里（注释也行）写了数据占位符名，字符串替换把整份 payload 注入两遍 | 骨架里永不书写占位符；`doc.count('\"scopeLabel\"')==1` 自检（见二轮节） |
 | `RangeError: Maximum call stack size exceeded` / 图谱视图整块空白 | `const` 箭头函数在自己体内兜底调用自己（`…:activeGraph()`） | 兜底回落到**另一个值**（`DATA.relationGraphFull`） |
 | 深链 `net=entity`/`net=full` 进来图形区空白、或两块图同时出现 | `display` 表达式只覆盖了部分模式 | 覆盖全部模式（`ego?'none':'block'`），两个容器都要有显示控制 |
@@ -332,6 +334,7 @@ sha = hashlib.sha1(b'blob %d\0' % len(data) + data).hexdigest()   # data=文件�
   python .dump/_deploy_index_now.py    # index.html + sw.js + README（有 3 次重试）
   python .dump/_sync_docs.py           # 源码/数据/web/tests/.github/文档 全量
   python .dump/_diff_remote.py         # 期望「过时 0」
+  python .dump/_post_publish_check.py  # 合规巡检 + 线上产物逐字节核对 + CI 结论
   ```
   提交说明可临时覆盖：`MING_DEPLOY_MESSAGE="..."` / `MING_SYNC_MESSAGE="..."`（在 bash 里 `VAR=值 python 脚本.py` 即可，**不要**用 `env -u`，本会话 `env` 不可用）。
 - 补录人物：`manual_persons.json` 写卡 → merge 注入 → `manual_relations.json` 加关系 → merge+build → 部署。

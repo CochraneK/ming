@@ -28,8 +28,9 @@
 ## 方法学与发布纪律
 - **写作**：不硬凑字数；观点挂文献且必须核实；书内情节/语录**必须先在原书 txt 命中原文**（0 命中即弃用）。「宁可留空不可猜错」。
 - **版权硬约束**：`明朝那些事儿.txt` 与 `data/chapters.json` **绝不发布**（换电脑私拷）。历史 commit `7190215d` 仍含该 blob，用户明确「不用管了」。发布后必跑巡检：`gh api "/repos/CochraneK/ming/git/trees/main?recursive=1" --jq '.tree[]|select(.type=="blob")|.path' | grep -Ei 'chapters\.json|明朝那些事儿'`，期望无输出。
-- **发布**：`.dump/_sync_docs.py` 是**超集**（FILES 已含 index.html/sw.js/README.md，走 `POST /git/blobs`，无 1MB 限制）→ **只跑它即可完成发布**（`MING_SYNC_MESSAGE=` 可覆盖）。`_deploy_index_now.py` 仅作「只改前端」轻量通道，重复跑只多一个空提交。**新增文件必须补 FILES 清单**。差异检查 `_diff_remote.py`（期望「过时 0」）。
+- **发布**：`.dump/_sync_docs.py` 是**超集**（FILES 已含 index.html/sw.js/README.md，走 `POST /git/blobs`，无 1MB 限制）→ **只跑它即可完成发布**（`MING_SYNC_MESSAGE=` 可覆盖）。`_deploy_index_now.py` 仅作「只改前端」轻量通道，重复跑只多一个空提交。**新增文件必须补 FILES 清单**。差异检查 `_diff_remote.py`（期望「过时 0」）。**发布后体检 `.dump/_post_publish_check.py`**：合规巡检（线上文件树）+ 线上产物逐字节 sha1 核对 + 解出 `CACHE` 名 + CI 结论，一条命令跑完。
   - **核验线上必须绕 CDN**：Pages 边缘 `max-age=600`，**不要用固定查询串**（会被按该 URL 缓存住），用**时间戳 cache-buster** 或读 `raw.githubusercontent.com/<owner>/<repo>/main/<path>`。SW 更新检查本身绕过 HTTP 缓存，别据此误判。
+  - **记忆/skill 文档也在发布清单里** → 先写完文档再同步，否则 `_diff_remote.py` 立刻又报「过时」。
 - **前端验真**：断言**必须正则匹配渲染标签**（产物内联 JS，裸串会假通过）；`--dump-dom` 把布尔属性序列化成 `key=""`；属性顺序不可假设（`id="x"[^>]*value="…"`）；区分「渲染出来」与「源码里写着」用 `scoped`；兜底路径注入语法错误副本验证。
 - **增量勘误层**（重跑 merge 不丢）：`manual_corrections.json` / `manual_lifespans.json` / `manual_persons.json` / `derived_chapter_persons.json` / `event_places.json`（注入须在归一化循环**之前**）/ `geo_annotations.json` / `manual_event_years.json`。
 - **同名异地两级拆分**（`merge.py`）：`location_splits`（键=**原始地点串**）+ `location_splits_by_chapter`（键=**章节 key**）。判据必须落在「章节」或「原始串」上（两处同名地点的片段名本来就相同）。**两处 splits 必须在地点归一化循环之前加载**，归一化后才走 `location_fixes`/geo 坐标。已拆：延安府（陕西/朝鲜）、龙山（浙江/朝鲜）。
