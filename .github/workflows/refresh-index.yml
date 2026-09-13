@@ -21,7 +21,7 @@ concurrency:
 jobs:
   refresh:
     if: github.actor != 'github-actions[bot]'
-    name: 重建公开报告、样式、主题镜像与 README 统计
+    name: 重建公开报告、样式、体验镜像与 README 统计
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -39,6 +39,9 @@ jobs:
       - name: 同步视觉主题镜像
         run: python src/sync_theme.py
 
+      - name: 同步 V3 产品体验镜像
+        run: python src/sync_experience.py
+
       - name: 同步 README 最终模型口径
         run: python src/sync_readme.py
 
@@ -54,11 +57,11 @@ jobs:
             exit 0
           fi
           if git diff --quiet -- web/css/app.css web/template/index.html README.md index.html; then
-            echo "基础 CSS / 主题镜像 / README.md / index.html 已与源码一致，无需提交。"
+            echo "基础 CSS / 主题镜像 / V3 体验镜像 / README.md / index.html 已与源码一致，无需提交。"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add web/css/app.css web/template/index.html README.md index.html
-          git commit -m "chore: normalize css and refresh generated report"
+          git commit -m "chore: refresh generated report and experience mirror"
           git push origin HEAD:main
