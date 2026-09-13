@@ -20,9 +20,8 @@ concurrency:
 
 jobs:
   refresh:
-    # 自动生成提交也会触发 web/**；bot 提交直接跳过，避免生成镜像造成二次循环。
     if: github.actor != 'github-actions[bot]'
-    name: 重建公开报告、主题镜像与 README 统计
+    name: 重建公开报告、样式、主题镜像与 README 统计
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -33,6 +32,9 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
+
+      - name: 规范化基础 CSS
+        run: python src/normalize_css.py
 
       - name: 同步视觉主题镜像
         run: python src/sync_theme.py
@@ -51,12 +53,12 @@ jobs:
             echo "main 已有更新；放弃本次旧快照回写，由更新提交触发的新任务负责。"
             exit 0
           fi
-          if git diff --quiet -- README.md web/template/index.html index.html; then
-            echo "主题镜像 / README.md / index.html 已与源码一致，无需提交。"
+          if git diff --quiet -- web/css/app.css web/template/index.html README.md index.html; then
+            echo "基础 CSS / 主题镜像 / README.md / index.html 已与源码一致，无需提交。"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md web/template/index.html index.html
-          git commit -m "chore: refresh generated report, theme mirror and README stats"
+          git add web/css/app.css web/template/index.html README.md index.html
+          git commit -m "chore: normalize css and refresh generated report"
           git push origin HEAD:main
