@@ -108,6 +108,7 @@ FILES = [
     (".workbuddy/memory/2026-09-03.md", ".workbuddy/memory/2026-09-03.md"),
     (".workbuddy/memory/2026-09-04.md", ".workbuddy/memory/2026-09-04.md"),
     (".workbuddy/memory/2026-09-13.md", ".workbuddy/memory/2026-09-13.md"),
+    (".workbuddy/memory/2026-09-14.md", ".workbuddy/memory/2026-09-14.md"),
 ]
 
 ENV = {k: v for k, v in os.environ.items()}
