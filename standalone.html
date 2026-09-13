@@ -1188,9 +1188,12 @@ const norm=v=>String(v==null?'':v).trim().toLowerCase();
 const pct=(a,b)=>b?Math.round(a*100/b):0;
 
 /* ------------------------------ 全局快捷搜索 ------------------------------ */
-let commandRows=null,commandResults=[],commandActive=0,commandLastFocus=null;
+/* V5_LAZY_COMMAND_DATA */
+let commandRows=null,commandRowsFull=false,commandResults=[],commandActive=0,commandLastFocus=null;
+function commandHasFullData(){return typeof window.__MING_ENSURE_FULL_DATA!=='function'||window.__MING_FULL_DATA_READY===true;}
 function buildCommandRows(){
-  if(commandRows)return commandRows;
+  const full=commandHasFullData();
+  if(commandRows&&commandRowsFull===full)return commandRows;
   const rows=[];
   VIEWS.forEach(([id,title,keys])=>rows.push({kind:'view',id,title,meta:'切换到 '+title,search:norm(title+' '+keys)}));
   (DATA.characters||[]).forEach(x=>{
@@ -1199,7 +1202,7 @@ function buildCommandRows(){
   });
   (DATA.locations||[]).forEach(x=>rows.push({kind:'place',id:x.ancient,title:x.ancient,meta:[x.modern,x.region].filter(Boolean).join(' · '),search:norm([x.ancient,x.modern,x.region,(x.altNames||[]).join(' '),(x.mentionedAs||[]).join(' ')].join(' ')),raw:x}));
   (DATA.events||[]).forEach(x=>rows.push({kind:'event',id:x.id,title:x.name,meta:[x.year||'年份待考',x.category,x.location].filter(Boolean).join(' · '),search:norm([x.name,x.year,x.category,x.type,x.location,(x.participants||[]).join(' ')].join(' ')),raw:x}));
-  commandRows=rows;
+  commandRows=rows;commandRowsFull=full;
   return rows;
 }
 function commandScore(row,q){
@@ -1240,7 +1243,14 @@ function moveCommand(delta){
 }
 function openCommand(seed){
   const shell=commandShell();commandLastFocus=document.activeElement;shell.hidden=false;document.body.classList.add('command-open');document.querySelectorAll('.command-trigger').forEach(b=>b.setAttribute('aria-expanded','true'));
-  const input=shell.querySelector('#commandInput');input.value=seed||'';commandActive=0;renderCommand(input.value);requestAnimationFrame(()=>input.focus());
+  const input=shell.querySelector('#commandInput');input.value=seed||'';commandActive=0;renderCommand(input.value);
+  if(!commandHasFullData()&&typeof window.__MING_ENSURE_FULL_DATA==='function'){
+    window.__MING_ENSURE_FULL_DATA('command').then(()=>{commandRows=null;renderCommand(input.value);}).catch(err=>{
+      const host=document.getElementById('commandResults');if(host)host.innerHTML='<div class="command-empty">完整知识库加载失败，可稍后重试。</div>';
+      if(typeof failBar==='function')failBar('full-data','完整知识库加载失败：'+String((err&&err.message)||err),{level:'error',retry:()=>location.reload(),retryLabel:'重新加载'});
+    });
+  }
+  requestAnimationFrame(()=>input.focus());
 }
 function closeCommand(){
   const shell=document.getElementById('commandPalette');if(!shell||shell.hidden)return;shell.hidden=true;document.body.classList.remove('command-open');document.querySelectorAll('.command-trigger').forEach(b=>b.setAttribute('aria-expanded','false'));if(commandLastFocus&&document.contains(commandLastFocus))try{commandLastFocus.focus()}catch(_){}

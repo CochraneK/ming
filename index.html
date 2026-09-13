@@ -58,8 +58,10 @@ setTimeout(function(){
   (document.body||document.documentElement).appendChild(bar);
 },5000);
 </script>
-<script src="assets/data.js"></script>
+<script src="assets/boot-data.js"></script>
+<script src="assets/data-loader.js"></script>
 <script src="assets/app.js"></script>
+<script src="assets/lazy-data.js"></script>
 <script>
 /* V2 首页探索路径：只增强已有总览 DOM，业务跳转继续复用 app.js 的 data-open-view 委托。 */
 (function(){
