@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""统一构建入口（Phase 4）。
+"""统一构建入口（Phase 4 / V4 双交付）。
 
-     python src/build.py                          # 全书 → index.html（单文件）
+     python src/build.py                          # 全书 → standalone.html（单文件）
      python src/build.py --scope p3               # 叁部 → report_p3.html
      python src/build.py --target web             # 分离资源版 → dist/full/
      python src/build.py --check                  # 只校验不落盘
@@ -13,15 +13,16 @@
 
 两个 target 的差别：
 - ``standalone``（默认）：CSS/JS/DATA 全部内联，产物是可直接双击打开的单文件，
-  用于 GitHub Pages 发布（唯一正式交付形态）。
-- ``web``：CSS/JS/DATA 拆成 ``assets/`` 外链，便于本地调试与浏览器 DevTools
-  逐文件断点；数据来自同一份 payload，因此两种产物内容等价。
+  作为离线携带 / 归档版本；默认全书文件名为 ``standalone.html``，避免误覆盖在线入口；
+- ``web``：基础样式、主题、体验层、业务 JS 与 DATA 全部拆进 ``assets/``，
+  用于在线发布和浏览器缓存。两种产物来自同一份 payload，内容等价。
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -34,10 +35,11 @@ import validators as V  # noqa: E402
 SCOPES = ("full", "p1", "p2", "p3", "p4", "p5", "p6", "p7")
 DIST_DIR = BASE / "dist"
 SW_PATH = BASE / "sw.js"
+THEME_CSS_PATH = BASE / "web" / "css" / "theme.css"
+EXPERIENCE_CSS_PATH = BASE / "web" / "css" / "experience.css"
+EXPERIENCE_JS_PATH = BASE / "web" / "js" / "experience.js"
 
-# 单文件模板里的历史遗留：某处模板字符串多了一个反引号，发布前统一抹平
-# （真正的替换在 generate_report.compose_document 里，此处只作说明锚点）。
-# web target 下骨架里的两个锚点整块替换（含外层标签），需要与骨架逐字一致。
+# web target 下骨架里的两个主锚点整块替换（含外层标签），需要与骨架逐字一致。
 _STYLE_ANCHOR = "<style>\n/*{{INLINE_CSS}}*/</style>"
 _SCRIPT_ANCHOR = "<script>\n/*{{INLINE_JS}}*/</script>"
 _DATA_CONST = "const DATA=__DATA__;\n"
@@ -45,11 +47,21 @@ _INSIGHT_CONST = "const INSIGHT_DATA=__INSIGHT_DATA__;\n"
 
 
 def _json_for_script(obj) -> str:
-    """把 Python 对象序列化成可安全嵌进 <script> 的 JSON。
-
-    ``</`` 必须转义，否则数据里一旦出现 ``</script>`` 会提前闭合脚本标签。
-    """
+    """把 Python 对象序列化成可安全嵌进 <script> 的 JSON。"""
     return json.dumps(obj, ensure_ascii=False).replace("</", "<\\/")
+
+
+def _externalize_generated_block(source: str, *, tag: str, generated_from: str, replacement: str) -> str:
+    """把模板里的生成镜像块替换成外链，且要求恰好命中一次。"""
+    pattern = re.compile(
+        r'<%s\s+data-generated-from="%s">.*?</%s>'
+        % (tag, re.escape(generated_from), tag),
+        re.DOTALL,
+    )
+    updated, count = pattern.subn(replacement, source, count=1)
+    if count != 1:
+        raise SystemExit("web target 找不到唯一生成镜像块：%s" % generated_from)
+    return updated
 
 
 def render_standalone(payload: dict) -> str:
@@ -58,17 +70,28 @@ def render_standalone(payload: dict) -> str:
 
 
 def render_web(payload: dict, out_dir: Path) -> dict:
-    """分离资源形态：写 index.html + assets/*，并带上页面注册的 sw.js。"""
+    """分离资源形态：HTML 只保留骨架，所有项目 CSS/JS/DATA 均写入 assets/。"""
     skeleton = G.TEMPLATE_PATH.read_text(encoding="utf-8")
     css = G.CSS_PATH.read_text(encoding="utf-8")
     js = G.JS_PATH.read_text(encoding="utf-8")
+    theme_css = THEME_CSS_PATH.read_text(encoding="utf-8")
+    experience_css = EXPERIENCE_CSS_PATH.read_text(encoding="utf-8")
+    experience_js = EXPERIENCE_JS_PATH.read_text(encoding="utf-8")
+
     for anchor, name in ((_STYLE_ANCHOR, "css"), (_SCRIPT_ANCHOR, "js")):
         if anchor not in skeleton:
             raise SystemExit("骨架缺少锚点 %s（%s 无法外链）" % (name, anchor))
 
     assets = out_dir / "assets"
     assets.mkdir(parents=True, exist_ok=True)
-    (assets / "app.css").write_text(css, encoding="utf-8")
+    files = {
+        "app.css": css,
+        "theme.css": theme_css,
+        "experience.css": experience_css,
+        "experience.js": experience_js,
+    }
+    for name, content in files.items():
+        (assets / name).write_text(content, encoding="utf-8")
 
     body = js.replace(_DATA_CONST, "", 1).replace(_INSIGHT_CONST, "", 1)
     (assets / "app.js").write_text(body, encoding="utf-8")
@@ -78,20 +101,43 @@ def render_web(payload: dict, out_dir: Path) -> dict:
     )
     (assets / "data.js").write_text(data_js, encoding="utf-8")
 
-    # app.js 注册的是相对于页面根目录的 sw.js。旧版 web target 没有复制它，
-    # 导致分离资源版每次都触发「Service Worker 注册失败」提示。
+    # app.js 注册的是相对于页面根目录的 sw.js。
     sw = SW_PATH.read_text(encoding="utf-8")
     (out_dir / "sw.js").write_text(sw, encoding="utf-8")
 
     html = skeleton.replace(_STYLE_ANCHOR, '<link rel="stylesheet" href="assets/app.css">')
-    html = html.replace(_SCRIPT_ANCHOR, '<script src="assets/data.js"></script>\n<script src="assets/app.js"></script>')
+    html = _externalize_generated_block(
+        html,
+        tag="style",
+        generated_from="web/css/theme.css",
+        replacement='<link rel="stylesheet" href="assets/theme.css">',
+    )
+    html = _externalize_generated_block(
+        html,
+        tag="style",
+        generated_from="web/css/experience.css",
+        replacement='<link rel="stylesheet" href="assets/experience.css">',
+    )
+    html = html.replace(
+        _SCRIPT_ANCHOR,
+        '<script src="assets/data.js"></script>\n<script src="assets/app.js"></script>',
+    )
+    html = _externalize_generated_block(
+        html,
+        tag="script",
+        generated_from="web/js/experience.js",
+        replacement='<script src="assets/experience.js"></script>',
+    )
     html = html.replace("__TITLE__", payload["scopeLabel"])
     (out_dir / "index.html").write_text(html, encoding="utf-8")
     return {
         "index.html": len(html),
         "assets/app.css": len(css),
+        "assets/theme.css": len(theme_css),
+        "assets/experience.css": len(experience_css),
         "assets/app.js": len(body),
         "assets/data.js": len(data_js),
+        "assets/experience.js": len(experience_js),
         "sw.js": len(sw),
     }
 
@@ -114,6 +160,9 @@ def check_render(payload: dict, findings: list) -> list:
     for anchor in (_STYLE_ANCHOR, _SCRIPT_ANCHOR):
         if anchor not in skeleton:
             findings.append(V.Finding(V.ERROR, "V-TPL-05", "骨架缺少锚点：%s" % anchor))
+    for generated_from in ("web/css/theme.css", "web/css/experience.css", "web/js/experience.js"):
+        if ('data-generated-from="%s"' % generated_from) not in skeleton:
+            findings.append(V.Finding(V.ERROR, "V-TPL-06", "骨架缺少生成镜像块：%s" % generated_from))
     return findings
 
 
@@ -121,7 +170,7 @@ def _default_out(scope: str, target: str) -> Path:
     if target == "web":
         return DIST_DIR / scope
     if scope == "full":
-        return BASE / "index.html"
+        return BASE / "standalone.html"
     return BASE / ("report_%s.html" % scope)
 
 
@@ -170,7 +219,7 @@ def main(argv=None) -> int:
         written = render_web(payload, out)
         print("[3/3] 分离资源已生成 %s" % out)
         for name, size in written.items():
-            print("      %-16s %d 字符" % (name, size))
+            print("      %-24s %d 字符" % (name, size))
     return 0
 
 

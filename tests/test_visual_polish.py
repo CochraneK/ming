@@ -25,19 +25,16 @@ def test_visual_polish_and_a11y_hooks_exist():
 def test_theme_css_is_single_source_for_template_mirror():
     skeleton = B.G.TEMPLATE_PATH.read_text(encoding="utf-8")
     theme = ST.THEME.read_text(encoding="utf-8")
-    # 首次迁移时模板可能还是 legacy 独立 style；同步后必须变成带来源标记的生成镜像。
     converted = ST.render_template(skeleton, theme)
     assert theme.rstrip() in converted
     assert converted.count(ST.SOURCE_ATTR) == 1
     assert converted.count(ST.START) == 1
     assert converted.count(ST.END) == 1
-    # 同步器必须幂等，否则发布工作流会不断制造无意义提交。
     assert ST.render_template(converted, theme) == converted
 
 
 def test_v2_information_architecture_hooks_exist():
     skeleton = B.G.TEMPLATE_PATH.read_text(encoding="utf-8")
-    # 12 个原视图一个不少，只改变信息架构，不改业务 view id。
     expected = (
         "overview", "distribution", "timeline", "dynasty", "chronicle",
         "characters", "locations", "events", "relations",
@@ -49,7 +46,6 @@ def test_v2_information_architecture_hooks_exist():
     for label in ("全局叙事", "实体索引", "探索分析"):
         assert 'aria-label="%s"' % label in skeleton
 
-    # 首页探索路径应复用 app.js 已有的 data-open-view 委托，而不是复制 setView。
     assert "V2 首页探索路径" in skeleton
     assert "MutationObserver" in skeleton
     assert "function setView" not in skeleton
@@ -73,19 +69,18 @@ def test_web_target_copies_service_worker_and_reports_all_assets():
         out = Path(td)
         written = B.render_web(payload, out)
 
-        assert (out / "index.html").exists()
-        assert (out / "assets" / "app.css").exists()
-        assert (out / "assets" / "app.js").exists()
-        assert (out / "assets" / "data.js").exists()
-        assert (out / "sw.js").exists(), "web target 必须带上 app.js 实际注册的 worker"
-        assert (out / "sw.js").read_text(encoding="utf-8") == B.SW_PATH.read_text(encoding="utf-8")
-
-        for name in ("index.html", "assets/app.css", "assets/app.js", "assets/data.js", "sw.js"):
+        expected = (
+            "index.html", "assets/app.css", "assets/theme.css", "assets/experience.css",
+            "assets/app.js", "assets/data.js", "assets/experience.js", "sw.js",
+        )
+        for name in expected:
+            assert (out / name).exists(), "web target 缺少 %s" % name
             assert name in written, "构建统计漏报 %s" % name
             assert written[name] > 0
+        assert (out / "sw.js").read_text(encoding="utf-8") == B.SW_PATH.read_text(encoding="utf-8")
 
 
 def test_service_worker_cache_bumped_for_frontend_change():
     sw = B.SW_PATH.read_text(encoding="utf-8")
-    assert "CACHE_PREFIX + 'v12'" in sw
-    assert "V3" in sw
+    assert "CACHE_PREFIX + 'v13'" in sw
+    assert "V4" in sw

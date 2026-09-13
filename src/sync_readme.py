@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""让 README 的公开规模口径与最终模型保持一致。
+"""让 README 的公开规模口径与最终模型 / 当前交付架构保持一致。
 
-README 是项目首页，但其中地点/事件等数字过去靠人工维护，数据勘误后容易滞后。
-本脚本直接复用 ``generate_report.build_scope("full")`` 的最终模型口径，只更新
-README 中少数明确标记的公开统计与 V2 导航摘要，不碰长篇说明正文。
+README 是项目首页，但其中地点/事件等数字以及交付说明过去靠人工维护，数据勘误或
+发布架构调整后容易滞后。本脚本直接复用 ``generate_report.build_scope("full")`` 的
+最终模型口径，并同步少数明确标记的导航与 V4 双交付说明，不碰长篇说明正文。
 
 用法：
     python src/sync_readme.py          # 原地更新 README.md
@@ -102,42 +102,69 @@ def render_readme(source: str) -> str:
         "人物语录覆盖",
     )
 
-    # web target 已包含页面实际注册的 Service Worker，README 同步反映完整产物。
+    # V4：在线版与离线版分开交付。这里兼容 V3 旧文案与已同步过的 V4 文案，保持幂等。
+    text = re.sub(
+        r"^基于《明朝那些事儿》七部 156 章全文抽取整理的.*$",
+        "基于《明朝那些事儿》七部 156 章全文抽取整理的静态知识库。在线版采用分离资源交付（轻量 `index.html` + `assets/`，便于浏览器独立缓存），同时保留 `standalone.html` 单文件离线版；以「圣地巡礼」为第一使用场景，把书中提到的地点落到真实坐标上，并保留每条记录的来源章节与核验状态。",
+        text,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    text = _replace_one(
+        text,
+        r"^GitHub Pages：.*$",
+        "GitHub Pages：`https://cochranek.github.io/ming/`（根目录 `index.html` 为在线分离资源入口；`standalone.html` 为可下载 / 双击打开的离线单文件版）",
+        "V4 在线入口",
+    )
     text = text.replace(
-        "拆成 `assets/app.css`、`assets/app.js`、`assets/data.js`，便于本地逐文件调试",
-        "拆成 `assets/app.css`、`assets/app.js`、`assets/data.js` 并复制 `sw.js`，便于本地逐文件调试",
+        "python src/build.py                 # 构建全书单文件 index.html",
+        "python src/build.py                 # 构建全书单文件 standalone.html",
+    )
+    text = re.sub(
+        r"^\| `--target standalone\\\|web` \|.*$",
+        "| `--target standalone\\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联到 `standalone.html`；`web`＝输出到 `dist/<scope>/`，拆成 `assets/app.css`、`assets/theme.css`、`assets/experience.css`、`assets/app.js`、`assets/data.js`、`assets/experience.js` 并复制 `sw.js`，用于在线发布与独立缓存 |",
+        text,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    text = text.replace(
+        "构建时会把 `web/template/index.html`（骨架）＋ `web/css/app.css` ＋ `web/js/app.js` 内联回单文件；三者拼回来的结果与拆分前的模板**逐字节一致**，由 `tests/test_template.py` 守着。",
+        "`standalone` 构建会把模板、基础样式、主题层、V3 体验层、业务脚本与 DATA 全部内联成一个文件；`web` 构建则把同一份源拆成可缓存资源。两种产物共享同一 payload 与回归测试，不维护两套业务逻辑。",
     )
 
     marker = "<!-- README_STATS_SYNC -->"
+    note = (
+        "> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme.py` 从最终模型自动刷新；"
+        "发布同步工作流会同时维护在线 `index.html + assets/` 与离线 `standalone.html`。"
+    )
     if marker not in text:
         anchor = "| 年谱 | 165 人 | 主要人物生卒横向展开，与年号对位 |\n"
         if anchor not in text:
             raise SystemExit("README 同步锚点异常（规模表尾部）")
-        text = text.replace(
-            anchor,
-            anchor
-            + "\n"
-            + marker
-            + "\n> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme.py` 从最终模型自动刷新；"
-            + "发布同步工作流会与根目录 `index.html` 一起维护。\n",
-            1,
+        text = text.replace(anchor, anchor + "\n" + marker + "\n" + note + "\n", 1)
+    else:
+        text = _replace_one(
+            text,
+            r"^> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme\.py`.*$",
+            note,
+            "V4 发布说明",
         )
 
     return text
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description="同步 README 中的最终模型统计")
+    parser = argparse.ArgumentParser(description="同步 README 中的最终模型统计与交付说明")
     parser.add_argument("--check", action="store_true", help="只检查 README 是否已同步")
     args = parser.parse_args(argv)
 
     source = README.read_text(encoding="utf-8")
     updated = render_readme(source)
     if updated == source:
-        print("README 已与最终模型一致")
+        print("README 已与最终模型和交付架构一致")
         return 0
     if args.check:
-        print("README 与最终模型不一致；请运行 python src/sync_readme.py", file=sys.stderr)
+        print("README 与最终模型或交付架构不一致；请运行 python src/sync_readme.py", file=sys.stderr)
         return 1
     README.write_text(updated, encoding="utf-8")
     print("README 已同步：%d → %d 字符" % (len(source), len(updated)))

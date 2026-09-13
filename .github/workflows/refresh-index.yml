@@ -21,7 +21,7 @@ concurrency:
 jobs:
   refresh:
     if: github.actor != 'github-actions[bot]'
-    name: 重建公开报告、样式、体验镜像与 README 统计
+    name: 重建在线版、离线版与 README 统计
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -48,8 +48,19 @@ jobs:
       - name: 同步 README 最终模型口径
         run: python src/sync_readme.py
 
-      - name: 构建 standalone 根产物
-        run: python src/build.py --scope full --out index.html --quiet
+      - name: 构建 V4 双交付产物
+        shell: bash
+        run: |
+          rm -rf .ci/publish
+          python src/build.py --scope full --target web --out .ci/publish --quiet
+          python src/build.py --scope full --target standalone --out standalone.html --quiet
+          rm -rf assets
+          cp .ci/publish/index.html index.html
+          cp -R .ci/publish/assets assets
+          # sw.js 的发布副本与源码应逐字一致；根目录直接保留源码即可。
+          cmp -s .ci/publish/sw.js sw.js
+          python src/check_delivery.py .ci/publish
+          python src/check_budget.py standalone.html
 
       - name: 仅在公开产物变化时回写 main
         shell: bash
@@ -59,12 +70,12 @@ jobs:
             echo "main 已有更新；放弃本次旧快照回写，由更新提交触发的新任务负责。"
             exit 0
           fi
-          if git diff --quiet -- web/js/app.js web/css/app.css web/template/index.html README.md index.html; then
-            echo "动态统计 / 基础 CSS / 主题镜像 / V3 体验镜像 / README.md / index.html 已与源码一致，无需提交。"
+          if git diff --quiet -- web/js/app.js web/css/app.css web/template/index.html README.md index.html standalone.html assets; then
+            echo "源码镜像、README、在线版与离线版均已一致，无需提交。"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add web/js/app.js web/css/app.css web/template/index.html README.md index.html
-          git commit -m "chore: refresh generated report and dynamic metrics"
+          git add web/js/app.js web/css/app.css web/template/index.html README.md index.html standalone.html assets
+          git commit -m "chore: publish split web and standalone reports"
           git push origin HEAD:main
