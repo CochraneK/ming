@@ -47,6 +47,11 @@ jobs:
       - name: 单元测试（共享核心 + 数据不变量 + 模板）
         run: python tests/run_tests.py
 
+      - name: README 同步脚本冒烟
+        run: |
+          python src/sync_readme.py
+          git diff --check -- README.md
+
       - name: 构建冒烟（standalone，不落盘）
         run: python src/build.py --check
 
