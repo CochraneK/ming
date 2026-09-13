@@ -7,6 +7,7 @@ from pathlib import Path
 
 import build
 import generate_report as G
+import sync_readme
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -59,9 +60,25 @@ def test_web_shell_is_small_and_data_is_separate():
         td.cleanup()
 
 
+def test_default_full_standalone_does_not_overwrite_online_index():
+    assert build._default_out("full", "standalone") == ROOT / "standalone.html"
+    assert build._default_out("full", "web") == ROOT / "dist" / "full"
+
+
 def test_refresh_workflow_publishes_web_root_and_keeps_standalone():
     text = (ROOT / ".github" / "workflows" / "refresh-index.yml").read_text(encoding="utf-8")
     assert "--target web" in text
     assert "standalone.html" in text
     assert "cp -R .ci/publish/assets assets" in text
     assert "git add" in text and "assets" in text and "standalone.html" in text
+
+
+def test_readme_sync_documents_dual_delivery_idempotently():
+    source = sync_readme.README.read_text(encoding="utf-8")
+    rendered = sync_readme.render_readme(source)
+    assert "在线版采用分离资源交付" in rendered
+    assert "`standalone.html` 单文件离线版" in rendered
+    assert "构建全书单文件 standalone.html" in rendered
+    assert "assets/experience.js" in rendered
+    assert "在线 `index.html + assets/` 与离线 `standalone.html`" in rendered
+    assert sync_readme.render_readme(rendered) == rendered
