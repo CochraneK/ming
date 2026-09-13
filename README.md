@@ -58,13 +58,46 @@ python -m http.server 8765 --bind 127.0.0.1
 数据链路：`章节正文 → 抽取结果 → 聚合数据 → 静态报告`（全量构建约 2 秒）。
 
 ```powershell
-python src/merge.py
-python src/generate_report.py
+python src/merge.py                 # 聚合（增量勘误层不会被覆盖）
+python src/build.py                 # 构建全书单文件 index.html
+python src/build.py --check         # 只校验不落盘（构建前的门禁）
+python tests/run_tests.py           # 单元测试（无第三方依赖，可直接跑）
 ```
+
+`src/build.py` 是 Phase 4 起的**统一构建入口**（`src/generate_report.py` 只保留数据聚合与模板装载）：
+
+| 参数 | 说明 |
+|---|---|
+| `--scope full\|p1..p7` | 构建全书或某一部（分部产物为 `report_pN.html`） |
+| `--target standalone\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联的单文件；`web`＝输出到 `dist/<scope>/`，拆成 `assets/app.css`、`assets/app.js`、`assets/data.js`，便于本地逐文件调试 |
+| `--out 路径` | 覆盖输出位置 |
+| `--check` | 跑完聚合与全部校验后不写文件，ERROR 时以退出码 2 中止 |
+| `--json 路径` | 把校验结论导出为 JSON |
+
+构建时会把 `web/template/index.html`（骨架）＋ `web/css/app.css` ＋ `web/js/app.js` 内联回单文件；三者拼回来的结果与拆分前的模板**逐字节一致**，由 `tests/test_template.py` 守着。
 
 - `data/data.json` 是聚合后的单一数据源。
 - `data/geo_annotations.json`（地点坐标/类型标注）、`data/manual_relations.json`（人工关系）、`data/manual_corrections.json`（勘误）、`data/manual_lifespans.json`（年谱）、`data/manual_persons.json`（补录人物）、`data/derived_chapter_persons.json`（文本反查出场）**重跑聚合不会丢失**，是可持续维护的增量层。
 - 分布诊断还读取 `data/extract_raw.json`（章节级原始抽取）与 `data/chapters.json`（正文长度）。每万字密度用于识别章节长度影响；非均匀分布本身不等于抽取错误，需结合内容类型与史料核验判断。
+- `data/chapters.json` 只在本地存在；**没有它也能正常构建**（章节标题取自 `extract_raw.json`，仅缺少字数统计），因此 CI 可以在不含原书全文的情况下完整跑通。
+
+## 分享与深链（URL 参数）
+
+地址栏即状态，复制地址即可分享当前视图：
+
+| 参数 | 示例 | 行为 |
+|---|---|---|
+| `view` | `#view=characters` | 切到指定视图（12 个视图 id 之一） |
+| `person` | `#view=characters&person=于谦` | 预填人物搜索、滚动定位并闪烁该卡片（**支持别名**，如 `person=王阳明`） |
+| `detail` | `#view=characters&person=于谦&detail=1` | 在上面的基础上直接打开详情弹窗 |
+| `event` | `#view=events&event=event-0001` | 打开事件详情弹窗（也接受事件名） |
+| `place` | `#place=七顶山` | 打开地点详情（地图视图下则展开右侧停靠面板） |
+| `era` | `#view=dynasty&era=万历` | 帝王视图中展开该年号 |
+| `map` | `#view=map&map=voyage` | 切换到郑和下西洋航线子视图 |
+| `q` | `#view=characters&q=王阳明` | 预填当前视图的搜索框 |
+
+打开任何详情（人物/事件/地点）都会把实体写回地址栏，因此「复制地址 → 另开」看到的是同一张卡。搜索命中的关键词会在列表里高亮（`mark.hl`）。
+
 
 ## 数据质量审计
 
@@ -84,6 +117,16 @@ python src/audit_final.py --quick  # 跳过分部构建，只查全书
 | INFO | 规模统计、已定位率、在位区间衔接（重叠/断档）、分部关系子图规模 |
 
 年份与经纬度判定复用 `src/core/year_parser.py`、`src/core/geo.py`，与页面完全一致；经纬度**禁止** `if not lat` 式判断（0 是合法值），统一用 `is None` + 类型 + 范围 + NaN 四重校验。
+
+### 三层校验，一套规则
+
+| 层 | 命令 | 内容 | 何时用 |
+|---|---|---|---|
+| 构建门禁 | `python src/build.py --check` | `src/validators.py` 的结构不变量（计数自洽、引用不悬空、ID 唯一、坐标合法、模板占位符已替换）＋内存渲染自检；有 ERROR 直接退出码 2，不产出半成品 | 每次构建前 |
+| 深审 | `python src/audit_final.py` | 上面的不变量（只吸收其 ERROR）＋业务规则：geo 标注对账、同名异地、在位区间衔接、分部诱导子图 | 发布前 |
+| 单元测试 | `python tests/run_tests.py`（或 `pytest tests`） | 共享核心（年份/经纬度/实体 ID/派系）、数据不变量、模板拆分等价性、Phase 6 前端锚点 | 改代码后 |
+
+CI（`.github/workflows/ci.yml`）在每次 push / PR 跑：版权合规巡检（`chapters.json`、`明朝那些事儿` 一旦入库即失败）→ Python/JS 语法 → 单元测试 → 构建门禁 → 深审 → 构建产物 + 无头浏览器自检（deep link、搜索高亮、tab 语义）。**不需要原书全文**即可全绿。
 
 ### 关系范围策略
 
@@ -149,16 +192,22 @@ python src/audit_final.py --quick  # 跳过分部构建，只查全书
 - **同名异地未拆分**：`延安府` 在标注表里有两个真实地点——陕西延安（张献忠籍贯）与朝鲜黄海南道延安（万历援朝战场，黑田长政被赵宪民兵击败处），地点表目前只取了陕西那个。需在 `location_fixes` 里拆成两条，否则朝鲜延安的巡礼点会错落到陕西。`python src/audit_final.py` 的 `R-GEO-03` 会持续提醒。
 - geo 标注里 93 条用的是**旧称**（应天→南京、濠州→凤阳、平江→苏州…），已由 `mentioned_as` 别名关联合并，属正常历史合并，非脏数据（审计以 INFO 列出）。
 
-### 6. 待决策：两处与既有约定冲突的方案项
-- **别名搜索**：`Ming_全面重构方案` 的 P2-01 要求搜索覆盖 aliases（崇祯→朱由检）。但现行约定是「人物搜索只匹配姓名字段，无匹配即空态」。若要做，建议加开关或只在**无精确姓名命中时**才回落到别名，需明确取舍。
-- **地图预加载**：方案 P2-06 建议「不首页空闲预载 Leaflet，只在 hover/点击地图时加载」。现行实现是首屏空闲后台预热（为消除点开地图的等待）。二者方向相反，需明确取舍。
+### 6. 已决策：两处曾与既有约定冲突的方案项
+两项都已按用户指示「都要」落地并验证：
+- **别名搜索**：人物搜索现在同时匹配姓名与别名，走统一的 `DATA.aliasIndex`（444 条）与 `matchesQuery()`；关系/事件/地点筛选共用同一套判定。实测 `崇祯→朱由检`、`崇祯帝→朱由检`、`道衍→姚广孝`、`王阳明→王守仁`、`朱重八→朱元璋`；无命中仍显示空态（不会回退成全部）。deep link 的 `person=` 同样吃别名。
+- **地图预加载**：保留首屏空闲后台预热（消除点开地图的等待），并叠加「鼠标悬停/手指触碰地图入口即立即预热」双保险；Leaflet 与瓦片只在需要时真正注入。二者不再冲突。
 
-### 7. 待推进：深层架构重构（方案 Phase 3~6）
-已完成的是 **Phase 1（正确性热修）+ Phase 2（移除 Python 力导布局）**。以下属大改，建议单独排期、分阶段迁移，保持每个提交可运行：
-- Phase 3 统一数据模型：canonical id（`person:xxx` / `place:xxx`）、entity_type、relation 用 source_id/target_id、faction 结构化（当前 1231 人产生 473 个 faction 字符串）。
-- Phase 4 拆分 `generate_report.py`（1567 行）：HTML 模板 / CSS / JS 独立文件 + `build.py` 统一入口 + standalone / web 双 target。
-- Phase 5 测试与 CI：pytest 数据不变量 + 浏览器 smoke + GitHub Actions（`audit` 已有退出码，可直接接入）。
-- Phase 6 体验：URL deep link、无障碍、人物图/实体图双模式。
+### 7. 深层架构重构（方案 Phase 3~6）进度
+| 阶段 | 状态 | 说明 |
+|---|---|---|
+| Phase 1 正确性热修 | ✅ 完成 | 关系图口径、numpy 静默降级、审计空转、`--dense` 丢失、SW 保活等 12 项 |
+| Phase 2 移除 Python 力导布局 | ✅ 完成 | 构建 109.7s → 2.3s，力模拟交给浏览器 |
+| Phase 3 统一数据模型 | ✅ 完成 | `entity_id()` → `person:朱由检`；`relation_id()` → `relation:<sha1[:12]>`（内容寻址，重跑稳定）；characters 增 `id/type/factions/factionRaw`，relation 增 `id/sourceId/targetId/sourceType/targetType`；payload 增 `model: {schemaVersion:2, entityTypes, idIndex}` |
+| Phase 4 拆分单体脚本 | ✅ 完成 | `web/{template,css,js}` 拆分（拼接逐字节等价）＋ `src/build.py` 统一入口（standalone/web 双 target、`--check`）；`generate_report.py` 1606 → 1155 行 |
+| Phase 5 测试与 CI | ✅ 完成 | `src/validators.py` + `tests/`（28 例，无第三方依赖）+ GitHub Actions |
+| Phase 6 体验 | ✅ 主体完成 | URL deep link（person/event/place/era/map/q）、搜索命中高亮、tabs `role=tablist` + 方向键导航。**未做**：人物图/实体图双模式切换、移动端详情抽屉（现有 `dialog` 已自适应 `100vw-32px` / `max-height:90vh`，未额外改造） |
+
+原方案里尚未落地的体验项只剩「人物图/实体图双模式」——需要先把非人物实体补进节点层，与方案 A（节点只允许人物）有冲突，需先定口径。
 
 ### 8. 私有文件手动拷贝（重要：永不入库）
 - 两个文件**故意不在仓库里**：`明朝那些事儿.txt`（原书全文）、`data/chapters.json`（含正文的抽取底稿）。本书版权在作者/出版社手中，网络免费阅读授权不等于可公开再分发，公开仓库分发全文属侵权。
@@ -167,20 +216,30 @@ python src/audit_final.py --quick  # 跳过分部构建，只查全书
 - 除这两个文件外，仓库其余内容即完整工作区。
 
 ### 9. 工程提醒
-- 构建：`python src/generate_report.py` 全量约 **2 秒**（已移除 Python 端 800 轮力导布局与 numpy 依赖；实测从 109.7 秒降到 2.3 秒）。力导向布局由浏览器端实时模拟完成，Python 只给确定性初始坐标（按势力分扇区 + 螺旋）。
-- 审计：`python src/audit_final.py`，有 ERROR 时返回 1，可直接接 CI。
-- 共享核心：`src/core/year_parser.py`（年份解析）、`src/core/geo.py`（经纬度校验）——生产与审计必须共用，**不要**在别处重新实现。
-- 部署/同步脚本：`.dump/_deploy_index_now.py`（index.html+sw.js+README.md）、`.dump/_sync_docs.py`（skill+memory+readme）。
+- 构建：`python src/build.py` 全量约 **2 秒**（已移除 Python 端 800 轮力导布局与 numpy 依赖；实测从 109.7 秒降到 2.3 秒）。力导向布局由浏览器端实时模拟完成，Python 只给确定性初始坐标（按势力分扇区 + 螺旋）。
+- 校验：`python src/build.py --check`（构建门禁，ERROR 退出码 2）；`python src/audit_final.py`（深审，ERROR 退出码 1）；`python tests/run_tests.py`（28 例单元测试，纯标准库）。
+- 浏览器自检：`python .dump/_browser_check.py [产物路径]`——用本机 Chrome `--dump-dom` 跑 7 个场景（默认首屏、人物/事件/帝王 deep link、搜索高亮、关系、地图）。断言必须用**正则匹配渲染出的标签**，不能裸字符串 `in dom`——产物把 JS 内联在同文件里，源码里本来就有 `flash`、`detail-grid` 这些词，裸串会假通过。
+- 共享核心：`src/core/year_parser.py`（年份解析）、`src/core/geo.py`（经纬度校验）——生产与审计必须共用，**不要**在别处重新实现。前端模板同理：只改 `web/`，不要在 Python 里再写一份。
+- 部署/同步脚本：`.dump/_deploy_index_now.py`（index.html+sw.js+README.md）、`.dump/_sync_docs.py`（含 web/、tests/、.github/ 的清单同步）。改动前后可用 `.dump/_diff_remote.py` 看本地↔线上差异。
 - 权限：沙箱内跑部署报 401 时用管理员豁免；`gh` 前清代理变量。
 - 本地查看：`python -m http.server 8765`（或任意静态服务器）。
 
 ## 交付检查
 
 ```powershell
-python -m compileall -q src
+python -m compileall -q src tests
+python tests/run_tests.py
 python src/merge.py
-python src/generate_report.py
+python src/build.py                 # 等价于旧的 generate_report.py
 python src/audit_final.py
+python .dump/_browser_check.py      # 需要本机 Chrome
+```
+
+四步全绿（测试 28/28、构建 ERROR 0、审计 ERROR 0、浏览器自检 7/7）再部署：
+
+```powershell
+python .dump/_deploy_index_now.py   # 线上 index.html + sw.js + README
+python .dump/_sync_docs.py          # 源码/web/tests/.github/文档 全量同步
 ```
 
 ## 版权

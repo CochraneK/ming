@@ -3,9 +3,10 @@
 // 跨域资源（地图瓦片、unpkg Leaflet）一律不拦截，直接走原生网络。
 // 注意：后台更新用 cache:'no-cache' 绕过浏览器 HTTP 缓存——否则 GitHub Pages 的
 // max-age=600 会让 SWR 拿到陈旧响应，滞后被拉长到多个访问周期。
-// CACHE 名 bump（v4）会在 activate 时清空旧缓存，强制老用户下次刷新立即得到新版。
+// CACHE 名 bump（v5）会在 activate 时清空旧缓存，强制老用户下次刷新立即得到新版。
+// v5：Phase 3~6 落地（统一实体 ID、模板拆分、deep link、搜索高亮、tab 语义）。
 const CACHE_PREFIX = 'ming-report-';
-const CACHE = CACHE_PREFIX + 'v4';
+const CACHE = CACHE_PREFIX + 'v5';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 
