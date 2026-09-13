@@ -38,7 +38,9 @@ jobs:
         run: python -m compileall -q src tests
 
       - name: 前端脚本语法检查
-        run: node --check web/js/app.js
+        run: |
+          node --check web/js/app.js
+          node --check web/js/experience.js
 
       - name: 基础 CSS 历史去重冒烟
         run: |
@@ -48,6 +50,12 @@ jobs:
       - name: 主题 CSS 镜像同步冒烟
         run: |
           python src/sync_theme.py
+          git diff --check -- web/template/index.html
+
+      - name: V3 产品体验镜像同步冒烟
+        run: |
+          python src/sync_experience.py
+          python src/sync_experience.py --check
           git diff --check -- web/template/index.html
 
       - name: 单元测试（共享核心 + 数据不变量 + 模板）
@@ -69,3 +77,6 @@ jobs:
 
       - name: 无头浏览器自检
         run: python .dump/_browser_check.py .ci/index.html
+
+      - name: V3 产品体验浏览器自检
+        run: python .dump/_experience_browser_check.py .ci/index.html
