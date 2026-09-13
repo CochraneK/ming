@@ -3,12 +3,15 @@
 # 走 Git Database API（4MB 超 Contents API 1MB 限制）。
 # 仅更新 index.html，base_tree 保留其余文件。沙箱 gh 需清代理。
 import os, json, base64, subprocess, tempfile, time
+from pathlib import Path
 
 OWNER = "CochraneK"
 REPO  = "ming"
-LOCAL = "D:/2026/WB项目/明朝/index.html"
-SW    = "D:/2026/WB项目/明朝/sw.js"
-README_MD = "D:/2026/WB项目/明朝/README.md"
+# 工程根由脚本自身位置推导，避免写死本机绝对路径（换机/换盘符都能直接跑）
+ROOT  = Path(__file__).resolve().parents[1]
+LOCAL = str(ROOT / "index.html")
+SW    = str(ROOT / "sw.js")
+README_MD = str(ROOT / "README.md")
 API   = f"/repos/{OWNER}/{REPO}"
 
 # 本次部署的提交说明（可用环境变量覆盖）

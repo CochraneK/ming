@@ -4,11 +4,13 @@
 # 2026-09-13 增强：① 先比 blob sha，**只上传有变化的文件**（避免每次重传 4MB index.html）；
 #                ② 每个 HTTP 调用失败重试 3 次（沙箱到 api.github.com 偶发 401/TLS 超时）。
 import os, json, base64, subprocess, tempfile, time, hashlib
+from pathlib import Path
 
 OWNER = "CochraneK"
 REPO  = "ming"
 API   = f"/repos/{OWNER}/{REPO}"
-BASE  = "D:/2026/WB项目/明朝"
+# 工程根由脚本自身位置推导，避免写死本机绝对路径（换机/换盘符都能直接跑）
+BASE  = str(Path(__file__).resolve().parents[1])
 
 # 本次同步的提交说明（每次同步前改这一行，或用环境变量覆盖）
 MESSAGE = os.environ.get("MING_SYNC_MESSAGE") or "Docs sync: 源码 / 数据 / 文档"
@@ -43,6 +45,9 @@ FILES = [
     ("src/core/__init__.py", "src/core/__init__.py"),
     ("src/core/year_parser.py", "src/core/year_parser.py"),
     ("src/core/geo.py", "src/core/geo.py"),
+    # 共享核心（2026-09-13 第二轮：势力结构化 P2-03 / 双模式图布局 Phase 6）
+    ("src/core/faction_profile.py", "src/core/faction_profile.py"),
+    ("src/core/graph_layout.py", "src/core/graph_layout.py"),
     # 数据（增量层 + 成品）
     ("data/data.json", "data/data.json"),
     ("data/extract_raw.json", "data/extract_raw.json"),
@@ -89,6 +94,7 @@ FILES = [
     ("requirements.txt", "requirements.txt"),
     # 文档
     ("report/Ming_全面重构方案.txt", "report/Ming_全面重构方案.txt"),
+    ("report/Ming_重构验收清单.md", "report/Ming_重构验收清单.md"),
     (".workbuddy/skills/ming-report-engineering/SKILL.md", ".workbuddy/skills/ming-report-engineering/SKILL.md"),
     (".workbuddy/memory/MEMORY.md", ".workbuddy/memory/MEMORY.md"),
     (".workbuddy/memory/2026-08-14.md", ".workbuddy/memory/2026-08-14.md"),

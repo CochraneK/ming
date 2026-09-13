@@ -95,7 +95,96 @@ CASES = [
         "yes": [r'id="map" class="view active"', r'id="mapSubnav"'],
         "no": [],
     },
+    {
+        "name": "图谱 · 实体图（net=entity，含类型图例）",
+        "hash": "#view=visuals&net=entity",
+        # 注意：Chrome --dump-dom 把布尔属性序列化成 `selected=""`，不能写成 `selected>`
+        "yes": [r'id="visuals" class="view active"',
+                r'<option value="entity" selected="">',
+                r'id="netModeNote">实体图口径',
+                r'实体关系图：<strong>\d+</strong> 个实体',
+                # 实体图模式必须显示总图、隐藏中心人物邻域，不能两块同时出现
+                r'id="egoNet" style="display:none"',
+                r'id="fullNet" style="display:block"',
+                # 无障碍：canvas 必须带描述性替代文本（P3-02），且按模式取不同口径
+                r'<canvas id="fullGraph"[^>]*role="img"[^>]*aria-describedby="fullSummary"',
+                r'aria-label="全书实体关系图：\d+ 个实体、\d+ 条关系'],
+        "no": [r'id="fullSummary"><span>人物关系图'],
+        # 图例内容必须「限定在图例元素内」断言：产物内联了 JS 源码，
+        # 全局搜 'kind-dot' 会命中源码里的模板字符串（永久假通过/假失败）。
+        "scoped": [
+            {"label": "类型图例（fullLegend）", "anchor": r'id="fullLegend"', "size": 600,
+             "yes": [r'kind-dot', r'节点类型', r'人物 \d+', r'(地点|机构|政权|其他) \d+'], "no": []},
+        ],
+    },
+    {
+        "name": "图谱 · 人物图（net=full，方案 A 口径）",
+        "hash": "#view=visuals&net=full",
+        "yes": [r'<option value="full" selected="">',
+                r'id="netModeNote">人物图口径',
+                r'人物关系图：<strong>\d+</strong> / \d+ 人',
+                r'id="egoNet" style="display:none"',
+                r'id="fullNet" style="display:block"',
+                r'aria-label="全书人物关系图：\d+ 人、\d+ 条人物关系'],
+        "no": [],
+        "scoped": [
+            {"label": "图例不应含类型色点（fullLegend）", "anchor": r'id="fullLegend"', "size": 600,
+             "yes": [r'cat-dot'], "no": [r'kind-dot']},
+        ],
+    },
+    {
+        "name": "时间轴区间（from/to 预填 + 过滤生效）",
+        "hash": "#view=timeline&from=1400&to=1450",
+        "yes": [r'id="timeline" class="view active"',
+                r'id="timelineFrom"[^>]*value="1400"',
+                r'id="timelineTo"[^>]*value="1450"',
+                r'当前筛选 1400—1450 年（命中 \d+ / \d+ 件）'],
+        "no": [],
+    },
 ]
+
+
+def check_boot_guard():
+    """故意制造语法错误，验证骨架里的启动守卫确实会渲染出可见错误条。
+
+    产物把 JS 内联在同一文件里，所以不能只断言 'fail-bar' 出现在源码里；
+    必须匹配守卫运行时真实拼出来的 DOM 属性（class + role）。
+    """
+    if not TARGET.exists():
+        print("跳过启动守卫自检：目标文件不存在")
+        return 0
+    doc = TARGET.read_text(encoding="utf-8")
+    # 在主脚本里插一条语法错误：整段 <script> 解析失败 → 主脚本一行都不执行
+    poisoned = doc.replace("const REL_CAT_COLORS=", "const __BROKEN__=;const REL_CAT_COLORS=", 1)
+    if poisoned == doc:
+        print("FAIL 启动守卫自检：未找到注入点 const REL_CAT_COLORS=")
+        return 1
+    with tempfile.TemporaryDirectory() as tmp:
+        broken = Path(tmp) / "index.html"
+        broken.write_text(poisoned, encoding="utf-8")
+        with tempfile.TemporaryDirectory() as prof:
+            cmd = [
+                CHROME, "--headless=new", "--disable-gpu", "--no-first-run",
+                "--no-default-browser-check", "--disable-extensions",
+                "--user-data-dir=" + prof, "--virtual-time-budget=9000",
+                "--dump-dom", broken.as_uri(),
+            ]
+            if hasattr(os, "geteuid") and os.geteuid() == 0:
+                cmd.insert(1, "--no-sandbox")
+            r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+            dom = r.stdout or ""
+    problems = []
+    # 守卫脚本 appendChild 后 DOM 里的真实形态（源码里不会以此形式出现）
+    if not re.search(r'<div class="fail-bar fail-error" role="alert">', dom):
+        problems.append("未渲染出启动错误条（role=alert）")
+    if not re.search(r'报告未能完成初始化', dom):
+        problems.append("错误条缺少说明文案")
+    if not re.search(r'<button type="button" class="fail-act">重新加载</button>', dom):
+        problems.append("错误条缺少「重新加载」按钮")
+    print("%s %-32s DOM %8d 字符" % ("ok  " if not problems else "FAIL", "启动守卫（语法错误兜底）", len(dom)))
+    for p in problems:
+        print("       - %s" % p)
+    return 1 if problems else 0
 
 
 def dump(hash_, budget=9000):
@@ -131,6 +220,21 @@ def main():
         for pat in case["no"]:
             if re.search(pat, dom):
                 problems.append("不应命中 /%s/" % pat)
+        # 限定区域断言：先锚定到某个渲染元素，只在它后面的 size 字符内匹配。
+        # 这是唯一能在「源码内联进同一个 DOM」的前提下区分「渲染出来」与「源码里写着」的办法。
+        # 这是唯一能在「源码内联进同一个 DOM」的前提下区分「渲染出来」与「源码里写着」的办法。
+        for sc in case.get("scoped", []):
+            m = re.search(sc["anchor"], dom)
+            if not m:
+                problems.append("区域 %s：找不到锚点 /%s/" % (sc["label"], sc["anchor"]))
+                continue
+            seg = dom[m.start():m.start() + sc.get("size", 500)]
+            for pat in sc.get("yes", []):
+                if not re.search(pat, seg):
+                    problems.append("区域 %s：未命中 /%s/" % (sc["label"], pat))
+            for pat in sc.get("no", []):
+                if re.search(pat, seg):
+                    problems.append("区域 %s：不应命中 /%s/" % (sc["label"], pat))
         m = re.search(r'<button data-view="(?P<v>[a-z]+)"[^>]*aria-selected="true"', dom)
         print("%s %-32s DOM %8d 字符  tab=%s" % (
             "ok  " if not problems else "FAIL", case["name"], len(dom), m.group("v") if m else "?"))
@@ -138,9 +242,12 @@ def main():
             print("       - %s" % p)
         if problems:
             failures.append(case["name"])
+    guard_fail = check_boot_guard()
+    total = len(CASES) + 1
+    failed = len(failures) + guard_fail
     print("\n" + "=" * 60)
-    print("通过 %d / 失败 %d" % (len(CASES) - len(failures), len(failures)))
-    return 1 if failures else 0
+    print("通过 %d / 失败 %d" % (total - failed, failed))
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":

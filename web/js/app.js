@@ -24,6 +24,69 @@ const catBadge=(c,color)=>`<span class="cat-tag" style="--cat:${color}">${esc(c)
 const epLabel=k=>k==='place'?'地点':k==='org'?'派系/机构':k==='regime'?'政权':k==='other'?'其他实体':'';
 const epTag=(n,k)=>{const kk=k||(DATA.endpointKinds||{})[n];return (kk&&kk!=='person')?`<span class="ep-tag ep-${kk}">${epLabel(kk)}</span>`:'';};
 const $=s=>document.querySelector(s);
+
+/* ---- P3-03 统一错误 UI ----
+   所有「可降级失败」共用同一条底部提示：role=alert/status + aria-live，
+   统一带「重试」与「关闭」，按 key 去重（同一故障重复触发只更新文案，不堆叠）。
+   设计原则：能继续用的功能绝不阻塞（地图挂了仍给离线点位图），但失败必须可见。 */
+const _failBars={};
+const _failSeen=Object.create(null);
+function failHost(){
+  let h=document.getElementById('failHost');
+  if(!h){h=document.createElement('div');h.id='failHost';h.className='fail-host';document.body.appendChild(h);}
+  return h;
+}
+function dismissFail(key){
+  const bar=_failBars[key];
+  if(!bar)return;
+  delete _failBars[key];
+  if(bar.parentNode)bar.parentNode.removeChild(bar);
+  const h=document.getElementById('failHost');
+  if(h&&!h.children.length&&h.parentNode)h.parentNode.removeChild(h);
+}
+/* level: error（红，需处理）| warn（黄，可降级）| info（灰，仅告知） */
+function failBar(key,msg,opts){
+  opts=opts||{};
+  const level=opts.level==='error'?'fail-error':(opts.level==='warn'?'fail-warn':'fail-info');
+  let bar=_failBars[key];
+  if(!bar){
+    bar=document.createElement('div');
+    bar.setAttribute('role',level==='fail-error'?'alert':'status');
+    bar.setAttribute('aria-live',level==='fail-error'?'assertive':'polite');
+    const msgEl=document.createElement('span');msgEl.className='fail-msg';
+    const acts=document.createElement('span');acts.className='fail-acts';
+    bar.appendChild(msgEl);bar.appendChild(acts);
+    if(opts.retry){
+      const label=opts.retryLabel||'重试';
+      const b=document.createElement('button');b.type='button';b.className='fail-act';b.textContent=label;
+      b.addEventListener('click',()=>{
+        b.disabled=true;b.textContent='重试中…';
+        try{opts.retry();}catch(_){}
+        setTimeout(()=>{b.disabled=false;b.textContent=label;},1200);
+      });
+      acts.appendChild(b);
+    }
+    if(opts.closable!==false){
+      const c=document.createElement('button');c.type='button';c.className='fail-close';
+      c.setAttribute('aria-label','关闭提示');c.textContent='×';
+      c.addEventListener('click',()=>dismissFail(key));
+      acts.appendChild(c);
+    }
+    _failBars[key]=bar;
+    failHost().appendChild(bar);
+  }
+  bar.className='fail-bar '+level;
+  const m=bar.querySelector('.fail-msg');
+  if(m&&m.textContent!==msg)m.textContent=msg;
+  return bar;
+}
+/* 运行时异常（脚本/异步/渲染）：同类异常只报一次，避免刷屏 */
+function reportRuntimeError(kind,detail){
+  const msg=(kind||'脚本')+'异常：'+String(detail||'未知错误').slice(0,160);
+  if(_failSeen[msg])return;
+  _failSeen[msg]=1;
+  failBar('runtime',msg+'（页面其余部分仍可浏览）',{level:'error',retry:()=>location.reload(),retryLabel:'重新加载'});
+}
 // 搜索框绑定：防抖 + 输入法合成保护 + 重渲染后恢复焦点与光标。
 // 直接监听 input 会全量重渲染整个区块、销毁输入框本身，导致中文输入法无法连续输入（每敲一个字母焦点就丢失）。
 const _searchTimers={};
@@ -52,13 +115,13 @@ const esc=value=>displayText(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
 function matchesQuery(hay,raw){const q=String(raw==null?'':raw).trim().toLowerCase();if(!q)return true;const h=String(hay||'').toLowerCase();if(h.includes(q))return true;const canon=(DATA.aliasIndex||{})[String(raw).trim()];return !!canon&&h.includes(String(canon).toLowerCase());}
 const shortStatus=s=>{if(!s)return s;if(s.includes('待核验'))return '待核验';return s;};
 const pageSize=36;
-const state={dynastyEra:'',mapMode:'pilgrim',showMarkers:true,cleanExpanded:false,view:'overview',locMode:'index',locPage:1,locQuery:'',locRegion:'全部区域',chapterPage:1,distributionPage:1,distributionPart:'全部七部',distributionSort:'order',visualPart:'全部',visualPerson:'',netMode:'ego',charPage:1,charQuery:'',charPart:'',charFaction:'全部势力',charMinor:false,eventPage:1,eventQuery:'',eventType:'全部类型',eventCategory:'全部类别',relationPage:1,relationQuery:'',relationCategory:'全部类别',timelinePage:1,timelineCategory:'全部类别',printMode:null,cardTheme:'thm-ink',rendered:{}};
+const state={dynastyEra:'',mapMode:'pilgrim',showMarkers:true,cleanExpanded:false,view:'overview',locMode:'index',locPage:1,locQuery:'',locRegion:'全部区域',chapterPage:1,distributionPage:1,distributionPart:'全部七部',distributionSort:'order',visualPart:'全部',visualPerson:'',netMode:'ego',charPage:1,charQuery:'',charPart:'',charFaction:'全部势力',charMinor:false,eventPage:1,eventQuery:'',eventType:'全部类型',eventCategory:'全部类别',relationPage:1,relationQuery:'',relationCategory:'全部类别',timelinePage:1,timelineCategory:'全部类别',timelineFrom:'',timelineTo:'',printMode:null,cardTheme:'thm-ink',rendered:{}};
 const metrics=DATA.metrics;
 const chapterLabel=key=>DATA.chapters[key]?.title||key;
 const chapterChips=items=>(items||[]).slice(0,6).map(x=>`<span class="source-chip" title="${esc(x.title)}">${esc(x.title)}</span>`).join('')+((items||[]).length>6?`<span class="source-chip">+${items.length-6}章</span>`:'');
 const pager=(page,total,size=pageSize)=>{const pages=Math.max(1,Math.ceil(total/size));return `<div class="pagination"><button data-page="prev" ${page<=1?'disabled':''}>上一页</button><span class="page-label">第 ${page} / ${pages} 页 · ${total} 条</span><button data-page="next" ${page>=pages?'disabled':''}>下一页</button></div>`};
 const slicePage=(list,page)=>list.slice((page-1)*pageSize,page*pageSize);
-function setView(view){state.view=view;document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===view));document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x.dataset.view===view));if(!state.rendered[view]){({overview:renderOverview,distribution:renderDistribution,visuals:renderVisuals,locations:renderLocations,map:renderMap,characters:renderCharacters,events:renderEvents,relations:renderRelations,timeline:renderTimeline,dynasty:renderDynasty,chronicle:renderChronicle,insight:renderInsight}[view])();state.rendered[view]=true;}if(view==='map'){const mi=state.mapMode==='voyage'?voyageMapInstance:mapInstance;if(mi)setTimeout(()=>mi.invalidateSize(),60)}if(view==='visuals'&&state.netMode==='full'){setTimeout(()=>renderFullGraph(),30)}window.scrollTo(0,0)}
+function setView(view){state.view=view;document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===view));document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x.dataset.view===view));if(!state.rendered[view]){({overview:renderOverview,distribution:renderDistribution,visuals:renderVisuals,locations:renderLocations,map:renderMap,characters:renderCharacters,events:renderEvents,relations:renderRelations,timeline:renderTimeline,dynasty:renderDynasty,chronicle:renderChronicle,insight:renderInsight}[view])();state.rendered[view]=true;}if(view==='map'){const mi=state.mapMode==='voyage'?voyageMapInstance:mapInstance;if(mi)setTimeout(()=>mi.invalidateSize(),60)}if(view==='visuals'&&state.netMode!=='ego'){setTimeout(()=>renderFullGraph(),30)}window.scrollTo(0,0)}
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
 document.addEventListener('click',e=>{const opener=e.target.closest('[data-open-view]');if(opener)setView(opener.dataset.openView)});
 /* 翻面卡：全局委托一次，避免每次渲染人物页重复绑定导致点击失效 */
@@ -67,7 +130,24 @@ document.addEventListener('click',e=>{const flip=e.target.closest('[data-flip]')
    避免同一张卡在三个地方各写一份模板而慢慢长歪。 */
 function personDetailHTML(x){
  const relHtml=(x.relations||[]).length?x.relations.map(r=>`<span class="rel ${r.dir}">${r.dir==='in'?'←':'→'} ${r.dir==='in'?esc(r.other)+' '+esc(r.rel):esc(r.rel)+' '+esc(r.other)}</span>${epTag(r.other,r.otherKind)}`).join('、'):'无';
- return `<div class="detail-grid"><div class="detail-block"><strong>身份</strong><p>${esc(x.role)}</p></div><div class="detail-block"><strong>势力</strong><p>${esc(x.faction||'未标注')}</p></div><div class="detail-block"><strong>生卒 / 籍贯</strong><p>${esc(x.life)} · ${esc(x.birth)}</p></div><div class="detail-block"><strong>状态</strong><p>${esc(x.status)}</p></div><div class="detail-block detail-wide"><strong>别名</strong><p>${esc((x.aliases||[]).join('、')||'无')}</p></div><div class="detail-block detail-wide"><strong>涉及事件（${x.events.length}）</strong>${x.events.length?`<ul class="event-list">${x.events.slice(0,12).map(n=>`<li><button class="link-button" data-event-name="${esc(n)}">${esc(n)}</button></li>`).join('')}</ul>`:`<p class="muted">书中未作为事件参与者出现。</p>`}</div><div class="detail-block detail-wide"><strong>同章上下文事件（${x.contextEvents.length}）</strong>${x.contextEvents.length?`<ul class="event-list">${x.contextEvents.slice(0,15).map(n=>`<li><button class="link-button" data-event-name="${esc(n)}">${esc(n)}</button></li>`).join('')}</ul><p class="muted">书中同章提及，非本人物直接参与（可作关联线索）</p>`:`<p class="muted">同章亦无其它事件记录。</p>`}</div><div class="detail-block detail-wide"><strong>关系</strong><p>${relHtml}</p></div><div class="detail-block detail-wide"><strong>来源章节</strong><div class="source-row">${chapterChips(x.chapters.map(k=>({key:k,...DATA.chapters[k]})))}</div></div>${x.derivedCount?`<div class="detail-block detail-wide"><strong>出场口径</strong><p>共 ${x.chapters.length} 章，其中 ${x.derivedCount} 章为文本反查推导（本章正文出现至少 6 次自动登记，与 LLM 抽取区分）</p></div>`:''}</div>`;
+ // P2-03：势力不再是一整串原文，而是逐项结构化展示；原串放在末行供回查（源透明）
+ const p=x.profile||{};
+ const chips=[];
+ if(p.dynasty)chips.push(['朝代',p.dynasty]);
+ if(p.regime)chips.push(['政权',p.regime]);
+ if(p.period)chips.push(['时期',p.period]);
+ if((p.factions||[]).length)chips.push(['派系',p.factions.join('、')]);
+ if((p.orgs||[]).length)chips.push(['机构',p.orgs.join('、')]);
+ if((p.categories||[]).length)chips.push(['身份类别',p.categories.join('、')]);
+ const powerHtml=chips.length
+   ?`<p class="profile-tags">${chips.map(([k,v])=>`<span class="profile-tag"><em>${esc(k)}</em>${esc(v)}</span>`).join('')}</p>${p.raw?`<p class="muted profile-raw">原串：${esc(p.raw)}</p>`:''}`
+   :`<p>${esc(x.faction||'未标注')}</p>`;
+ const extraBlocks=[];
+ if((p.office||[]).length)extraBlocks.push(`<div class="detail-block"><strong>官职</strong><p>${esc(p.office.join('、'))}</p></div>`);
+ if(p.origin)extraBlocks.push(`<div class="detail-block"><strong>籍贯</strong><p>${esc(p.origin)}</p></div>`);
+ if(p.jinshi_year)extraBlocks.push(`<div class="detail-block"><strong>科举</strong><p>${esc(p.jinshi_year)} 年中进士</p></div>`);
+ if(p.note)extraBlocks.push(`<div class="detail-block detail-wide"><strong>备注</strong><p>${esc(p.note)}</p></div>`);
+ return `<div class="detail-grid"><div class="detail-block"><strong>身份</strong><p>${esc(x.role)}</p></div><div class="detail-block"><strong>生卒</strong><p>${esc(x.life)}</p></div><div class="detail-block"><strong>状态</strong><p>${esc(x.status)}</p></div><div class="detail-block detail-wide"><strong>势力 / 政治归属</strong>${powerHtml}</div>${extraBlocks.join('')}<div class="detail-block detail-wide"><strong>别名</strong><p>${esc((x.aliases||[]).join('、')||'无')}</p></div><div class="detail-block detail-wide"><strong>涉及事件（${x.events.length}）</strong>${x.events.length?`<ul class="event-list">${x.events.slice(0,12).map(n=>`<li><button class="link-button" data-event-name="${esc(n)}">${esc(n)}</button></li>`).join('')}</ul>`:`<p class="muted">书中未作为事件参与者出现。</p>`}</div><div class="detail-block detail-wide"><strong>同章上下文事件（${x.contextEvents.length}）</strong>${x.contextEvents.length?`<ul class="event-list">${x.contextEvents.slice(0,15).map(n=>`<li><button class="link-button" data-event-name="${esc(n)}">${esc(n)}</button></li>`).join('')}</ul><p class="muted">书中同章提及，非本人物直接参与（可作关联线索）</p>`:`<p class="muted">同章亦无其它事件记录。</p>`}</div><div class="detail-block detail-wide"><strong>关系</strong><p>${relHtml}</p></div><div class="detail-block detail-wide"><strong>来源章节</strong><div class="source-row">${chapterChips(x.chapters.map(k=>({key:k,...DATA.chapters[k]})))}</div></div>${x.derivedCount?`<div class="detail-block detail-wide"><strong>出场口径</strong><p>共 ${x.chapters.length} 章，其中 ${x.derivedCount} 章为文本反查推导（本章正文出现至少 6 次自动登记，与 LLM 抽取区分）</p></div>`:''}</div>`;
 }
 function showPerson(name){
  const x=DATA.characters.find(y=>y.name===name);if(!x)return false;
@@ -80,14 +160,38 @@ $('#dialogClose').addEventListener('click',()=>$('#detailDialog').close());
 $('#detailDialog').addEventListener('click',e=>{if(e.target.id==='detailDialog')$('#detailDialog').close()});
 state.showMarkers=true;// 地点标记常显（原勾选框已按需求移除）
 const mapSubnav=$('#mapSubnav');if(mapSubnav){mapSubnav.querySelectorAll('[data-map-mode]').forEach(b=>b.addEventListener('click',()=>{state.mapMode=b.dataset.mapMode;mapSubnav.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));renderMap()}))}
-// 离线缓存：注册 Service Worker（stale-while-revalidate），重复访问秒开；失败静默不影响使用。
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
+// 离线缓存：注册 Service Worker（stale-while-revalidate），重复访问秒开；失败不阻塞阅读，但给出可见提示。
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    const reg=()=>navigator.serviceWorker.register('sw.js')
+      .then(()=>{dismissFail('sw');})
+      .catch(()=>{failBar('sw','离线缓存未启用（离线打开与二次访问加速不可用），不影响当前阅读。',{level:'info',retry:reg});});
+    reg();
+    // 新版本就绪：提示刷新即可拿到最新数据
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{failBar('swUpdate','报告已更新到新版本，刷新即可加载最新内容。',{level:'info',retry:()=>location.reload(),retryLabel:'刷新'});});
+  });
+}
 // 瓦片层工厂：主源 Esri（国内可达性好），连续 6 次出错且 0 张成功时自动回退 OSM。
-function makeTiles(){
-  const l=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'Tiles © Esri'});
-  let errs=0,oks=0,switched=false;
-  l.on('tileload',()=>{oks++;});
-  l.on('tileerror',()=>{errs++;if(errs>=6&&oks===0&&!switched){switched=true;l.setUrl('https://tile.openstreetmap.org/{z}/{x}/{y}.png');}});
+const TILE_ESRI='https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+const TILE_OSM='https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+function makeTiles(silent){
+  const l=L.tileLayer(TILE_ESRI,{maxZoom:18,attribution:'Tiles © Esri'});
+  let errs=0,oks=0,switched=false,reported=false;
+  l.on('tileload',()=>{oks++;if(oks>0)dismissFail('tiles');});
+  l.on('tileerror',()=>{
+    errs++;
+    if(errs>=6&&oks===0&&!switched){
+      switched=true;errs=0;l.setUrl(TILE_OSM);
+      if(!silent)failBar('tiles','底图主源（Esri）不可达，已自动切换到备用源 OSM。',{level:'info'});
+      return;
+    }
+    if(switched&&errs>=14&&oks===0&&!reported){
+      reported=true;
+      if(silent)return;   // 后台预热失败不打扰用户；真正打开地图时会再报一次
+      failBar('tiles','地图底图加载失败，地图上可能只见标记不见街道；请检查网络后重试。',{level:'warn',
+        retry:()=>{switched=false;reported=false;errs=0;oks=0;l.setUrl(TILE_ESRI);l.redraw();}});
+    }
+  });
   return l;
 }
 // 地图资源后台预热：首屏空闲时预载 Leaflet，并用屏外隐藏地图把初始视野的瓦片
@@ -101,10 +205,10 @@ function warmMap(){
       d.style.cssText='position:fixed;left:-9999px;top:-9999px;width:400px;height:300px;';
       document.body.appendChild(d);
       const m=L.map(d,{attributionControl:false,zoomControl:false}).setView([34.5,113],4);
-      makeTiles().addTo(m);
+      makeTiles(true).addTo(m);
       setTimeout(()=>{try{m.remove();}catch(_){}try{d.remove();}catch(_){}},4000);
     }catch(_){}
-  }).catch(()=>{});
+  }).catch(()=>{/* 后台预热失败不打扰用户：真正打开地图时 renderMap 会再报一次 */});
 }
 // 双保险：① 首屏空闲后台预热（主路径）；② 鼠标/手指一碰地图入口就立即预热，
 // 避免 idle 回调被浏览器推迟时用户还要等。预热只做一次。
@@ -142,49 +246,83 @@ function renderVisuals(){
  const heatmap=heatRows||'<div class="network-empty">当前范围没有可展示人物。</div>';const maxHeatColumns=Math.max(chapters.length,1);const heatHeader=`<div class="heatmap-corner">人物 / 章节</div>${chapters.map((ch,index)=>`<div class="heatmap-chapter" title="${esc(ch.part)} · ${esc(ch.title)}">${String(index+1).padStart(2,'0')}</div>`).join('')}`;
  const visibleParts=evolution.parts.filter(x=>state.visualPart==='全部'||x.partKey===state.visualPart);const maxTotal=Math.max(...visibleParts.map(x=>x.total),1);const colorByType=type=>`--event-color:${eventCatColor(type)}`;const legend=evolution.types.map(type=>`<span class="event-legend-item"><i style="${colorByType(type)}"></i>${esc(type)}</span>`).join('');const evolutionRows=visibleParts.map(part=>`<div class="evolution-row"><div class="evolution-label"><strong title="${esc(part.part)}">${esc(part.part)}</strong><span>${part.total}件事件</span></div><div class="evolution-track" title="${esc(part.part)} · ${part.total}件"><div class="evolution-fill" style="width:${part.total*100/maxTotal}%">${evolution.types.map(type=>`<span class="evolution-segment" style="width:${part.total?part.values[type]*100/part.total:0}%;background:${eventCatColor(type)}" title="${esc(type)} ${part.values[type]}件"></span>`).join('')}</div></div><div class="evolution-total">${part.total}</div></div>`).join('');
  const names=network.names;let selectedName=state.visualPerson&&network.byName[state.visualPerson]?state.visualPerson:(names[0]?.name||'');state.visualPerson=selectedName;const graph=network.byName[selectedName];const neighbors=(graph?.neighbors||[]).slice(0,12);const svgWidth=760,svgHeight=430,cx=svgWidth/2,cy=svgHeight/2,rx=290,ry=154;const positioned=neighbors.map((item,index)=>{const angle=-Math.PI/2+(Math.PI*2*index/Math.max(neighbors.length,1));return {...item,idx:index,x:Math.round(cx+Math.cos(angle)*rx),y:Math.round(cy+Math.sin(angle)*ry)}});const networkLinks=positioned.map(item=>{const t=item.idx%2?0.62:0.38;const lx=Math.round(cx+(item.x-cx)*t),ly=Math.round(cy+(item.y-cy)*t);const rel=item.relation||'';const showRel=rel&&!/同事件|推导/.test(rel);return `<line class="network-link ${item.direction==='in'?'incoming':''}" style="stroke:${relCatColor(item.category)}" x1="${cx}" y1="${cy}" x2="${item.x}" y2="${item.y}"><title>${esc(item.category)} · ${item.direction==='in'?'对方→我':item.direction==='out'?'我→对方':'双向'} · ${esc(item.relation)} · ${item.relationCount}条来源</title></line>${showRel?`<text class="network-edge-label" x="${lx}" y="${ly}">${esc(rel.length>12?rel.slice(0,12)+'...':rel)}</text>`:''}`}).join('');const networkNodes=positioned.map(item=>`<g><circle class="network-node" cx="${item.x}" cy="${item.y}" r="28"><title>${esc(item.name)} · ${item.chapterCount}章 · ${item.relationCount}条来源</title></circle><text class="network-label" x="${item.x}" y="${item.y+4}">${esc(item.name.length>6?item.name.slice(0,5)+'...':item.name)}</text></g>`).join('');const networkSvg=selectedName?`<svg class="network-svg" viewBox="0 0 ${svgWidth} ${svgHeight}" role="img" aria-label="${esc(selectedName)}的人物关系网络"><g>${networkLinks}</g><g><circle class="network-node center" cx="${cx}" cy="${cy}" r="42"><title>${esc(graph.center.name)} · ${graph.center.chapterCount}章 · ${graph.center.relationCount}条关系</title></circle><text class="network-label center" x="${cx}" y="${cy+4}">${esc(selectedName.length>7?selectedName.slice(0,6)+'...':selectedName)}</text></g><g>${networkNodes}</g></svg>`:'<div class="network-empty">当前范围没有可展示关系的人物。</div>';
- $('#visuals').innerHTML=`<div class="section-head"><div><h2>图谱：从章节分布到人物网络</h2><p>${esc(DATA.scopeLabel)} · 只展示高频人物、归一后的事件类别和核心人物邻域，保留原始数据的可读结构。</p></div><span class="status draft">图形用于发现线索</span></div><div class="visual-toolbar"><label for="visualPart">范围</label><select id="visualPart">${partOptions}</select><span class="visual-note">热力图按章节顺序排列；颜色和线型均有文字说明。</span></div><div class="visuals-stack"><section class="panel visuals-panel"><div class="section-head"><div><h3>一、人物出场轨迹</h3><p>纵轴为章节覆盖度最高的 24 位人物，横轴为当前范围内的章节序号；深色格表示该人物在该章有记录。</p></div><span class="visual-note">${heat.characters.length} 人 · ${chapters.length} 章</span></div><div class="heatmap-wrap"><div class="heatmap-grid" style="--heatmap-columns:${maxHeatColumns}">${heatHeader}${heatmap}</div></div><div class="heatmap-legend"><span><i class="heatmap-key present"></i>有出场（深色 = 所属部次）</span><span><i class="heatmap-key absent"></i>本范围无出场</span><span class="legend-sep"></span><span class="legend-title">部次配色</span>${Object.entries(PART_COLORS).map(([k,v])=>`<span><i class="heatmap-key part" style="background:${v}"></i>${esc(PARTS[k]||k).split(' ')[0]}</span>`).join('')}<span class="legend-sep"></span><span>人物行按章节覆盖度排序</span></div></section><section class="panel visuals-panel"><div class="section-head"><div><h3>二、事件类型演变</h3><p>各分部共享同一尺度；条形长度代表该部事件总量，内部颜色表示归一后的事件类别。</p></div><span class="visual-note">${visibleParts.length} 个分部 · ${evolution.types.length} 类</span></div><div class="event-legend">${legend}</div><div class="evolution-list">${evolutionRows||'<div class="network-empty">当前范围没有事件。</div>'}</div></section><section class="panel visuals-panel"><div class="section-head"><div><h3>三、核心人物关系网络</h3><p>切换查看：中心人物邻域，或全书人物关系总图（力导向布局，点越大关系越多）。</p></div></div><div class="network-controls"><label for="netMode">关系视图</label><select id="netMode"><option value="ego" ${state.netMode==='ego'?'selected':''}>中心人物</option><option value="full" ${state.netMode==='full'?'selected':''}>全书版本</option></select><span class="muted grow" id="netModeNote"></span></div><div id="egoNet"><div class="network-controls"><label for="visualPerson">中心人物</label><select id="visualPerson">${names.map(item=>`<option value="${esc(item.name)}" ${item.name===selectedName?'selected':''}>${esc(item.name)} · ${item.relationCount}条关系 · ${item.chapterCount}章</option>`).join('')}</select></div>${graph?`<div class="network-summary"><span>中心：<strong>${esc(graph.center.name)}</strong></span><span>覆盖 ${graph.center.chapterCount} 章</span><span>关系记录 ${graph.center.relationCount} 条</span><span>展示邻居 ${neighbors.length} 人</span></div><div class="cat-legend">${(DATA.relationCategories||[]).map(c=>`<span><i class="cat-dot" style="--cat:${relCatColor(c)};margin-right:4px"></i>${esc(c)}</span>`).join('')}</div>${networkSvg}`:'<div class="network-empty">暂无关系网络数据。</div>'}</div><div id="fullNet" style="display:${state.netMode==='full'?'block':'none'}"><div class="network-summary" id="fullSummary"></div><canvas id="fullGraph" class="network-svg full-graph-canvas"></canvas><div id="fullTip" class="full-graph-tip-box"></div><div class="cat-legend" id="fullLegend"></div><p class="full-graph-tip">滚轮缩放 · 拖拽平移 · 点击节点高亮其邻域 · 点击空白复位</p></div></section></div>`;
+ $('#visuals').innerHTML=`<div class="section-head"><div><h2>图谱：从章节分布到人物网络</h2><p>${esc(DATA.scopeLabel)} · 只展示高频人物、归一后的事件类别和核心人物邻域，保留原始数据的可读结构。</p></div><span class="status draft">图形用于发现线索</span></div><div class="visual-toolbar"><label for="visualPart">范围</label><select id="visualPart">${partOptions}</select><span class="visual-note">热力图按章节顺序排列；颜色和线型均有文字说明。</span></div><div class="visuals-stack"><section class="panel visuals-panel"><div class="section-head"><div><h3>一、人物出场轨迹</h3><p>纵轴为章节覆盖度最高的 24 位人物，横轴为当前范围内的章节序号；深色格表示该人物在该章有记录。</p></div><span class="visual-note">${heat.characters.length} 人 · ${chapters.length} 章</span></div><div class="heatmap-wrap"><div class="heatmap-grid" role="img" aria-label="人物出场矩阵：纵轴为覆盖度最高的 ${heat.characters.length} 位人物，横轴为 ${chapters.length} 章，深色格表示该人物在该章有记录；逐章明细见「人物」视图" style="--heatmap-columns:${maxHeatColumns}">${heatHeader}${heatmap}</div></div><div class="heatmap-legend"><span><i class="heatmap-key present"></i>有出场（深色 = 所属部次）</span><span><i class="heatmap-key absent"></i>本范围无出场</span><span class="legend-sep"></span><span class="legend-title">部次配色</span>${Object.entries(PART_COLORS).map(([k,v])=>`<span><i class="heatmap-key part" style="background:${v}"></i>${esc(PARTS[k]||k).split(' ')[0]}</span>`).join('')}<span class="legend-sep"></span><span>人物行按章节覆盖度排序</span></div></section><section class="panel visuals-panel"><div class="section-head"><div><h3>二、事件类型演变</h3><p>各分部共享同一尺度；条形长度代表该部事件总量，内部颜色表示归一后的事件类别。</p></div><span class="visual-note">${visibleParts.length} 个分部 · ${evolution.types.length} 类</span></div><div class="event-legend">${legend}</div><div class="evolution-list">${evolutionRows||'<div class="network-empty">当前范围没有事件。</div>'}</div></section><section class="panel visuals-panel"><div class="section-head"><div><h3>三、核心人物关系网络</h3><p>切换查看：中心人物邻域，或全书人物关系总图（力导向布局，点越大关系越多）。</p></div></div><div class="network-controls"><label for="netMode">关系视图</label><select id="netMode"><option value="ego" ${state.netMode==='ego'?'selected':''}>中心人物</option><option value="full" ${state.netMode==='full'?'selected':''}>全书人物图</option><option value="entity" ${state.netMode==='entity'?'selected':''}>全书实体图（含地点/机构/政权）</option></select><span class="muted grow" id="netModeNote">${state.netMode==='entity'?'实体图口径：节点=全部关系端点，不能读作「N 名人物」——人物图见上一项。':(state.netMode==='full'?'人物图口径（方案 A）：只保留人物↔人物关系，非人物端点不计入。':'')}</span></div><div id="egoNet" style="display:${state.netMode==='ego'?'block':'none'}"><div class="network-controls"><label for="visualPerson">中心人物</label><select id="visualPerson">${names.map(item=>`<option value="${esc(item.name)}" ${item.name===selectedName?'selected':''}>${esc(item.name)} · ${item.relationCount}条关系 · ${item.chapterCount}章</option>`).join('')}</select></div>${graph?`<div class="network-summary"><span>中心：<strong>${esc(graph.center.name)}</strong></span><span>覆盖 ${graph.center.chapterCount} 章</span><span>关系记录 ${graph.center.relationCount} 条</span><span>展示邻居 ${neighbors.length} 人</span></div><div class="cat-legend">${(DATA.relationCategories||[]).map(c=>`<span><i class="cat-dot" style="--cat:${relCatColor(c)};margin-right:4px"></i>${esc(c)}</span>`).join('')}</div>${networkSvg}`:'<div class="network-empty">暂无关系网络数据。</div>'}</div><div id="fullNet" style="display:${state.netMode==='ego'?'none':'block'}"><div class="network-summary" id="fullSummary"></div><canvas id="fullGraph" class="network-svg full-graph-canvas" role="img" aria-describedby="fullSummary" aria-label="关系网络图（渲染中）"></canvas><div id="fullTip" class="full-graph-tip-box"></div><div class="cat-legend" id="fullLegend"></div><p class="full-graph-tip">滚轮缩放 · 拖拽平移 · 点击节点高亮其邻域 · 点击空白复位</p></div></section></div>`;
  $('#visualPart').addEventListener('change',event=>{state.visualPart=event.target.value;renderVisuals()});$('#visualPerson').addEventListener('change',event=>{state.visualPerson=event.target.value;renderVisuals()});
-const nmEl=$('#netMode');if(nmEl){nmEl.addEventListener('change',e=>{state.netMode=e.target.value;const ego=$('#egoNet'),full=$('#fullNet');if(state.netMode==='full'){ego.style.display='none';full.style.display='block';renderFullGraph()}else{ego.style.display='block';full.style.display='none';stopFullSim();}});if(state.netMode==='full'){renderFullGraph()}}
+const nmEl=$('#netMode');if(nmEl){nmEl.addEventListener('change',e=>{state.netMode=e.target.value;writeHash({view:'visuals',net:state.netMode==='ego'?'':state.netMode});const ego=$('#egoNet'),full=$('#fullNet');if(state.netMode!=='ego'){ego.style.display='none';full.style.display='block';fullSummaryHTML&&renderFullGraph()}else{ego.style.display='block';full.style.display='none';stopFullSim();}const note=$('#netModeNote');if(note)note.textContent=state.netMode==='entity'?'实体图口径：节点=全部关系端点，不能读作「N 名人物」——人物图见上一项。':(state.netMode==='full'?'人物图口径（方案 A）：只保留人物↔人物关系，非人物端点不计入。':'');});if(state.netMode!=='ego'){renderFullGraph()}}
 }
 function factionColor(tier){const palette=['#8d3025','#476b86','#527b5c','#b88b35','#6d688c','#a24b55','#3d7a7a','#9a6b2f','#7a5ca8','#4f7d3a','#b0466f','#356f9c','#8a6d2b','#5c7a3a','#9c5a3a'];let h=0;for(let i=0;i<tier.length;i++){h=(h*31+tier.charCodeAt(i))>>>0}return palette[h%palette.length]}
+/* Phase 6 双模式图：同一个人物图/实体图切换入口。
+   两种图口径不同——人物图只含人物（方案 A），实体图含地点/机构/政权/其他；
+   因此统计文案、图例、悬浮提示都要按当前模式走，绝不能把实体数说成人物数。 */
+const GRAPH_KIND_LABELS={person:'人物',place:'地点',org:'机构',regime:'政权',other:'其他'};
+const GRAPH_KIND_COLORS={person:'#8d3025',place:'#476b86',org:'#527b5c',regime:'#b88b35',other:'#6d688c'};
+const kindLabel=k=>GRAPH_KIND_LABELS[k]||'其他';
+const isEntityMode=()=>state.netMode==='entity'&&!!DATA.relationGraphEntities;
+// 注意：兜底必须回落到人物图（relationGraphFull），不能回落成 activeGraph() 自己——
+// 那会变成无限自递归导致栈溢出，直接把图谱视图打挂。
+const activeGraph=()=>isEntityMode()?DATA.relationGraphEntities:DATA.relationGraphFull;
+const nodeColor=nd=>isEntityMode()&&nd.kind!=='person'?GRAPH_KIND_COLORS[nd.kind]||GRAPH_KIND_COLORS.other:factionColor(nd.faction||nd.tier||'');
+const fullModeOption=(v,label)=>`<option value="${v}" ${state.netMode===v?'selected':''}>${label}</option>`;
 let fullT={k:1,tx:0,ty:0};
 function applyFullTransform(){if(fullCanvas)drawFull()}
-function fgByName(n){if(!_fgCache){_fgCache={};(DATA.relationGraphFull.nodes||[]).forEach(x=>{_fgCache[x.name]=x})}return _fgCache[n]}
+function fgByName(n){if(!_fgCache){_fgCache={};(activeGraph().nodes||[]).forEach(x=>{_fgCache[x.name]=x})}return _fgCache[n]}
 function drawFull(){
-  const g=DATA.relationGraphFull;if(!g||!g.nodes||!g.nodes.length)return;
+  const g=activeGraph();if(!g||!g.nodes||!g.nodes.length)return;
   const ctx=fullCtx;ctx.save();ctx.setTransform(fullDpr,0,0,fullDpr,0,0);ctx.clearRect(0,0,fullCssW,fullCssH);
   const k=fullT.k,tx=fullT.tx,ty=fullT.ty;const hl=fullHighlight;const inc=new Set();
   const S=fullSim?fullSim.nodes:null;
   if(hl){inc.add(hl);g.links.forEach(l=>{if(l.source===hl)inc.add(l.target);if(l.target===hl)inc.add(l.source)});}
   g.links.forEach(l=>{const a=S?S[fullSim.ix[l.source]]:fgByName(l.source);const b=S?S[fullSim.ix[l.target]]:fgByName(l.target);if(!a||!b)return;const ax=a.x*k+tx,ay=a.y*k+ty,bx=b.x*k+tx,by=b.y*k+ty;let op=0.5,w=Math.min(0.6+l.count*0.35,3.2);if(hl){const on=(l.source===hl||l.target===hl);op=on?0.95:0.05;w=on?Math.min(w+0.8,4):w;}ctx.strokeStyle=relCatColor(l.category);ctx.globalAlpha=op;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();});
   ctx.globalAlpha=1;
-  g.nodes.forEach((nd,i)=>{const s=S?S[i]:nd;const x=s.x*k+tx,y=s.y*k+ty,r=Math.max(s.r*k,2.2);let op=1;if(hl){op=inc.has(nd.name)?1:0.12;}ctx.globalAlpha=op;ctx.fillStyle=factionColor(nd.tier);ctx.beginPath();ctx.arc(x,y,r,0,6.2832);ctx.fill();ctx.lineWidth=0.8;ctx.strokeStyle='#fffdf9';ctx.stroke();if(nd.degree>=10&&(!hl||inc.has(nd.name))){ctx.globalAlpha=op;ctx.fillStyle='#443a32';ctx.font='11px "Microsoft YaHei","PingFang SC",sans-serif';ctx.textAlign='center';ctx.fillText(nd.name.length>6?nd.name.slice(0,6)+'…':nd.name,x,y-r-4);}});
+  g.nodes.forEach((nd,i)=>{const s=S?S[i]:nd;const x=s.x*k+tx,y=s.y*k+ty,r=Math.max(s.r*k,2.2);let op=1;if(hl){op=inc.has(nd.name)?1:0.12;}ctx.globalAlpha=op;ctx.fillStyle=nodeColor(nd);ctx.beginPath();ctx.arc(x,y,r,0,6.2832);ctx.fill();ctx.lineWidth=0.8;ctx.strokeStyle='#fffdf9';ctx.stroke();const wantLabel=nd.kind&&nd.kind!=='person'?true:nd.degree>=10;if(wantLabel&&(!hl||inc.has(nd.name))){ctx.globalAlpha=op;ctx.fillStyle='#443a32';ctx.font='11px "Microsoft YaHei","PingFang SC",sans-serif';ctx.textAlign='center';ctx.fillText(nd.name.length>6?nd.name.slice(0,6)+'…':nd.name,x,y-r-4);}});
   ctx.globalAlpha=1;ctx.restore();
 }
 /* 实时力模拟：网格加速斥力 + 弹簧 + 中心引力 + 微抖动（轻微飘动） */
 let fullSim=null,fullReduceMotion=false,_fullBound=false,_fullResizeBound=false,_fgAbort=null;
-function sizeFullCanvas(){if(!fullCanvas)return;const g=DATA.relationGraphFull;if(!g)return;const cssW=fullCanvas.parentElement.clientWidth||800;const cssH=Math.max(320,Math.min(cssW*(g.height/g.width),cssW*1.15));fullCssW=cssW;fullCssH=cssH;fullDpr=window.devicePixelRatio||1;fullCanvas.style.height=cssH+'px';fullCanvas.width=Math.round(cssW*fullDpr);fullCanvas.height=Math.round(cssH*fullDpr);fullCanvas.style.width=cssW+'px';const s=cssW/g.width;fullT={k:s,tx:0,ty:0};if(!_fullResizeBound){_fullResizeBound=true;let rt=null;window.addEventListener('resize',()=>{if(!fullCanvas)return;clearTimeout(rt);rt=setTimeout(()=>{sizeFullCanvas();drawFull();},120);});}}
-function initFullSim(){const g=DATA.relationGraphFull;if(!g||!g.nodes||!g.nodes.length){fullSim=null;return;}const nodes=g.nodes.map(nd=>({name:nd.name,x:nd.x,y:nd.y,vx:0,vy:0,r:nd.r,degree:nd.degree,faction:nd.faction,tier:nd.tier,role:nd.role,fixed:false}));const ix={};nodes.forEach((n,i)=>ix[n.name]=i);const links=g.links.map(l=>({a:ix[l.source],b:ix[l.target],category:l.category,count:l.count}));fullSim={nodes,ix,links,w:g.width,h:g.height,alpha:1,alphaTarget:0,raf:null,dragIdx:-1,reduced:fullReduceMotion};}
+function sizeFullCanvas(){if(!fullCanvas)return;const g=activeGraph();if(!g)return;const cssW=fullCanvas.parentElement.clientWidth||800;const cssH=Math.max(320,Math.min(cssW*(g.height/g.width),cssW*1.15));fullCssW=cssW;fullCssH=cssH;fullDpr=window.devicePixelRatio||1;fullCanvas.style.height=cssH+'px';fullCanvas.width=Math.round(cssW*fullDpr);fullCanvas.height=Math.round(cssH*fullDpr);fullCanvas.style.width=cssW+'px';const s=cssW/g.width;fullT={k:s,tx:0,ty:0};if(!_fullResizeBound){_fullResizeBound=true;let rt=null;window.addEventListener('resize',()=>{if(!fullCanvas)return;clearTimeout(rt);rt=setTimeout(()=>{sizeFullCanvas();drawFull();},120);});}}
+function initFullSim(){const g=activeGraph();if(!g||!g.nodes||!g.nodes.length){fullSim=null;return;}const nodes=g.nodes.map(nd=>({name:nd.name,kind:nd.kind||'person',kindLabel:nd.kindLabel||'',x:nd.x,y:nd.y,vx:0,vy:0,r:nd.r,degree:nd.degree,faction:nd.faction,tier:nd.tier,role:nd.role,fixed:false}));const ix={};nodes.forEach((n,i)=>ix[n.name]=i);const links=g.links.map(l=>({a:ix[l.source],b:ix[l.target],category:l.category,count:l.count}));fullSim={nodes,ix,links,w:g.width,h:g.height,alpha:1,alphaTarget:0,raf:null,dragIdx:-1,reduced:fullReduceMotion};}
 function fullStep(){const S=fullSim;if(!S)return;const N=S.nodes,n=N.length;const k=24,rep=160,spring=0.02,gravity=0.018,cx=S.w/2,cy=S.h/2,alpha=S.alpha;const thermal=S.reduced?0:0.22;const cell=k*4;const grid=new Map();for(let i=0;i<n;i++){const nd=N[i];const gx=Math.floor(nd.x/cell),gy=Math.floor(nd.y/cell);const key=gx+'|'+gy;let arr=grid.get(key);if(!arr){arr=[];grid.set(key,arr);}arr.push(i);}for(let i=0;i<n;i++){const a=N[i];if(a.fixed)continue;let fx=0,fy=0;const gx=Math.floor(a.x/cell),gy=Math.floor(a.y/cell);for(let ox=-1;ox<=1;ox++)for(let oy=-1;oy<=1;oy++){const arr=grid.get((gx+ox)+'|'+(gy+oy));if(!arr)continue;for(let q=0;q<arr.length;q++){const j=arr[q];if(j===i)continue;const b=N[j];let dx=a.x-b.x,dy=a.y-b.y;let d2=dx*dx+dy*dy;if(d2<1e-3){dx=Math.random()-0.5;dy=Math.random()-0.5;d2=dx*dx+dy*dy+1e-3;}const d=Math.sqrt(d2);const f=rep/d2;fx+=dx/d*f;fy+=dy/d*f;}}fx+=(cx-a.x)*gravity;fy+=(cy-a.y)*gravity;a._fx=fx;a._fy=fy;}for(let e=0;e<S.links.length;e++){const l=S.links[e];const a=N[l.a],b=N[l.b];if(a.fixed&&b.fixed)continue;let dx=b.x-a.x,dy=b.y-a.y;let d=Math.sqrt(dx*dx+dy*dy)+1e-6;const f=(d-k)*spring;const fx=dx/d*f,fy=dy/d*f;if(!a.fixed){a._fx+=fx;a._fy+=fy;}if(!b.fixed){b._fx-=fx;b._fy-=fy;}}const damp=0.85,maxStep=12;for(let i=0;i<n;i++){const a=N[i];if(a.fixed){a.vx=0;a.vy=0;continue;}const jx=thermal?(Math.random()-0.5)*thermal:0;const jy=thermal?(Math.random()-0.5)*thermal:0;a.vx=(a.vx+a._fx*alpha+jx)*damp;a.vy=(a.vy+a._fy*alpha+jy)*damp;const sp=Math.hypot(a.vx,a.vy);if(sp>maxStep){a.vx*=maxStep/sp;a.vy*=maxStep/sp;}a.x+=a.vx;a.y+=a.vy;}S.alpha+=(S.alphaTarget-S.alpha)*0.02;if(S.alpha<0)S.alpha=0;}
 function fullLoop(){if(!fullSim)return;fullStep();drawFull();if(fullSim.alpha<0.02&&fullSim.dragIdx<0){const r=fullSim.raf;fullSim.raf=null;if(r)cancelAnimationFrame(r);return;}fullSim.raf=requestAnimationFrame(fullLoop);}
 function startFullSim(){if(!fullSim)initFullSim();if(fullSim&&!fullSim.raf){fullSim.raf=requestAnimationFrame(fullLoop);}}
 function stopFullSim(){if(fullSim&&fullSim.raf){cancelAnimationFrame(fullSim.raf);fullSim.raf=null;}}
-/* 关系统计口径统一入口：人物关系图只统计「人物↔人物」关系，
-   非人物端点（东林党/东厂/后金/北京…）被排除，这里把排除量如实标出。 */
+/* 关系统计口径统一入口。两种图的数字含义不同，文案必须分开写：
+   - 人物图（方案 A）：只统计「人物↔人物」关系，非人物端点被排除并如实标出；
+   - 实体图：节点含地点/机构/政权/其他，只能说「实体 N 个」，绝不能说「N 名人物」。 */
 function fullSummaryHTML(g){
+  if(isEntityMode()){
+    const k=g.stats.byKind||{};
+    const parts=Object.keys(GRAPH_KIND_LABELS).filter(x=>k[x]).map(x=>`${GRAPH_KIND_LABELS[x]} ${k[x]}`);
+    return `<span>实体关系图：<strong>${g.stats.nodes}</strong> 个实体 · <strong>${g.stats.edges}</strong> 条关系</span>`
+      +`<span>其中人物 <strong>${g.stats.personNodes}</strong> 位，另有 ${g.stats.nonPersonNodes} 个非人物实体</span>`
+      +`<span>孤立人物 ${g.stats.isolatedPersons}（指与该人物毫无人物间关系者，全书人物共 ${g.stats.bookPersons}）</span>`
+      +(parts.length?`<span class="muted">${parts.join(' · ')}</span>`:'');
+  }
   const pct=g.stats.persons?Math.round(g.stats.isolated*100/g.stats.persons):0;
   return `<span>人物关系图：<strong>${g.stats.nodes}</strong> / ${g.stats.persons} 人 · <strong>${g.stats.edges}</strong> 条人物关系</span>`
     +`<span>孤立人物 ${g.stats.isolated}（${pct}%，指无任何人物间关系）</span>`
     +(g.stats.excludedNonPerson?`<span class="muted">另有 ${g.stats.excludedNonPerson} 条关系含非人物端点，未计入人物关系图</span>`:'');
 }
 function renderFullGraph(){
-  const g=DATA.relationGraphFull;const sum=document.getElementById('fullSummary'),legend=document.getElementById('fullLegend'),canvas=document.getElementById('fullGraph');
+  const g=activeGraph();const sum=document.getElementById('fullSummary'),legend=document.getElementById('fullLegend'),canvas=document.getElementById('fullGraph');
   if(!g||!g.nodes||!g.nodes.length){if(sum)sum.innerHTML='<span>当前范围没有可绘制的关系图。</span>';return;}
   fullReduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   fullCanvas=canvas;fullCtx=canvas.getContext('2d');_fgCache=null;fullHighlight=null;
   sizeFullCanvas();
-  legend.innerHTML=(DATA.relationCategories||[]).map(c=>`<span><i class="cat-dot" style="--cat:${relCatColor(c)};margin-right:4px"></i>${esc(c)}</span>`).join('')+`<span class="muted"> · 点大小=关系数，颜色=势力大类 · 可拖拽节点</span>`;
+  const catLegend=(DATA.relationCategories||[]).map(c=>`<span><i class="cat-dot" style="--cat:${relCatColor(c)};margin-right:4px"></i>${esc(c)}</span>`).join('');
+  // 实体图按节点类型着色，必须配类型图例，否则颜色无从解读
+  if(isEntityMode()){
+    const k=(g.stats&&g.stats.byKind)||{};
+    const kinds=Object.keys(GRAPH_KIND_LABELS).filter(x=>k[x]).map(x=>`<span><i class="kind-dot" style="--kind:${GRAPH_KIND_COLORS[x]}"></i>${GRAPH_KIND_LABELS[x]} ${k[x]}</span>`).join('');
+    legend.innerHTML=`<span class="legend-title">节点类型</span>${kinds}<span class="legend-sep"></span><span class="legend-title">关系类别（线色）</span>${catLegend}<span class="muted"> · 点大小=关系数 · 可拖拽节点</span>`;
+  }else{
+    legend.innerHTML=catLegend+`<span class="muted"> · 点大小=关系数，颜色=势力大类 · 可拖拽节点</span>`;
+  }
   sum.innerHTML=fullSummaryHTML(g);
+  /* 无障碍：canvas 本身没有可读内容，必须给出描述性替代文本，
+     并指向下方的文本统计（完整逐条数据在「关系」视图里）。 */
+  if(canvas)canvas.setAttribute('aria-label',isEntityMode()
+    ?`全书实体关系图：${g.stats.nodes} 个实体、${g.stats.edges} 条关系，节点按类型着色；逐条关系见「关系」视图`
+    :`全书人物关系图：${g.stats.nodes} 人、${g.stats.edges} 条人物关系，另有 ${g.stats.excludedNonPerson||0} 条含非人物端点的关系未计入；逐条关系见「关系」视图`);
   stopFullSim();            // 防止多次渲染叠加多个 rAF 循环（CPU 翻倍、收敛被加速）
   initFullSim();
   drawFull();
@@ -192,15 +330,15 @@ function renderFullGraph(){
   if(canvas.dataset.fgBound!=='1'){setupFullInteractions(canvas);canvas.dataset.fgBound='1';}
   startFullSim();
 }
-function showFullNode(name){const g=DATA.relationGraphFull;const node=fgByName(name);if(!node)return;fullHighlight=name;const inc=new Set([name]);g.links.forEach(l=>{if(l.source===name)inc.add(l.target);if(l.target===name)inc.add(l.source)});const neigh=[...inc].filter(x=>x!==name);document.getElementById('fullSummary').innerHTML=`<span>已选：<strong>${esc(name)}</strong></span><span>${esc(node.faction||'势力待补')}</span><span>关系 ${node.degree} 条</span><span>邻域 ${neigh.length} 人</span>`;drawFull();}
-function resetFullHighlight(){fullHighlight=null;const g=DATA.relationGraphFull;if(g)document.getElementById('fullSummary').innerHTML=fullSummaryHTML(g);drawFull();}
+function showFullNode(name){const g=activeGraph();const node=fgByName(name);if(!node)return;fullHighlight=name;const inc=new Set([name]);g.links.forEach(l=>{if(l.source===name)inc.add(l.target);if(l.target===name)inc.add(l.source)});const neigh=[...inc].filter(x=>x!==name);document.getElementById('fullSummary').innerHTML=`<span>已选：<strong>${esc(name)}</strong></span><span>${esc(node.faction||'势力待补')}</span><span>关系 ${node.degree} 条</span><span>邻域 ${neigh.length} ${isEntityMode()?'个实体':'人'}</span>`;drawFull();}
+function resetFullHighlight(){fullHighlight=null;const g=activeGraph();if(g)document.getElementById('fullSummary').innerHTML=fullSummaryHTML(g);drawFull();}
 function setupFullInteractions(canvas){
   // 用模块级 AbortController：画布被 innerHTML 替换后重新挂载时，先 abort 上一轮，
   // window 级监听器随信号一并注销。（挂在 canvas 上会随旧画布一起被丢弃，
   // 但 window 上的监听器不会，逐次累积 → 事件泄漏。）
   if(_fgAbort){try{_fgAbort.abort()}catch(_){}}
   _fgAbort=new AbortController();const __sg={signal:_fgAbort.signal};
-  const hit=(mx,my)=>{const arr=fullSim?fullSim.nodes:DATA.relationGraphFull.nodes;let best=-1,bd=1e9;for(let i=0;i<arr.length;i++){const nd=arr[i];const sx=nd.x*fullT.k+fullT.tx,sy=nd.y*fullT.k+fullT.ty;const d=Math.hypot(sx-mx,sy-my);const rr=Math.max(nd.r*fullT.k,2.2)+6;if(d<rr&&d<bd){bd=d;best=i;}}return best;};
+  const hit=(mx,my)=>{const arr=fullSim?fullSim.nodes:activeGraph().nodes;let best=-1,bd=1e9;for(let i=0;i<arr.length;i++){const nd=arr[i];const sx=nd.x*fullT.k+fullT.tx,sy=nd.y*fullT.k+fullT.ty;const d=Math.hypot(sx-mx,sy-my);const rr=Math.max(nd.r*fullT.k,2.2)+6;if(d<rr&&d<bd){bd=d;best=i;}}return best;};
   let panning=false,lx=0,ly=0,moved=false,dragIdx=-1;
   canvas.addEventListener('wheel',e=>{e.preventDefault();const rect=canvas.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;const f=e.deltaY<0?1.12:1/1.12;const nk=Math.min(Math.max(fullT.k*f,0.15),14);const r=nk/fullT.k;fullT.tx=mx-(mx-fullT.tx)*r;fullT.ty=my-(my-fullT.ty)*r;fullT.k=nk;drawFull();},__sg);
   canvas.addEventListener('pointerdown',e=>{const rect=canvas.getBoundingClientRect();const idx=hit(e.clientX-rect.left,e.clientY-rect.top);moved=false;lx=e.clientX;ly=e.clientY;if(idx>=0){dragIdx=idx;if(fullSim){const nd=fullSim.nodes[idx];nd.fixed=true;fullSim.dragIdx=idx;fullSim.alpha=Math.max(fullSim.alpha,0.6);fullSim.alphaTarget=0.6;}startFullSim();canvas.classList.add('dragging');if(canvas.setPointerCapture)try{canvas.setPointerCapture(e.pointerId);}catch(_){}}else{panning=true;canvas.classList.add('dragging');}},__sg);
@@ -208,8 +346,8 @@ function setupFullInteractions(canvas){
   canvas.addEventListener('pointermove',e=>{const rect=canvas.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;
     if(dragIdx>=0){const dx=e.clientX-lx,dy=e.clientY-ly;if(Math.abs(dx)>3||Math.abs(dy)>3)moved=true;const nd=fullSim.nodes[dragIdx];nd.x=(mx-fullT.tx)/fullT.k;nd.y=(my-fullT.ty)/fullT.k;nd.vx=dx/fullT.k;nd.vy=dy/fullT.k;lx=e.clientX;ly=e.clientY;fullSim.alpha=Math.max(fullSim.alpha,0.6);return;}
     if(panning){const dx=e.clientX-lx,dy=e.clientY-ly;if(Math.abs(dx)>3||Math.abs(dy)>3)moved=true;fullT.tx+=dx;fullT.ty+=dy;lx=e.clientX;ly=e.clientY;drawFull();return;}
-    const idx=hit(mx,my);const tip=document.getElementById('fullTip');if(idx>=0){const nd=(fullSim?fullSim.nodes:fgByName(DATA.relationGraphFull.nodes[idx].name));canvas.style.cursor='grab';tip.style.display='block';tip.style.left=e.clientX+'px';tip.style.top=e.clientY+'px';tip.textContent=`${nd.name}${nd.faction?' · '+nd.faction:''}${nd.role?' · '+nd.role:''} · ${nd.degree}条关系`;}else{canvas.style.cursor='grab';tip.style.display='none';}},__sg);
-  canvas.addEventListener('click',e=>{if(moved){moved=false;return;}const rect=canvas.getBoundingClientRect();const idx=hit(e.clientX-rect.left,e.clientY-rect.top);if(idx>=0){const name=(fullSim?fullSim.nodes[idx].name:DATA.relationGraphFull.nodes[idx].name);showFullNode(name);}else resetFullHighlight();},__sg);
+    const idx=hit(mx,my);const tip=document.getElementById('fullTip');if(idx>=0){const nd=(fullSim?fullSim.nodes:fgByName(activeGraph().nodes[idx].name));canvas.style.cursor='grab';tip.style.display='block';tip.style.left=e.clientX+'px';tip.style.top=e.clientY+'px';tip.textContent=`${(nd.kind&&nd.kind!=='person')?'【'+kindLabel(nd.kind)+'】':''}${nd.name}${nd.faction?' · '+nd.faction:''}${nd.role&&nd.role!==nd.faction?' · '+nd.role:''} · ${nd.degree}条关系`;}else{canvas.style.cursor='grab';tip.style.display='none';}},__sg);
+  canvas.addEventListener('click',e=>{if(moved){moved=false;return;}const rect=canvas.getBoundingClientRect();const idx=hit(e.clientX-rect.left,e.clientY-rect.top);if(idx>=0){const name=(fullSim?fullSim.nodes[idx].name:activeGraph().nodes[idx].name);showFullNode(name);}else resetFullHighlight();},__sg);
   // 指针离开画布时收起提示框，避免提示常驻挡住点击
   canvas.addEventListener('pointerleave',()=>{const tp=document.getElementById('fullTip');if(tp)tp.style.display='none';},__sg);
 }
@@ -284,11 +422,15 @@ function renderMap(){
     box.innerHTML=`<svg class="fallback-map" viewBox="0 0 1000 520" role="img" aria-label="地点坐标图"><rect width="1000" height="520" fill="#e6eee7"/>${dots}</svg>`;
     box.querySelectorAll('[data-loc-ancient]').forEach(c=>c.addEventListener('click',()=>{const x=DATA.locations.find(y=>y.ancient===c.dataset.locAncient);if(x)showLocation(x)}));
   };
-  if(window.L){drawLeaflet();}
+  if(window.L){drawLeaflet();dismissFail('leaflet');}
   else{
     drawSvg();   // 先立即显示离线点位图，不阻塞；Leaflet 就绪后再升级
-    loadLeaflet().then(()=>{if(state.view==='map'&&state.mapMode==='pilgrim'&&mapInstance==null)drawLeaflet();})
-      .catch(()=>{$('#mapNote').textContent=`已定位 ${locations.length}/${DATA.locations.length} 个地点。当前为离线点位图（地图组件加载失败，可刷新重试）。`;});
+    loadLeaflet().then(()=>{dismissFail('leaflet');if(state.view==='map'&&state.mapMode==='pilgrim'&&mapInstance==null)drawLeaflet();})
+      .catch(()=>{
+        $('#mapNote').textContent=`已定位 ${locations.length}/${DATA.locations.length} 个地点。当前为离线点位图（地图组件加载失败，可重试）。`;
+        failBar('leaflet','地图组件（Leaflet）加载失败，当前显示离线点位图（点位与点击详情不受影响）。',{level:'warn',
+          retry:()=>{_leafletPromise=null;renderMap();}});
+      });
   }
 }
 function renderVoyage(){
@@ -316,10 +458,15 @@ function renderVoyage(){
     box.innerHTML=`<svg class="fallback-map" viewBox="0 0 1000 520" role="img" aria-label="郑和航线图"><rect width="1000" height="520" fill="#e6eee7"/>${route}</svg>`;
     box.querySelectorAll('circle[data-stop]').forEach(c=>c.addEventListener('click',()=>{const k=Number(c.dataset.stop);if(pts[k])showVoyageStop(pts[k],k)}));
   };
-  if(window.L){drawLeaflet();}
+  if(window.L){drawLeaflet();dismissFail('leaflet');}
   else{
     drawSvg();
-    loadLeaflet().then(()=>{if(state.view==='map'&&state.mapMode==='voyage'&&voyageMapInstance==null)drawLeaflet();}).catch(()=>{});
+    loadLeaflet().then(()=>{dismissFail('leaflet');if(state.view==='map'&&state.mapMode==='voyage'&&voyageMapInstance==null)drawLeaflet();})
+      .catch(()=>{
+        $('#voyageNote').textContent=`${esc(v.name)} · ${pts.length} 个停靠点（地图组件加载失败，当前为离线航线示意图）。`;
+        failBar('leaflet','地图组件（Leaflet）加载失败，航线以离线示意图显示（停靠点详情不受影响）。',{level:'warn',
+          retry:()=>{_leafletPromise=null;renderVoyage();}});
+      });
   }
 }
 function showVoyageStop(p,i){const dock=$('#voyageDock');const evs=p.events||[];dock.innerHTML=`<div class="dock-head"><h3>${i+1}. ${esc(p.name)}</h3><button class="dock-close" id="voyageDockClose">关闭</button></div><div class="detail-grid"><div class="detail-block detail-wide"><strong>停靠序号</strong><p>第 ${i+1} 站 / 共 ${DATA.voyages.points.length} 站</p></div><div class="detail-block detail-wide"><strong>书中描述</strong><p>${esc(p.desc||'（书中仅提及，未详述）')}</p></div><div class="detail-block"><strong>坐标</strong><p>${Number(p.lat).toFixed(2)}, ${Number(p.lng).toFixed(2)}</p></div><div class="detail-block"><strong>核验</strong><p class="muted">${DATA.voyages.illustrative?'坐标为示意，需史料核验':'坐标已核验'}</p></div><div class="detail-block detail-wide"><strong>书中相关事件</strong>${evs.length?`<ul class="event-list">${evs.map(e=>`<li><button class="link-button" data-event-id="${e.id}">${esc(e.name)}</button>${e.year?` <span class="muted">${esc(String(e.year))}</span>`:''}</li>`).join('')}</ul>${p.eventsDirect?'':'<p class="muted">书中未直接提及此停靠点，以上为本航线同章大事。</p>'}`:'<p class="muted">暂无</p>'}</div></div>`;dock.hidden=false;$('#voyageDockClose').addEventListener('click',()=>{dock.hidden=true});dock.querySelectorAll('[data-event-id]').forEach(b=>b.addEventListener('click',()=>{const x=DATA.events.find(y=>y.id===b.dataset.eventId);if(x)showEvent(x)}))}
@@ -331,16 +478,32 @@ function renderCharacters(){
 $('#cardTheme').addEventListener('change',e=>{state.cardTheme=e.target.value;renderCharacters()});
  const root=$('#characters');bindPaging(root,delta=>{state.charPage+=delta;renderCharacters()});root.querySelectorAll('[data-char-mode]').forEach(b=>b.addEventListener('click',()=>{root.querySelectorAll('[data-char-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.charMode==='screen'){root.querySelector('#charScreen').style.display='grid';root.querySelector('#printGuide').style.display='none';root.querySelector('#printArea').style.display='none'}else{root.querySelector('#charScreen').style.display='none';root.querySelector('#printGuide').style.display='block';root.querySelector('#printArea').style.display='block';renderPrint(b.dataset.charMode,list)}}));root.querySelectorAll('[data-char-detail]').forEach(b=>b.addEventListener('click',()=>{const x=DATA.characters.find(y=>y.name===b.dataset.charDetail);showPerson(x.name)}));
 }
-// 卡面字段清洁：势力字段常被抽取污染成「明朝·官职（籍贯，科举）」整串（84 处）。
-// 显示层拆分：去「明朝·」前缀、尾部括号拆到「出身」行、括号里的籍贯回填籍贯字段；不改动源数据。
+/* 卡面字段（P2-03）：优先读 Python 端一次性解析好的 profile，
+   不再用正则从展示串里猜字段含义。
+   profile 契约见 src/core/faction_profile.py：
+     label 势力标签 / origin 籍贯 / note 括号备注 / office 官职 / jinshi_year 科举年份
+   只有在 profile 缺失（例如旧 payload）时才回退到原先的字符串清洗逻辑。 */
 function cleanCardFields(x){
+ const p=x&&x.profile;
+ if(p&&typeof p==='object'&&p.label!==undefined){
+  return{
+   faction:p.label||x.faction||'势力待补',
+   role:(x.role||'').trim(),
+   birth:p.origin||'',
+   extra:p.note||'',
+   office:(p.office||[]).join('、'),
+   jinshi:p.jinshi_year||null,
+   dynasty:p.dynasty||'',
+   raw:p.raw||''
+  };
+ }
  let faction=(x.faction||'').trim(),extra='';
  const m=faction.match(/（([^（）]*)）\s*$/);
  if(m){extra=m[1];faction=faction.slice(0,m.index).trim()}
  faction=faction.replace(/^明朝\s*[·・:：]?\s*/,'').replace(/^明\s*[·・]\s*/,'').trim();
  let birth=(x.birth||'').trim();
  if(!birth&&extra){const bp=extra.match(/([^，,、]+人)/);if(bp)birth=bp[1]}
- return{faction:faction||x.faction||'势力待补',role:(x.role||'').trim(),birth,extra};
+ return{faction:faction||x.faction||'势力待补',role:(x.role||'').trim(),birth,extra,office:'',jinshi:null,dynasty:'',raw:x.faction||''};
 }
 function characterCard(x){
  const F=cleanCardFields(x);
@@ -439,7 +602,16 @@ detail=`<div class="panel" style="margin-top:14px"><div class="section-head"><di
 $('#dynasty').innerHTML=`<div class="section-head"><div><h2>帝王谱系</h2><p>十六位天子、十七段年号；${DATA.timeline.length} 件可纪年大事按在位期自动归位，条带宽度即在位时长。</p></div><span class="status">帝系为人工整理 · 事件自动对位</span></div><div class="panel" style="margin-bottom:14px"><div class="section-head"><div><h2 style="font-size:16px">一、在位条带与逐年大事热度</h2><p>中条为年号区间（1368-1644），年号标签在色带上、下方交替错行并按区间居中；下条为逐年事件数，颜色随年号切换；悬停看具体年份。</p></div></div><div class="dynasty-labels above">${eraLabelsAbove}</div><div class="dynasty-band">${segs}</div><div class="dynasty-labels below">${eraLabelsBelow}</div><div class="dynasty-hist">${bars}</div><div class="dynasty-scale"><span>1368 · 洪武开国</span><span>1644 · 崇祯殉国</span></div></div><div class="panel"><div class="section-head"><div><h2 style="font-size:16px">二、十六帝小传</h2><p>点击任一帝王卡片或上方年号条，展开本朝大事与活跃人物。</p></div></div><div class="dynasty-cards">${cards}</div></div>${detail}`;
 document.querySelectorAll('#dynasty .dynasty-card,#dynasty .dynasty-seg,#dynasty .dynasty-label').forEach(el=>el.addEventListener('click',()=>{state.dynastyEra=state.dynastyEra===el.dataset.era?'':el.dataset.era;renderDynasty()}));
 document.querySelectorAll('#dynasty [data-event-id]').forEach(b=>b.addEventListener('click',()=>showEvent(DATA.events.find(x=>x.id===b.dataset.eventId))))}
-const EST_HINT=55;function renderChronicle(){const lives=(DATA.lifespans||[]).slice();if(!lives.length){$('#chronicle').innerHTML='<div class="empty">暂无年谱数据</div>';return}const GROUP_COLORS={'帝系':'#8d3025','开国功臣':'#b88b35','永乐群英':'#476b86','内阁文臣':'#527b5c','武将勋臣':'#8c6344','宦官佞幸':'#706b91','对手与民变':'#a24b55','文苑行者':'#6f6a63','东林党人':'#3f7d6e','忠烈':'#9c3b2e'};const minY=Math.min(...lives.map(x=>x.birth))-3,maxY=Math.max(...lives.map(x=>x.death))+3,span=maxY-minY;const pct=y=>(y-minY)*100/span;const reigns=DATA.reigns||[];let bands='';if(1368>minY)bands+=`<span class="chronicle-band" style="left:0;width:${pct(Math.min(1368,maxY))}%;background:#9d9a8d" title="明兴之前"></span>`;reigns.forEach(r=>{bands+=`<span class="chronicle-band" style="left:${pct(r.start)}%;width:${(r.end-r.start+1)*100/span}%;background:${reignColor(r.order-1)}" title="${esc(r.era)} ${r.start}-${r.end}"></span>`});if(maxY>1644)bands+=`<span class="chronicle-band" style="left:${pct(1645)}%;width:${pct(maxY)-pct(1645)}%;background:#9d9a8d" title="甲申之后"></span>`;let ticks='';for(let y=Math.ceil(minY/25)*25;y<=maxY;y+=25){ticks+=`<span class="chronicle-tick" style="left:${pct(y)}%">${y}</span>`}const groups=[];lives.slice().sort((a,b)=>a.birth-b.birth).forEach(l=>{let g=groups.find(x=>x.label===l.group);if(!g){g={label:l.group,items:[]};groups.push(g)}g.items.push(l)});const charSet=new Set(DATA.characters.map(c=>c.name));const rows=groups.map(g=>{const c=GROUP_COLORS[g.label]||'#9d9a8d';return `<div class="chronicle-group"><span class="cat-dot" style="--cat:${c}"></span>${esc(g.label)} · ${g.items.length} 人</div>`+g.items.map(l=>{const left=pct(l.birth),w=Math.max(.7,pct(l.death+1)-left);const estNote=l.life_estimated?`\n生年不详，按卒年推 ${EST_HINT} 年示意（虚线条）`:(l.approx?'\n生卒年为通行说法（有异说）':'');const btn=charSet.has(l.name)?`<button class="link-button" data-person="${esc(l.name)}">${esc(l.name)}</button>`:esc(l.name);return `<div class="chronicle-row"><div class="chronicle-name">${btn}</div><div class="chronicle-track"><span class="chronicle-bar${l.life_estimated?' est':''}" style="left:${left}%;width:${w}%;background:${c}" title="${esc(l.name)} · ${l.life_estimated?'?':l.birth}–${l.death}${l.note?' · '+esc(l.note):''}${estNote}"></span></div></div>`}).join('')}).join('');$('#chronicle').innerHTML=`<div class="section-head"><div><h2>年谱 · 人物生平对照</h2><p>${lives.length} 位主要人物的生卒年横向展开，底色条带为十六帝在位期，人物与年号直接对位；点击人名打开详情。</p></div><span class="status draft">生卒年据通行史料整理 · 需史料核验</span></div><div class="panel"><div class="chronicle-wrap">${bands}<div class="chronicle-content"><div class="chronicle-axis">${ticks}</div>${rows}</div></div></div>`;document.querySelectorAll('#chronicle [data-person]').forEach(b=>b.addEventListener('click',()=>{const x=DATA.characters.find(y=>y.name===b.dataset.person);if(!x)return;showPerson(x.name)}))}function renderTimeline(){const cats=DATA.eventCategories||[];const filtered=(state.timelineCategory==='全部类别')?DATA.timeline:DATA.timeline.filter(x=>x.category===state.timelineCategory);const page=slicePage(filtered,state.timelinePage);const groups=[];for(const event of page){const year=event.year||'年份待考';let group=groups.find(x=>x.year===year);if(!group){group={year,items:[]};groups.push(group)}group.items.push(event)}$('#timeline').innerHTML=`<div class="section-head"><div><h2>时间轴</h2><p>按数值年份排序；年份待考事件单独保留，不再混入历史顺序。</p></div></div><div class="panel"><div class="toolbar"><label>类别</label><select id="timelineCategory"><option value="全部类别" ${state.timelineCategory==='全部类别'?'selected':''}>全部类别（${DATA.timeline.length}）</option>${cats.map(c=>`<option ${state.timelineCategory===c?'selected':''}>${esc(c)}</option>`).join('')}</select><span class="muted">圆点颜色即事件类别</span></div><div class="timeline">${groups.map(g=>`<div class="year-group"><h3>${esc(g.year)}${eraTag(g.year)}</h3>${g.items.map(x=>`<div class="timeline-item"><span class="cat-dot" style="--cat:${eventCatColor(x.category)}" title="${esc(x.category)}"></span><button data-event-id="${x.id}">${esc(x.name)}</button><span class="muted"> · ${esc(x.participants.slice(0,4).join('、'))}</span></div>`).join('')}</div>`).join('')}</div>${pager(state.timelinePage,filtered.length)}</div><div class="panel unknown"><div class="section-head"><div><h2 style="font-size:18px">年份待考</h2><p>${DATA.unknownTimeline.length} 件事件仍在事件索引中。</p></div></div><div class="source-row">${DATA.unknownTimeline.slice(0,80).map(x=>`<button class="source-chip link-button" data-event-id="${x.id}">${esc(x.name)}</button>`).join('')}</div></div>`;$('#timelineCategory').addEventListener('change',e=>{state.timelineCategory=e.target.value;state.timelinePage=1;renderTimeline()});const root=$('#timeline');bindPaging(root,delta=>{state.timelinePage+=delta;renderTimeline()});root.querySelectorAll('[data-event-id]').forEach(b=>b.addEventListener('click',()=>showEvent(DATA.events.find(x=>x.id===b.dataset.eventId))))}
+const EST_HINT=55;function renderChronicle(){const lives=(DATA.lifespans||[]).slice();if(!lives.length){$('#chronicle').innerHTML='<div class="empty">暂无年谱数据</div>';return}const GROUP_COLORS={'帝系':'#8d3025','开国功臣':'#b88b35','永乐群英':'#476b86','内阁文臣':'#527b5c','武将勋臣':'#8c6344','宦官佞幸':'#706b91','对手与民变':'#a24b55','文苑行者':'#6f6a63','东林党人':'#3f7d6e','忠烈':'#9c3b2e'};const minY=Math.min(...lives.map(x=>x.birth))-3,maxY=Math.max(...lives.map(x=>x.death))+3,span=maxY-minY;const pct=y=>(y-minY)*100/span;const reigns=DATA.reigns||[];let bands='';if(1368>minY)bands+=`<span class="chronicle-band" style="left:0;width:${pct(Math.min(1368,maxY))}%;background:#9d9a8d" title="明兴之前"></span>`;reigns.forEach(r=>{bands+=`<span class="chronicle-band" style="left:${pct(r.start)}%;width:${(r.end-r.start+1)*100/span}%;background:${reignColor(r.order-1)}" title="${esc(r.era)} ${r.start}-${r.end}"></span>`});if(maxY>1644)bands+=`<span class="chronicle-band" style="left:${pct(1645)}%;width:${pct(maxY)-pct(1645)}%;background:#9d9a8d" title="甲申之后"></span>`;let ticks='';for(let y=Math.ceil(minY/25)*25;y<=maxY;y+=25){ticks+=`<span class="chronicle-tick" style="left:${pct(y)}%">${y}</span>`}const groups=[];lives.slice().sort((a,b)=>a.birth-b.birth).forEach(l=>{let g=groups.find(x=>x.label===l.group);if(!g){g={label:l.group,items:[]};groups.push(g)}g.items.push(l)});const charSet=new Set(DATA.characters.map(c=>c.name));const rows=groups.map(g=>{const c=GROUP_COLORS[g.label]||'#9d9a8d';return `<div class="chronicle-group"><span class="cat-dot" style="--cat:${c}"></span>${esc(g.label)} · ${g.items.length} 人</div>`+g.items.map(l=>{const left=pct(l.birth),w=Math.max(.7,pct(l.death+1)-left);const estNote=l.life_estimated?`\n生年不详，按卒年推 ${EST_HINT} 年示意（虚线条）`:(l.approx?'\n生卒年为通行说法（有异说）':'');const btn=charSet.has(l.name)?`<button class="link-button" data-person="${esc(l.name)}">${esc(l.name)}</button>`:esc(l.name);return `<div class="chronicle-row"><div class="chronicle-name">${btn}</div><div class="chronicle-track"><span class="chronicle-bar${l.life_estimated?' est':''}" style="left:${left}%;width:${w}%;background:${c}" title="${esc(l.name)} · ${l.life_estimated?'?':l.birth}–${l.death}${l.note?' · '+esc(l.note):''}${estNote}"></span></div></div>`}).join('')}).join('');$('#chronicle').innerHTML=`<div class="section-head"><div><h2>年谱 · 人物生平对照</h2><p>${lives.length} 位主要人物的生卒年横向展开，底色条带为十六帝在位期，人物与年号直接对位；点击人名打开详情。</p></div><span class="status draft">生卒年据通行史料整理 · 需史料核验</span></div><div class="panel"><div class="chronicle-wrap">${bands}<div class="chronicle-content"><div class="chronicle-axis">${ticks}</div>${rows}</div></div></div>`;document.querySelectorAll('#chronicle [data-person]').forEach(b=>b.addEventListener('click',()=>{const x=DATA.characters.find(y=>y.name===b.dataset.person);if(!x)return;showPerson(x.name)}))}/* P2-10：时间轴支持起止年份筛选（#view=timeline&from=1368&to=1644），
+   与地址栏双向同步。判据用 year_start，与「按数值年份排序」同一口径；
+   未填即不限，避免把「年份待考」的事件误当 0 年处理。 */
+const timelineRange=()=>{const f=parseInt(state.timelineFrom,10),t=parseInt(state.timelineTo,10);return{from:Number.isFinite(f)?f:null,to:Number.isFinite(t)?t:null};};
+function renderTimeline(){const cats=DATA.eventCategories||[];const R=timelineRange();const filtered=DATA.timeline.filter(x=>(state.timelineCategory==='全部类别'||x.category===state.timelineCategory)&&(R.from==null||x.year_start>=R.from)&&(R.to==null||x.year_start<=R.to));const page=slicePage(filtered,state.timelinePage);const groups=[];for(const event of page){const year=event.year||'年份待考';let group=groups.find(x=>x.year===year);if(!group){group={year,items:[]};groups.push(group)}group.items.push(event)}$('#timeline').innerHTML=`<div class="section-head"><div><h2>时间轴</h2><p>按数值年份排序；年份待考事件单独保留，不再混入历史顺序。${(R.from!=null||R.to!=null)?`当前筛选 ${R.from!=null?R.from:'不限'}—${R.to!=null?R.to:'不限'} 年（命中 ${filtered.length} / ${DATA.timeline.length} 件）。`:`可用起止年份筛选区间，例如 1368—1644。`}</p></div></div><div class="panel"><div class="toolbar"><label>类别</label><select id="timelineCategory"><option value="全部类别" ${state.timelineCategory==='全部类别'?'selected':''}>全部类别（${DATA.timeline.length}）</option>${cats.map(c=>`<option ${state.timelineCategory===c?'selected':''}>${esc(c)}</option>`).join('')}</select><label for="timelineFrom">起年</label><input class="search year-input" id="timelineFrom" type="number" inputmode="numeric" min="1368" max="1644" placeholder="不限" value="${esc(state.timelineFrom)}"><span class="muted">—</span><label for="timelineTo">止年</label><input class="search year-input" id="timelineTo" type="number" inputmode="numeric" min="1368" max="1644" placeholder="不限" value="${esc(state.timelineTo)}"><button class="action" id="timelineClear" ${(R.from==null&&R.to==null)?'disabled':''}>清除区间</button><span class="muted">圆点颜色即事件类别</span></div><div class="timeline">${groups.map(g=>`<div class="year-group"><h3>${esc(g.year)}${eraTag(g.year)}</h3>${g.items.map(x=>`<div class="timeline-item"><span class="cat-dot" style="--cat:${eventCatColor(x.category)}" title="${esc(x.category)}"></span><button data-event-id="${x.id}">${esc(x.name)}</button><span class="muted"> · ${esc(x.participants.slice(0,4).join('、'))}</span></div>`).join('')}</div>`).join('')||'<div class="empty">当前区间没有可纪年事件</div>'}</div>${pager(state.timelinePage,filtered.length)}</div><div class="panel unknown"><div class="section-head"><div><h2 style="font-size:18px">年份待考</h2><p>${DATA.unknownTimeline.length} 件事件仍在事件索引中；它们没有数字年份，不受区间筛选影响。</p></div></div><div class="source-row">${DATA.unknownTimeline.slice(0,80).map(x=>`<button class="source-chip link-button" data-event-id="${x.id}">${esc(x.name)}</button>`).join('')}</div></div>`;$('#timelineCategory').addEventListener('change',e=>{state.timelineCategory=e.target.value;state.timelinePage=1;renderTimeline()});
+ const applyRange=()=>{state.timelinePage=1;writeHash({view:'timeline',from:state.timelineFrom,to:state.timelineTo});renderTimeline()};
+ $('#timelineFrom').addEventListener('change',e=>{state.timelineFrom=e.target.value.trim();applyRange()});
+ $('#timelineTo').addEventListener('change',e=>{state.timelineTo=e.target.value.trim();applyRange()});
+ $('#timelineClear').addEventListener('click',()=>{state.timelineFrom='';state.timelineTo='';applyRange()});
+ const root=$('#timeline');bindPaging(root,delta=>{state.timelinePage+=delta;renderTimeline()});root.querySelectorAll('[data-event-id]').forEach(b=>b.addEventListener('click',()=>showEvent(DATA.events.find(x=>x.id===b.dataset.eventId))))}
 renderOverview();state.rendered.overview=true;
 
 /* ============================================================
@@ -473,7 +645,7 @@ function writeHash(params){
 /* 实体参数互斥：打开事件时就该把上一次的 person/place 清掉，否则复制出去的地址会同时指向两张卡 */
 function entityHash(kind,name){const o={person:null,event:null,place:null,detail:null};if(kind)o[kind]=name;return o;}
 const RENDERERS={overview:renderOverview,distribution:renderDistribution,visuals:renderVisuals,locations:renderLocations,map:renderMap,characters:renderCharacters,events:renderEvents,relations:renderRelations,timeline:renderTimeline,dynasty:renderDynasty,chronicle:renderChronicle,insight:renderInsight};
-function rerender(view){const key=view||state.view;const fn=RENDERERS[key];if(!fn)return;fn();state.rendered[key]=true;}
+function rerender(view){const key=view||state.view;const fn=RENDERERS[key];if(!fn)return;try{fn();state.rendered[key]=true;}catch(err){reportRuntimeError('渲染',(err&&err.message)||err);}}
 const cssEscape=s=>window.CSS&&CSS.escape?CSS.escape(s):String(s).replace(/["\\]/g,'\\$&');
 function locatePersonCard(name){
   const host=$('#characters');if(!host||!name)return;
@@ -491,6 +663,13 @@ function applyDeepLink(){
     if(p.view&&HASH_VIEWS.has(p.view))setView(p.view);
     if(p.map==='voyage'||p.map==='pilgrim'){state.mapMode=p.map;if(state.view==='map')rerender('map')}
     if(p.era){state.dynastyEra=p.era;if(state.view==='dynasty')rerender('dynasty')}
+    // 双模式图：net=full 人物图 / net=entity 实体图
+    if(p.net==='full'||p.net==='entity'||p.net==='ego'){state.netMode=p.net;if(state.view==='visuals')rerender('visuals')}
+    // 时间轴区间：from / to（仅时间轴视图消费；年份待考事件不受影响）
+    if(p.from!==undefined||p.to!==undefined){
+      state.timelineFrom=String(p.from||'').trim();state.timelineTo=String(p.to||'').trim();
+      if(state.view==='timeline'){state.timelinePage=1;rerender('timeline')}
+    }
     if(p.q){
       const key={locations:'locQuery',characters:'charQuery',events:'eventQuery',relations:'relationQuery'}[state.view];
       if(key){
@@ -519,7 +698,7 @@ function applyDeepLink(){
   }finally{_hashApplying=false}
 }
 window.addEventListener('hashchange',applyDeepLink);
-document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>writeHash(Object.assign({view:b.dataset.view},entityHash(null,null)))));
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>writeHash(Object.assign({view:b.dataset.view},entityHash(null,null),{from:null,to:null}))));
 /* 打开详情时把实体写进地址栏——复制地址即可分享同一张卡 */
 const _showEvent=showEvent;
 showEvent=function(event){_showEvent(event);writeHash(Object.assign({view:state.view},entityHash('event',event&&event.id)))};
@@ -609,6 +788,14 @@ if(_tabsNav){
   syncTabA11y();
 }
 
+/* ---- P3-03 启动自检与全局异常兜底 ---- */
+window.__MING_READY=true;   // 数据已解析、主脚本已执行（骨架里的守卫脚本据此判断是否需要报错）
+window.addEventListener('error',e=>{if(e&&e.message)reportRuntimeError('脚本',e.message)});
+window.addEventListener('unhandledrejection',e=>{const r=e&&e.reason;reportRuntimeError('异步',(r&&(r.message||r))||'未捕获的 Promise 拒绝')});
+/* 数据完整性：必需字段缺失（构建异常或文件被裁剪）时给出可见提示，而不是留下一片空白视图 */
+const _missingKeys=['characters','events','locations','relations','chapters'].filter(k=>!DATA[k]);
+if(_missingKeys.length)failBar('data','内嵌数据不完整，缺少字段：'+_missingKeys.join('、')+'，部分视图可能空白，请重新生成报告。',{level:'error',retry:()=>location.reload(),retryLabel:'重新加载'});
+
 /* 首屏按地址栏还原（无 hash 时原样停在总览） */
-applyDeepLink();
+try{applyDeepLink();}catch(err){reportRuntimeError('深链',(err&&err.message)||err);}
 

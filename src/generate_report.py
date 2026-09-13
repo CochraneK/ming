@@ -41,6 +41,17 @@ except Exception:
 # 否则会出现「审计说 6 个未知年份、报告说 7 个」这类口径漂移。
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from core.year_parser import year_bounds as _shared_year_bounds
+# 共享核心：势力/身份字段的结构化解析（P2-03）。
+# 生产构建、校验与前端共用同一份解析结果，前端不再用正则猜字段含义。
+from core import faction_profile
+# 共享核心：关系图的两种口径（人物图 / 实体图）与确定性初始布局。
+# 布局与边去重逻辑放在 core 里，构建、校验与单测共用一份，避免各写一套。
+from core.graph_layout import (
+    _dedupe_edges as _graph_dedupe_edges,
+    _degree as _graph_degree,
+    _deterministic_layout as _graph_layout,
+    graph_kind_label,
+)
 PARTS = {
     "p1": "壹部 · 洪武大帝",
     "p2": "贰部 · 万国来朝",
@@ -90,21 +101,20 @@ def relation_id(from_name: str, to_name: str, rel: str, source: str) -> str:
     return "relation:" + hashlib.sha1(raw).hexdigest()[:12]
 
 
-# 派系识别：faction 字段在抽取阶段混进了大量非派系信息（1231 人产生 473 种字符串），
-# 这里做一次结构化解析，把真正的派系名挑出来放进 factions 列表，原始串保留在 factionRaw。
-FACTION_TOKENS = ("东林党", "东林", "阉党", "浙党", "楚党", "齐党", "宣党", "昆党",
-                  "复社", "齐楚浙三党", "邪党", "清流")
-
-
+# 派系识别：faction 字段在抽取阶段混进了大量非派系信息（1231 人产生 473 种字符串）。
+# 词表与解析逻辑统一放在 src/core/faction_profile.py（唯一真源），这里只做兼容包装：
+# 第 1 个参数按「势力字段」宽松扫描（该字段本身就是标签），其余参数按 role 严格扫描
+# —— 只有「东林党要角」这类自我认同句式才算，避免把「被东林借杨镐事攻击」算成东林党。
 def parse_factions(*texts) -> list:
-    joined = " ".join(t for t in texts if t)
     found = []
-    for token in FACTION_TOKENS:
-        if token in joined:
-            # 「东林」与「东林党」视为同一派系，统一成「东林党」
-            canon_token = "东林党" if token == "东林" else token
-            if canon_token not in found:
-                found.append(canon_token)
+    for index, text in enumerate(texts):
+        if not text:
+            continue
+        tokens = faction_profile.factions_in(text) if index == 0 \
+            else faction_profile.factions_from_role(text)
+        for token in tokens:
+            if token not in found:
+                found.append(token)
     return found
 
 
@@ -494,12 +504,12 @@ def build_visualizations(chars, events, relations, selected_keys, chapter_by_key
 
 
 def build_relation_graph_full(relations, chars):
-    """全书人物关系图数据（只含人物节点；坐标为廉价确定性初始布局）。
+    """人物关系图（方案 A）：节点只允许人物表内实体，坐标为廉价确定性初始布局。
 
     与早期版本的三点不同：
-    1. 方案 A：节点只允许人物表 (chars) 内的人物。关系端点里的
-       「东林党 / 东厂 / 内阁 / 后金 / 北京 / 明朝 / 黄河」等非人物实体
+    1. 端点里的「东林党 / 东厂 / 内阁 / 后金 / 北京 / 明朝 / 黄河」等非人物实体
        一律不进入人物关系图，它们仍保留在关系卡片与详情里（标注端点类型）。
+       想看含实体的全貌，用 build_relation_graph_entities()（双模式图的「实体版」）。
     2. 不再跑 numpy 力导向布局（800 轮 x O(n^2)，实测让构建耗时约 110 秒）。
        这里只给每个节点一个确定性的初始坐标（按势力分扇区 + 扇区内螺旋），
        真正的布局由浏览器端 fullStep() 的实时力模拟完成。
@@ -513,10 +523,7 @@ def build_relation_graph_full(relations, chars):
                         if r["from"] in char_by_name and r["to"] in char_by_name]
 
     # 2) degree / 邻接都在人物集合内统计
-    deg = {}
-    for r in person_relations:
-        deg[r["from"]] = deg.get(r["from"], 0) + 1
-        deg[r["to"]] = deg.get(r["to"], 0) + 1
+    deg = _graph_degree(person_relations)
     connected = set(deg.keys())
     isolated = len(char_by_name) - len(connected)
     excluded = len(relations) - len(person_relations)
@@ -528,85 +535,38 @@ def build_relation_graph_full(relations, chars):
                           "excludedNonPerson": excluded}}
 
     nodes = sorted(deg.keys(), key=lambda n: (-deg[n], n))
-    n = len(nodes)
     idx = {name: i for i, name in enumerate(nodes)}
+    edges = _graph_dedupe_edges(person_relations, idx, RELATION_CATEGORIES)
 
-    # 3) 去重边（保留主导类别与原始条数）
-    edge_groups = {}
-    for r in person_relations:
-        a, b = r["from"], r["to"]
-        if a == b:
-            continue
-        i, j = idx[a], idx[b]
-        key = (i, j) if i < j else (j, i)
-        grp = edge_groups.setdefault(key, {"count": 0, "cats": {}})
-        grp["count"] += 1
-        cat = r.get("category") or "其他"
-        grp["cats"][cat] = grp["cats"].get(cat, 0) + 1
-    edges = []
-    for (i, j), grp in edge_groups.items():
-        dominant = max(grp["cats"], key=lambda c: (grp["cats"][c],
-                         RELATION_CATEGORIES.index(c) if c in RELATION_CATEGORIES else 99))
-        edges.append((i, j, dominant, grp["count"]))
-
-    # 4) 确定性初始布局：势力分扇区，扇区内螺旋（O(n)，无随机、无 numpy）
+    # 3) 确定性初始布局：势力分扇区，扇区内螺旋
     def tier_of(name):
         return (char_by_name.get(name, {}).get("faction", "") or "未知").split("·")[0]
 
-    buckets = {}
-    for name in nodes:
-        buckets.setdefault(tier_of(name), []).append(name)
-    ordered_tiers = sorted(buckets.items(), key=lambda kv: (-len(kv[1]), kv[0]))
-
-    total = max(n, 1)
+    placed, width, height = _graph_layout(nodes, deg, tier_of)
     out_nodes = []
-    angle_cursor = -math.pi / 2.0
-    for tier_name, members in ordered_tiers:
-        share = len(members) / total
-        span = share * 2.0 * math.pi
-        members_sorted = sorted(members, key=lambda nm: (-deg[nm], nm))
-        count = max(len(members_sorted), 1)
-        for k, name in enumerate(members_sorted):
-            t = (k + 0.5) / count
-            angle = angle_cursor + span * t
-            radius = 240.0 + 26.0 * math.sqrt(k + 1) * (1.0 + 4.0 * share)
-            x = 680.0 + radius * math.cos(angle)
-            y = 400.0 + radius * 0.62 * math.sin(angle)
-            d = deg[name]
-            out_nodes.append({
-                "name": name,
-                "faction": char_by_name[name].get("faction", "") or "未知",
-                "tier": tier_name,
-                "role": char_by_name[name].get("role", "") or "",
-                "degree": d,
-                "r": round(min(3 + d ** 0.5 * 1.0, 20), 1),
-                "x": round(x, 1),
-                "y": round(y, 1),
-            })
-        angle_cursor += span
-
-    # 归一化到 1280 宽画布，保持比例
-    xs = [nd["x"] for nd in out_nodes]
-    ys = [nd["y"] for nd in out_nodes]
-    minx, maxx = min(xs), max(xs)
-    miny, maxy = min(ys), max(ys)
-    pad = 40.0
-    scale = 1280.0 / max(maxx - minx, 1.0)
-    for nd in out_nodes:
-        nd["x"] = round((nd["x"] - minx) * scale + pad, 1)
-        nd["y"] = round((nd["y"] - miny) * scale + pad, 1)
-    width = 1280.0 + 2 * pad
-    height = (maxy - miny) * scale + 2 * pad
+    for nd in placed:
+        name = nd["name"]
+        out_nodes.append({
+            "name": name,
+            "kind": "person",
+            "faction": char_by_name[name].get("faction", "") or "未知",
+            "tier": nd["bucket"],
+            "role": char_by_name[name].get("role", "") or "",
+            "degree": nd["degree"],
+            "r": nd["r"],
+            "x": nd["x"],
+            "y": nd["y"],
+        })
 
     out_links = [{"source": nodes[i], "target": nodes[j], "category": cat, "count": cnt}
                  for (i, j, cat, cnt) in edges]
     return {
         "nodes": out_nodes,
         "links": out_links,
-        "width": round(max(width, 1.0), 1),
-        "height": round(max(height, 1.0), 1),
+        "width": width,
+        "height": height,
         "stats": {
-            "nodes": n,
+            "nodes": len(nodes),
             "edges": len(edges),
             "persons": len(char_by_name),
             "connected": len(connected),
@@ -616,9 +576,91 @@ def build_relation_graph_full(relations, chars):
     }
 
 
+def build_relation_graph_entities(relations, chars):
+    """实体关系图（Phase 6 双模式图的「实体版」）：节点 = 全部关系端点。
+
+    与人物图的口径差别（也是两种图必须分开表述的原因）：
+    - 人物图：节点只允许人物表内实体 → 口径「人物 N 人 / 人物关系 M 条」；
+    - 实体图：节点是人物 + 地点 + 机构 + 政权 + 其他 → 口径「实体 N 个 / 关系 M 条」。
+    若把实体图的节点数直接写成「N 名人物」就会重犯 P1-01 的错误，故前端必须
+    按本函数的 stats.byKind / personNodes 分别表述。
+    """
+    char_by_name = {c["name"]: c for c in chars}
+
+    kind_of = {}
+    for r in relations:
+        ek = r.get("endpointKind") or {}
+        for side in ("from", "to"):
+            name = r[side]
+            if name in char_by_name:
+                kind_of[name] = "person"          # 真人优先于任何端点类型判定
+            else:
+                kind_of.setdefault(name, ek.get(side) or "other")
+
+    names = sorted(kind_of.keys())
+    idx = {name: i for i, name in enumerate(names)}
+    deg = _graph_degree(relations)
+    if not deg:
+        return {"nodes": [], "links": [], "width": 1360.0, "height": 800.0,
+                "stats": {"nodes": 0, "edges": 0, "personNodes": 0,
+                          "bookPersons": len(char_by_name), "isolatedPersons": len(char_by_name),
+                          "byKind": {}}}
+
+    edges = _graph_dedupe_edges(relations, idx, RELATION_CATEGORIES)
+
+    def bucket_of(name):
+        return kind_of.get(name, "other")
+
+    placed, width, height = _graph_layout(names, deg, bucket_of)
+    out_nodes = []
+    for nd in placed:
+        name = nd["name"]
+        kind = kind_of.get(name, "other")
+        char = char_by_name.get(name)
+        out_nodes.append({
+            "name": name,
+            "kind": kind,
+            "kindLabel": graph_kind_label(kind),
+            "faction": (char or {}).get("faction", "") or graph_kind_label(kind),
+            "tier": kind,
+            "role": (char or {}).get("role", "") or graph_kind_label(kind),
+            "degree": nd["degree"],
+            "r": nd["r"],
+            "x": nd["x"],
+            "y": nd["y"],
+        })
+
+    person_nodes = sum(1 for n in names if kind_of.get(n) == "person")
+    by_kind = {}
+    for name in names:
+        key = kind_of.get(name, "other")
+        by_kind[key] = by_kind.get(key, 0) + 1
+
+    out_links = [{"source": names[i], "target": names[j], "category": cat, "count": cnt}
+                 for (i, j, cat, cnt) in edges]
+    return {
+        "nodes": out_nodes,
+        "links": out_links,
+        "width": width,
+        "height": height,
+        "stats": {
+            "nodes": len(names),
+            "edges": len(edges),
+            "personNodes": person_nodes,
+            "nonPersonNodes": len(names) - person_nodes,
+            "bookPersons": len(char_by_name),
+            "isolatedPersons": len(char_by_name) - person_nodes,
+            "byKind": by_kind,
+        },
+    }
+
+
 
 def build_scope(scope: str):
     data = load_json(DATA_PATH, {})
+    # 年号元年表（供「万历三十五年进士」这类科举表述换算成公元年）。
+    # 直接从 data.json 的 reigns 取，不另立一份年号表，避免与帝王视图口径漂移。
+    reign_years = faction_profile.reign_start_map(data.get("reigns", []))
     raw_list = load_json(RAW_PATH, [])
     chapter_records = load_json(CHAPTERS_PATH, [])
     raw_by_key = {item.get("key"): item for item in raw_list}
@@ -829,6 +871,9 @@ def build_scope(scope: str):
         })
         item["faction"] = item["faction"] or character.get("faction", "")
         item["role"] = item["role"] or clean_role(character.get("role", ""))
+        # role 原串单独留一份：结构化解析（籍贯/科举/派系）需要完整句子，
+        # 而 clean_role() 只取首个分句（用于卡面「身份」行）。解析后即丢弃，不进 payload。
+        item["_roleRaw"] = item.get("_roleRaw") or character.get("role", "")
         item["birth"] = item["birth"] if item["birth"] != "不详" else character.get("birth", "不详")
         item["life"] = item["life"] if item["life"] != "不详" else character.get("life", "不详")
         item["profiled"] = item["profiled"] or bool(character.get("life") or character.get("birth") or character.get("role_clean"))
@@ -882,6 +927,12 @@ def build_scope(scope: str):
         character["type"] = "person"
         character["factions"] = parse_factions(character.get("faction"), character.get("role"))
         character["factionRaw"] = character.get("faction", "")
+        # P2-03：把「政权·时期·派系·身份·官职·籍贯·科举·备注」一次性解析成结构化字段，
+        # 前端直接读字段（不再用正则从展示串里猜）。原始串保留在 profile.raw。
+        character["profile"] = faction_profile.parse_profile(
+            character.get("faction"), character.pop("_roleRaw", "") or character.get("role", ""),
+            reign_years,
+        )
         chars.append(character)
     chars.sort(key=lambda item: (-len(item["chapters"]), -len(item["events"]), item["name"]))
 
@@ -1064,9 +1115,11 @@ def build_scope(scope: str):
         "scope": scope,
         "scopeLabel": scope_label,
         # 模型元信息（Phase 3）：schema 版本 + 实体类型表 + id 索引。
-        # 前端不再靠字符串猜字段含义，靠 type / *Id 字段。
+        # 前端不再靠字符串猜字段含义，靠 type / *Id / profile 字段。
+        # v3：新增 characters[].profile（P2-03 势力/身份结构化）与
+        #     relationGraphEntities（Phase 6 实体图）。
         "model": {
-            "schemaVersion": 2,
+            "schemaVersion": 3,
             "entityTypes": list(ENTITY_TYPES),
             "idIndex": entity_index,
         },
@@ -1084,6 +1137,9 @@ def build_scope(scope: str):
         "distribution": distribution,
         "visualizations": visualizations,
         "relationGraphFull": build_relation_graph_full(relations, chars),
+        # Phase 6 双模式图：与人物图并存的「实体版」（节点含地点/机构/政权）。
+        # 两种图口径不同，前端必须分别表述（见两个 build_relation_graph_* 的 docstring）。
+        "relationGraphEntities": build_relation_graph_entities(relations, chars),
         # 全局别名索引（alias → 规范名）：搜索/关系/事件等模块共用，
         # 避免各视图各写一套"某个人物还能怎么称呼"的判断。
         "aliasIndex": alias_index,
@@ -1126,16 +1182,27 @@ def load_template() -> str:
 HTML_TEMPLATE = load_template()
 
 
+def _inline_json(obj) -> str:
+    """把内联数据序列化成紧凑 JSON（P3-01）。
+
+    两处细节都不能省：
+    - ``separators``：json.dumps 默认在逗号/冒号后补空格，单文件里每一处都要白付
+      一个字节（payload 有 60 余万个分隔符，实测可省约 11% 体积）；
+    - ``</`` 转义：数据里一旦出现 ``</script>`` 会提前闭合脚本标签，必须转成 ``<\\/``
+      （JSON 语义等价，浏览器解析后仍是同一个字符串）。
+    """
+    return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+
+
 def compose_document(payload: dict) -> str:
     """把 payload 注入模板，产出最终单文件 HTML（唯一注入实现）。
 
     build.py 的 standalone target 直接复用本函数，保证「两条构建路径
-    不可能产出不同文件」；``</`` 必须转义，否则数据里出现 ``</script>``
-    会提前闭合脚本标签。
+    不可能产出不同文件」。
     """
-    document = HTML_TEMPLATE.replace("__DATA__", json.dumps(payload, ensure_ascii=False).replace("</", "<\\/"))
+    document = HTML_TEMPLATE.replace("__DATA__", _inline_json(payload))
     document = document.replace("__TITLE__", payload["scopeLabel"])
-    document = document.replace("__INSIGHT_DATA__", json.dumps(INSIGHT_PAYLOAD, ensure_ascii=False).replace("</", "<\\/"))
+    document = document.replace("__INSIGHT_DATA__", _inline_json(INSIGHT_PAYLOAD))
     # Normalize the compact inline template before publishing.
     document = document.replace("pages.join('')}`", "pages.join('')}")
     return document

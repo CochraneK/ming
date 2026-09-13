@@ -87,3 +87,97 @@ def test_parse_factions_merges_donglin():
     assert G.parse_factions("阉党头目") == ["阉党"]
     assert G.parse_factions("平民") == []
     assert G.parse_factions(None, "") == []
+
+
+PROFILE_KEYS = {
+    "raw", "label", "regime", "dynasty", "period", "factions", "orgs",
+    "categories", "office", "origin", "jinshi_year", "note",
+}
+
+
+def test_faction_profile_shape_and_conservatism():
+    """P2-03 的核心契约：字段集固定、空输入不臆造、原串可完整回查。"""
+    from core import faction_profile as F
+
+    empty = F.parse_profile(None)
+    assert set(empty) == PROFILE_KEYS
+    assert empty["raw"] == ""
+    assert empty["regime"] is None and empty["dynasty"] is None and empty["period"] is None
+    assert empty["factions"] == [] and empty["orgs"] == []
+    assert empty["categories"] == [] and empty["office"] == []
+    assert empty["origin"] is None and empty["jinshi_year"] is None
+
+
+def test_faction_profile_parses_real_shapes():
+    """真实脏串形态的解析锚点（改词表/正则时这些断言会先炸）。"""
+    from core import faction_profile as F
+
+    reign = F.reign_start_map([
+        {"era": "嘉靖", "start": 1522}, {"era": "隆庆", "start": 1567},
+        {"era": "万历", "start": 1573}, {"era": "建文", "start": 1399},
+    ])
+
+    p = F.parse_profile("明朝·兵科给事中（湖广应山人，万历三十五年1607进士）", "兵科给事中", reign)
+    assert p["regime"] == "明朝" and p["dynasty"] == "明"
+    assert p["office"] == ["兵科给事中"]
+    assert p["origin"] == "湖广应山", "括号内「…人」应识别为籍贯"
+    assert p["jinshi_year"] == 1607, "四位公元年夹在年号纪年里也要抽出来"
+    assert p["note"] is None, "已识别的籍贯/科举不得重复落进备注"
+    assert p["label"] == "兵科给事中"
+    assert p["raw"].startswith("明朝·兵科给事中"), "原串必须原样保留"
+
+    # 年号 + 汉数换算：真实串里最常见的形式（「万历五年进士」）
+    q = F.parse_profile("明朝·内阁首辅（宁波人，隆庆二年进士）", "", reign)
+    assert q["jinshi_year"] == 1568, "隆庆二年 = 1567 + 2 - 1"
+    assert q["origin"] == "宁波"
+    assert "内阁首辅" in q["orgs"] + q["office"]
+
+    # 「嘉靖朝内阁」这类「时期+机构」拼接要拆开，但「建文朝廷」不能被误拆
+    r = F.parse_profile("明朝·嘉靖朝内阁", "", reign)
+    assert r["period"] == "嘉靖朝" and "内阁" in r["orgs"]
+    s = F.parse_profile("建文朝廷", "", reign)
+    assert s["regime"] == "建文朝廷", "精确政权名必须优先于时期拆分"
+
+
+def test_faction_profile_leaves_unknown_blank():
+    """宁可留空不可猜错：没有年份的「进士」不得臆造年份。"""
+    from core import faction_profile as F
+
+    p = F.parse_profile("明朝·福建进士", "", {})
+    assert p["jinshi_year"] is None
+    assert p["origin"] is None
+
+
+def test_faction_profile_label_priority():
+    """卡面「势力」标签优先级：派系 > 身份类别 > 机构 > 官职 > 政权。"""
+    from core import faction_profile as F
+
+    assert F.parse_profile("明朝·阉党·文官")["label"] == "阉党"
+    assert F.parse_profile("明朝·锦衣卫")["label"] == "锦衣卫"
+    assert F.parse_profile("明朝")["label"] == "明朝"
+
+
+def test_factions_from_role_requires_self_identification():
+    """role 里的派系只在「自我认同」句式下才算；叙述句不能算到自己头上。"""
+    from core import faction_profile as F
+
+    assert F.factions_from_role("东林党要角，官至左都御史") == ["东林党"]
+    assert F.factions_from_role("浙党首辅，保杨镐，被东林借杨镐事攻击。") == ["浙党"]
+    assert F.factions_from_role("被东林党人弹劾") == []
+    assert F.factions_in("被东林借杨镐事攻击") == ["东林党"], "宽松扫描用于「势力」字段本身"
+
+
+def test_profile_stats_counts_filled_and_unclassified():
+    from core import faction_profile as F
+
+    stats = F.profile_stats([F.parse_profile("明朝·锦衣卫"), F.parse_profile("……")])
+    assert stats["total"] == 2
+    assert stats["filled"]["regime"] == 1
+    assert stats["unclassified"] == 1
+
+
+def test_reign_start_map_ignores_incomplete_rows():
+    from core import faction_profile as F
+
+    table = F.reign_start_map([{"era": "万历", "start": 1573}, {"era": "缺年份"}, {"start": 1400}])
+    assert table == {"万历": 1573}

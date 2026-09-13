@@ -19,6 +19,8 @@ import re
 from pathlib import Path
 
 from core.geo import coord_problem, has_coords
+from core import faction_profile
+from core.graph_layout import GRAPH_KIND_LABELS
 
 ERROR = "ERROR"
 WARNING = "WARNING"
@@ -41,6 +43,7 @@ REQUIRED_TOP_KEYS = (
     "distribution",
     "visualizations",
     "relationGraphFull",
+    "relationGraphEntities",
     "aliasIndex",
     "metrics",
     "reigns",
@@ -48,7 +51,13 @@ REQUIRED_TOP_KEYS = (
 )
 
 ENTITY_TYPES = ("person", "place", "org", "regime", "other")
-_SCHEMA_VERSION = 2
+# v3：characters[].profile（P2-03 势力/身份结构化）+ relationGraphEntities（Phase 6 实体图）
+_SCHEMA_VERSION = 3
+# 人物卡「势力」字段的结构化契约：缺字段说明生产端与前端已经脱节。
+_PROFILE_KEYS = (
+    "raw", "label", "regime", "dynasty", "period", "factions", "orgs",
+    "categories", "office", "origin", "jinshi_year", "note",
+)
 _EVENT_ID_RE = re.compile(r"^event-\d{4}$")
 
 
@@ -373,6 +382,191 @@ def check_graph(payload):
     return findings
 
 
+def check_profiles(payload):
+    """P2-03 契约：每个人物都要有结构化 profile，且与原串自洽。
+
+    这条规则存在的意义：前端已改为「读 profile 字段」而不是「正则猜字段含义」，
+    一旦生产端漏掉 profile 或字段名漂移，页面会静默退化成空卡——用 ERROR 拦住。
+    """
+    findings = []
+    characters = payload.get("characters") or []
+    if not characters:
+        return findings
+    missing = [c.get("name") for c in characters if not isinstance(c.get("profile"), dict)]
+    if missing:
+        findings.append(
+            Finding(
+                ERROR,
+                "V-PROFILE-01",
+                "%d 位人物缺 profile（前端卡面依赖它，缺失会退化成空卡）：%s"
+                % (len(missing), _summarize(missing)),
+                missing,
+            )
+        )
+    bad_keys, raw_drift, no_label, bad_faction = [], [], [], []
+    known_factions = set(faction_profile.FACTION_TOKENS) | {"东林党"}
+    for c in characters:
+        p = c.get("profile")
+        if not isinstance(p, dict):
+            continue
+        name = c.get("name")
+        absent = [k for k in _PROFILE_KEYS if k not in p]
+        if absent:
+            bad_keys.append("%s(缺 %s)" % (name, ",".join(absent)))
+        if p.get("raw") != (c.get("factionRaw") or ""):
+            raw_drift.append("%s(raw=%r factionRaw=%r)" % (name, p.get("raw"), c.get("factionRaw")))
+        if not p.get("label"):
+            no_label.append(name)
+        for token in p.get("factions") or ():
+            if token not in known_factions:
+                bad_faction.append("%s(%s)" % (name, token))
+    if bad_keys:
+        findings.append(
+            Finding(
+                ERROR,
+                "V-PROFILE-02",
+                "%d 位人物的 profile 字段不全：%s" % (len(bad_keys), _summarize(bad_keys)),
+                bad_keys,
+            )
+        )
+    if raw_drift:
+        findings.append(
+            Finding(
+                ERROR,
+                "V-PROFILE-03",
+                "%d 位人物的 profile.raw 与 factionRaw 不一致（原串必须可回查）：%s"
+                % (len(raw_drift), _summarize(raw_drift)),
+                raw_drift,
+            )
+        )
+    if no_label:
+        findings.append(
+            Finding(ERROR, "V-PROFILE-04", "%d 位人物 profile.label 为空：%s" % (len(no_label), _summarize(no_label)), no_label)
+        )
+    if bad_faction:
+        findings.append(
+            Finding(
+                ERROR,
+                "V-PROFILE-05",
+                "%d 处派系名不在词表内（拼写漂移）：%s" % (len(bad_faction), _summarize(bad_faction)),
+                bad_faction,
+            )
+        )
+    stats = faction_profile.profile_stats([c["profile"] for c in characters if isinstance(c.get("profile"), dict)])
+    if stats["unclassified"]:
+        findings.append(
+            Finding(
+                INFO,
+                "V-PROFILE-06",
+                "势力字段结构化：政权 %d/%d（%.1f%%）、身份类别 %d、派系 %d、官职 %d、籍贯 %d、科举 %d；"
+                "另有 %d 条原串无政权/派系/身份可归类（已整体存入 profile.note，原串保留在 raw）"
+                % (
+                    stats["filled"]["regime"], stats["total"],
+                    stats["filled"]["regime"] * 100.0 / max(stats["total"], 1),
+                    stats["filled"]["category"], stats["filled"]["faction"],
+                    stats["filled"]["office"], stats["filled"]["origin"],
+                    stats["filled"]["jinshi_year"], stats["unclassified"],
+                ),
+            )
+        )
+    return findings
+
+
+def check_entity_graph(payload):
+    """Phase 6 双模式图的第二条口径：实体图必须与人物图自洽。
+
+    守恒关系（任一条不成立即为数据自相矛盾）：
+    1. 实体图统计与实际数组长度一致；
+    2. 按类型计数之和 = 节点数；
+    3. 人物图的节点/边是实体图的**子集**（实体图只多不少）；
+    4. 节点类型都在约定枚举内。
+    """
+    findings = []
+    pg = payload.get("relationGraphFull") or {}
+    eg = payload.get("relationGraphEntities") or {}
+    if not eg:
+        findings.append(Finding(ERROR, "V-EGRAPH-01", "缺少 relationGraphEntities（实体图）"))
+        return findings
+    nodes = eg.get("nodes") or []
+    links = eg.get("links") or []
+    stats = eg.get("stats") or {}
+    if stats.get("nodes") != len(nodes):
+        findings.append(
+            Finding(ERROR, "V-EGRAPH-02", "实体图 stats.nodes=%r 与 nodes=%d 不符" % (stats.get("nodes"), len(nodes)))
+        )
+    if stats.get("edges") != len(links):
+        findings.append(
+            Finding(ERROR, "V-EGRAPH-03", "实体图 stats.edges=%r 与 links=%d 不符" % (stats.get("edges"), len(links)))
+        )
+    by_kind = stats.get("byKind") or {}
+    if by_kind and sum(by_kind.values()) != len(nodes):
+        findings.append(
+            Finding(
+                ERROR,
+                "V-EGRAPH-04",
+                "实体图 byKind 之和 %d != 节点数 %d" % (sum(by_kind.values()), len(nodes)),
+            )
+        )
+    person_nodes = sum(1 for n in nodes if n.get("kind") == "person")
+    if stats.get("personNodes") != person_nodes:
+        findings.append(
+            Finding(
+                ERROR,
+                "V-EGRAPH-05",
+                "实体图 stats.personNodes=%r 与 kind=person 的节点数 %d 不符"
+                % (stats.get("personNodes"), person_nodes),
+            )
+        )
+    bad_kind = sorted({n.get("kind") for n in nodes} - set(GRAPH_KIND_LABELS))
+    if bad_kind:
+        findings.append(
+            Finding(ERROR, "V-EGRAPH-06", "实体图出现未知节点类型：%s" % _summarize(bad_kind), bad_kind)
+        )
+    node_names = {n.get("name") for n in nodes}
+    ghost = sorted({l.get("source") for l in links} | {l.get("target") for l in links} - node_names)
+    ghost = [n for n in ghost if n not in node_names]
+    if ghost:
+        findings.append(Finding(ERROR, "V-EGRAPH-07", "实体图存在悬空边端点：%s" % _summarize(ghost), ghost))
+    person_names = {n.get("name") for n in pg.get("nodes") or []}
+    not_covered = sorted(person_names - node_names)
+    if not_covered:
+        findings.append(
+            Finding(
+                ERROR,
+                "V-EGRAPH-08",
+                "人物图有 %d 个节点未出现在实体图（实体图必须只多不少）：%s"
+                % (len(not_covered), _summarize(not_covered)),
+                not_covered,
+            )
+        )
+    pair = lambda l: tuple(sorted((l.get("source"), l.get("target"))))
+    lost = sorted({pair(l) for l in pg.get("links") or []} - {pair(l) for l in links}, key=str)
+    if lost:
+        findings.append(
+            Finding(
+                ERROR,
+                "V-EGRAPH-09",
+                "人物图有 %d 条边未出现在实体图：%s" % (len(lost), _summarize(["/".join(x) for x in lost])),
+                ["/".join(x) for x in lost],
+            )
+        )
+    findings.append(
+        Finding(
+            INFO,
+            "V-EGRAPH-10",
+            "双模式图口径：人物图 %d 人 / %d 条人物关系（方案 A，排除 %r 条含非人物端点的关系）；"
+            "实体图 %d 个实体 / %d 条关系（%s）"
+            % (
+                len(person_names), len(pg.get("links") or []),
+                (pg.get("stats") or {}).get("excludedNonPerson"),
+                len(nodes), len(links),
+                "、".join("%s %d" % (GRAPH_KIND_LABELS[k], v) for k, v in sorted(by_kind.items())),
+            ),
+        )
+    )
+    return findings
+
+
 # --------------------------------------------------------------------------
 # 事件 / 地点 / 年号 / 别名
 # --------------------------------------------------------------------------
@@ -512,8 +706,10 @@ ALL_CHECKS = (
     check_structure,
     check_metrics,
     check_characters,
+    check_profiles,
     check_relations,
     check_graph,
+    check_entity_graph,
     check_events,
     check_locations,
     check_alias_index,

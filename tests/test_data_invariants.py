@@ -108,3 +108,73 @@ def test_relation_ids_stable_across_scopes():
     full = {r["id"] for r in _support.payload("full")["relations"]}
     p1 = {r["id"] for r in _support.payload("p1")["relations"]}
     assert p1 <= full, "分部关系 id 应是全书关系 id 的子集"
+
+
+def test_every_character_has_profile():
+    """P2-03：前端卡面已改为只读 profile，缺一个都会退化成空卡，必须全员覆盖。"""
+    payload = _support.payload("full")
+    keys = {"raw", "label", "regime", "dynasty", "period", "factions", "orgs",
+            "categories", "office", "origin", "jinshi_year", "note"}
+    for c in payload["characters"]:
+        p = c.get("profile")
+        assert isinstance(p, dict), "%s 缺 profile" % c["name"]
+        assert set(p) == keys, "%s 的 profile 字段集漂移" % c["name"]
+        assert p["raw"] == (c.get("factionRaw") or ""), "%s 的原串无法回查" % c["name"]
+        assert p["label"], "%s 的 profile.label 为空" % c["name"]
+
+
+def test_entity_graph_superset_of_person_graph():
+    """Phase 6 双模式图的口径契约：
+
+    - 人物图（方案 A）只含人物↔人物关系；
+    - 实体图含全部关系端点（人物/地点/机构/政权/其他）；
+    - 人物图的节点与边必须是实体图的子集——否则两张图互相打架。
+    """
+    payload = _support.payload("full")
+    person = payload["relationGraphFull"]
+    entity = payload["relationGraphEntities"]
+
+    p_names = {n["name"] for n in person["nodes"]}
+    e_names = {n["name"] for n in entity["nodes"]}
+    assert p_names <= e_names, "人物图节点必须是实体图节点的子集"
+
+    def undirected(g):
+        return {tuple(sorted((l["source"], l["target"]))) for l in g["links"]}
+
+    p_edges, e_edges = undirected(person), undirected(entity)
+    assert p_edges <= e_edges, "人物图的边必须都在实体图里"
+    assert len(p_edges) < len(e_edges), "实体图应当比人物图多出非人物关系"
+
+
+def test_entity_graph_stats_internally_consistent():
+    """实体图统计必须自洽，且绝不能把「实体数」说成「人物数」。"""
+    payload = _support.payload("full")
+    entity = payload["relationGraphEntities"]
+    stats = entity["stats"]
+
+    assert stats["nodes"] == len(entity["nodes"])
+    assert stats["edges"] == len(entity["links"])
+    assert stats["personNodes"] + stats["nonPersonNodes"] == stats["nodes"]
+    assert sum(stats["byKind"].values()) == stats["nodes"]
+    assert stats["personNodes"] == stats["bookPersons"] - stats["isolatedPersons"]
+
+    # 节点类型只能是约定内的 5 种；标成 person 的必须真在人物表内
+    names = {c["name"] for c in payload["characters"]}
+    for node in entity["nodes"]:
+        assert node["kind"] in {"person", "place", "org", "regime", "other"}, node
+        if node["kind"] == "person":
+            assert node["name"] in names, "%s 标成人物却不在人物表内" % node["name"]
+
+    # 端点必须落在节点集合内（不允许悬空引用）
+    node_names = {n["name"] for n in entity["nodes"]}
+    for link in entity["links"]:
+        assert link["source"] in node_names and link["target"] in node_names
+
+
+def test_entity_graph_is_deterministic():
+    """实体图布局同样必须纯确定性（重跑不得漂移，否则 deep link / 截图对不上）。"""
+    a = _support.payload("full")["relationGraphEntities"]
+    b = _support.fresh_payload("full")["relationGraphEntities"]
+    assert a["stats"] == b["stats"]
+    assert [(n["name"], n["x"], n["y"]) for n in a["nodes"]] == \
+           [(n["name"], n["x"], n["y"]) for n in b["nodes"]]

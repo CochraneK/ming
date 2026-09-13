@@ -103,3 +103,20 @@ mark.hl{background:#f6dd93;color:#2f2a22;border-radius:2px;padding:0 1px;box-sha
 @media(prefers-reduced-motion:reduce){
   .character-card.flash{animation:none;outline:2px solid rgba(141,48,37,.5);outline-offset:2px}
 }
+
+/* ---- P3-03 统一错误提示条：底部固定，error/warn/info 三级 + 重试/关闭 ---- */
+.fail-host{position:fixed;left:16px;right:16px;bottom:16px;z-index:60;max-width:1296px;margin:0 auto;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.fail-bar{position:fixed;left:16px;right:16px;bottom:16px;z-index:60;max-width:1296px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--line);border-left-width:4px;border-radius:8px;background:var(--paper);color:var(--ink);font-size:13px;line-height:1.5;box-shadow:0 10px 26px rgba(42,31,21,.16);pointer-events:auto}
+.fail-host .fail-bar{position:static;left:auto;right:auto;bottom:auto;margin:0;max-width:none;width:100%}
+.fail-error{border-left-color:var(--accent);background:#fdf3f1}
+.fail-warn{border-left-color:var(--gold);background:#fdf8ee}
+.fail-info{border-left-color:var(--blue);background:#f4f7fa}
+.fail-msg{flex:1 1 auto;min-width:0}
+.fail-acts{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.fail-act{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:6px;padding:4px 12px;white-space:nowrap}
+.fail-act:hover{border-color:var(--accent);color:var(--accent)}
+.fail-act:disabled{opacity:.6;cursor:default}
+.fail-close{border:0;background:transparent;color:var(--muted);font-size:16px;line-height:1;padding:2px 6px;border-radius:4px}
+.fail-close:hover{background:var(--wash);color:var(--ink)}
+@media(max-width:640px){.fail-host{left:10px;right:10px;bottom:10px}.fail-bar{left:10px;right:10px;bottom:10px;flex-wrap:wrap}}
+@media print{.fail-host,.fail-bar{display:none}}

@@ -32,5 +32,27 @@
 <dialog id="detailDialog"><div class="dialog-body"><div class="dialog-head"><h2 id="dialogTitle"></h2><button class="dialog-close" id="dialogClose">关闭</button></div><div id="dialogContent"></div></div></dialog>
 <footer class="muted" style="text-align:center;padding:0 24px 28px;font-size:12px">数据来自章节抽取与人工整理；地点、年份及关系均保留核验状态。</footer>
 <script>
+/* 启动守卫（P3-03）：主脚本内联了整份数据，一旦数据被裁剪或脚本执行抛错，
+   页面会停在空白骨架且毫无提示。这里独立于主脚本先埋一个检查点：
+   5 秒内若主脚本仍未置位 __MING_READY，就渲染一条可见的错误提示与重载入口。
+   本段不依赖任何外部资源，也不受数据注入影响（注意：此处不得书写数据占位符
+   本身，否则字典序注入会把整份 payload 塞进注释里，产物体积直接翻倍）。 */
+window.__MING_BOOTERR='';
+window.addEventListener('error',function(e){if(e&&e.message&&!window.__MING_BOOTERR)window.__MING_BOOTERR=e.message;});
+setTimeout(function(){
+  if(window.__MING_READY)return;
+  var bar=document.createElement('div');
+  bar.className='fail-bar fail-error';
+  bar.setAttribute('role','alert');
+  var msg=document.createElement('span');msg.className='fail-msg';
+  msg.textContent='报告未能完成初始化'+(window.__MING_BOOTERR?'：'+String(window.__MING_BOOTERR).slice(0,160):'（内嵌数据可能缺失或被裁剪）')+'。可重新加载，或改用完整版文件打开。';
+  var acts=document.createElement('span');acts.className='fail-acts';
+  var btn=document.createElement('button');btn.type='button';btn.className='fail-act';btn.textContent='重新加载';
+  btn.addEventListener('click',function(){location.reload();});
+  acts.appendChild(btn);bar.appendChild(msg);bar.appendChild(acts);
+  (document.body||document.documentElement).appendChild(bar);
+},5000);
+</script>
+<script>
 /*{{INLINE_JS}}*/</script>
 </body></html>
