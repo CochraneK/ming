@@ -101,9 +101,10 @@ def render_web(payload: dict, out_dir: Path) -> dict:
     )
     (assets / "data.js").write_text(data_js, encoding="utf-8")
 
-    # app.js 注册的是相对于页面根目录的 sw.js。
-    sw = SW_PATH.read_text(encoding="utf-8")
-    (out_dir / "sw.js").write_text(sw, encoding="utf-8")
+    # app.js 注册的是相对于页面根目录的 sw.js。这里必须按 bytes 原样复制：
+    # read_text/write_text 会把 CRLF 规范化成 LF，使发布工作流的逐字节一致性检查误报。
+    sw_bytes = SW_PATH.read_bytes()
+    (out_dir / "sw.js").write_bytes(sw_bytes)
 
     html = skeleton.replace(_STYLE_ANCHOR, '<link rel="stylesheet" href="assets/app.css">')
     html = _externalize_generated_block(
@@ -138,7 +139,7 @@ def render_web(payload: dict, out_dir: Path) -> dict:
         "assets/app.js": len(body),
         "assets/data.js": len(data_js),
         "assets/experience.js": len(experience_js),
-        "sw.js": len(sw),
+        "sw.js": len(sw_bytes),
     }
 
 
@@ -219,7 +220,7 @@ def main(argv=None) -> int:
         written = render_web(payload, out)
         print("[3/3] 分离资源已生成 %s" % out)
         for name, size in written.items():
-            print("      %-24s %d 字符" % (name, size))
+            print("      %-24s %d 字节/字符" % (name, size))
     return 0
 
 
