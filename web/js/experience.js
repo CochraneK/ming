@@ -17,21 +17,27 @@ const norm=v=>String(v==null?'':v).trim().toLowerCase();
 const pct=(a,b)=>b?Math.round(a*100/b):0;
 
 /* ------------------------------ 全局快捷搜索 ------------------------------ */
-/* V5_LAZY_COMMAND_DATA */
-let commandRows=null,commandRowsFull=false,commandResults=[],commandActive=0,commandLastFocus=null;
+/* V6_SEARCH_INDEX_COMMAND_DATA */
+let commandRows=null,commandRowsMode='',commandResults=[],commandActive=0,commandLastFocus=null;
 function commandHasFullData(){return typeof window.__MING_ENSURE_FULL_DATA!=='function'||window.__MING_FULL_DATA_READY===true;}
+function commandHasSearchIndex(){return window.__MING_SEARCH_INDEX_READY===true&&window.__MING_SEARCH_INDEX__&&Array.isArray(window.__MING_SEARCH_INDEX__.rows);}
+function commandMode(){return commandHasFullData()?'full':(commandHasSearchIndex()?'search':'boot');}
 function buildCommandRows(){
-  const full=commandHasFullData();
-  if(commandRows&&commandRowsFull===full)return commandRows;
+  const mode=commandMode();
+  if(commandRows&&commandRowsMode===mode)return commandRows;
   const rows=[];
   VIEWS.forEach(([id,title,keys])=>rows.push({kind:'view',id,title,meta:'切换到 '+title,search:norm(title+' '+keys)}));
-  (DATA.characters||[]).forEach(x=>{
-    const aliases=(x.aliases||[]).join(' '),p=x.profile||{};
-    rows.push({kind:'person',id:x.name,title:x.name,meta:[x.role,(p.factions||[]).join('、'),x.life].filter(Boolean).join(' · '),search:norm([x.name,aliases,x.role,x.faction,p.raw,(p.factions||[]).join(' ')].join(' ')),raw:x});
-  });
-  (DATA.locations||[]).forEach(x=>rows.push({kind:'place',id:x.ancient,title:x.ancient,meta:[x.modern,x.region].filter(Boolean).join(' · '),search:norm([x.ancient,x.modern,x.region,(x.altNames||[]).join(' '),(x.mentionedAs||[]).join(' ')].join(' ')),raw:x}));
-  (DATA.events||[]).forEach(x=>rows.push({kind:'event',id:x.id,title:x.name,meta:[x.year||'年份待考',x.category,x.location].filter(Boolean).join(' · '),search:norm([x.name,x.year,x.category,x.type,x.location,(x.participants||[]).join(' ')].join(' ')),raw:x}));
-  commandRows=rows;commandRowsFull=full;
+  if(mode==='full'){
+    (DATA.characters||[]).forEach(x=>{
+      const aliases=(x.aliases||[]).join(' '),p=x.profile||{};
+      rows.push({kind:'person',id:x.name,title:x.name,meta:[x.role,(p.factions||[]).join('、'),x.life].filter(Boolean).join(' · '),search:norm([x.name,aliases,x.role,x.faction,p.raw,(p.factions||[]).join(' ')].join(' ')),raw:x});
+    });
+    (DATA.locations||[]).forEach(x=>rows.push({kind:'place',id:x.ancient,title:x.ancient,meta:[x.modern,x.region].filter(Boolean).join(' · '),search:norm([x.ancient,x.modern,x.region,(x.altNames||[]).join(' '),(x.mentionedAs||[]).join(' ')].join(' ')),raw:x}));
+    (DATA.events||[]).forEach(x=>rows.push({kind:'event',id:x.id,title:x.name,meta:[x.year||'年份待考',x.category,x.location].filter(Boolean).join(' · '),search:norm([x.name,x.year,x.category,x.type,x.location,(x.participants||[]).join(' ')].join(' ')),raw:x}));
+  }else if(mode==='search'){
+    (window.__MING_SEARCH_INDEX__.rows||[]).forEach(x=>rows.push({kind:x.kind,id:x.id,title:x.title,meta:x.meta||'',search:norm(x.search||x.title)}));
+  }
+  commandRows=rows;commandRowsMode=mode;
   return rows;
 }
 function commandScore(row,q){
@@ -73,10 +79,10 @@ function moveCommand(delta){
 function openCommand(seed){
   const shell=commandShell();commandLastFocus=document.activeElement;shell.hidden=false;document.body.classList.add('command-open');document.querySelectorAll('.command-trigger').forEach(b=>b.setAttribute('aria-expanded','true'));
   const input=shell.querySelector('#commandInput');input.value=seed||'';commandActive=0;renderCommand(input.value);
-  if(!commandHasFullData()&&typeof window.__MING_ENSURE_FULL_DATA==='function'){
-    window.__MING_ENSURE_FULL_DATA('command').then(()=>{commandRows=null;renderCommand(input.value);}).catch(err=>{
-      const host=document.getElementById('commandResults');if(host)host.innerHTML='<div class="command-empty">完整知识库加载失败，可稍后重试。</div>';
-      if(typeof failBar==='function')failBar('full-data','完整知识库加载失败：'+String((err&&err.message)||err),{level:'error',retry:()=>location.reload(),retryLabel:'重新加载'});
+  if(!commandHasFullData()&&!commandHasSearchIndex()&&typeof window.__MING_ENSURE_SEARCH_INDEX==='function'){
+    window.__MING_ENSURE_SEARCH_INDEX('command').then(()=>{commandRows=null;commandRowsMode='';renderCommand(input.value);}).catch(err=>{
+      const host=document.getElementById('commandResults');if(host)host.innerHTML='<div class="command-empty">搜索索引加载失败，可稍后重试。</div>';
+      if(typeof failBar==='function')failBar('search-index','搜索索引加载失败：'+String((err&&err.message)||err),{level:'warn'});
     });
   }
   requestAnimationFrame(()=>input.focus());
@@ -84,20 +90,31 @@ function openCommand(seed){
 function closeCommand(){
   const shell=document.getElementById('commandPalette');if(!shell||shell.hidden)return;shell.hidden=true;document.body.classList.remove('command-open');document.querySelectorAll('.command-trigger').forEach(b=>b.setAttribute('aria-expanded','false'));if(commandLastFocus&&document.contains(commandLastFocus))try{commandLastFocus.focus()}catch(_){}
 }
+function executeEntityCommand(r){
+  if(r.kind==='person'){
+    setView('characters');state.charQuery=r.title;state.charPage=1;if(typeof rerender==='function')rerender('characters');if(typeof locatePersonCard==='function')locatePersonCard(r.title);if(typeof showPerson==='function')showPerson(r.title);return;
+  }
+  if(r.kind==='place'){
+    const x=(DATA.locations||[]).find(v=>v.ancient===r.id)||(DATA.locations||[]).find(v=>v.ancient===r.title);setView('locations');if(x&&typeof showLocation==='function')showLocation(x);return;
+  }
+  if(r.kind==='event'){
+    const x=(DATA.events||[]).find(v=>v.id===r.id)||(DATA.events||[]).find(v=>v.name===r.title);setView('events');if(x&&typeof showEvent==='function')showEvent(x);
+  }
+}
 function runCommand(r){
   closeCommand();
   if(r.kind==='view'){
     setView(r.id);if(typeof writeHash==='function')writeHash({view:r.id,person:null,event:null,place:null,detail:null});return;
   }
-  if(r.kind==='person'){
-    setView('characters');state.charQuery=r.title;state.charPage=1;if(typeof rerender==='function')rerender('characters');if(typeof locatePersonCard==='function')locatePersonCard(r.title);if(typeof showPerson==='function')showPerson(r.title);return;
+  const execute=()=>{commandRows=null;commandRowsMode='';executeEntityCommand(r);};
+  if(commandHasFullData()){execute();return;}
+  if(typeof window.__MING_ENSURE_FULL_DATA==='function'){
+    window.__MING_ENSURE_FULL_DATA('command-result:'+r.kind).then(execute).catch(err=>{
+      if(typeof failBar==='function')failBar('full-data','完整知识库加载失败：'+String((err&&err.message)||err),{level:'error',retry:()=>location.reload(),retryLabel:'重新加载'});
+    });
+    return;
   }
-  if(r.kind==='place'){
-    setView('locations');if(typeof showLocation==='function')showLocation(r.raw);return;
-  }
-  if(r.kind==='event'){
-    setView('events');if(typeof showEvent==='function')showEvent(r.raw);
-  }
+  execute();
 }
 function ensureCommandTrigger(){
   const stat=document.getElementById('headerStat');if(!stat||stat.querySelector('.command-trigger'))return;
