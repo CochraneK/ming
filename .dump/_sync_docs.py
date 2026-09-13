@@ -100,6 +100,8 @@ FILES = [
     ("report/Ming_全面重构方案.txt", "report/Ming_全面重构方案.txt"),
     ("report/Ming_重构验收清单.md", "report/Ming_重构验收清单.md"),
     ("report/Ming_自查报告_2026-09-14.md", "report/Ming_自查报告_2026-09-14.md"),
+    # 发布后体检（合规巡检 + 线上产物逐字节核对 + CI 结论）
+    (".dump/_post_publish_check.py", ".dump/_post_publish_check.py"),
     (".workbuddy/skills/ming-report-engineering/SKILL.md", ".workbuddy/skills/ming-report-engineering/SKILL.md"),
     (".workbuddy/memory/MEMORY.md", ".workbuddy/memory/MEMORY.md"),
     (".workbuddy/memory/2026-08-14.md", ".workbuddy/memory/2026-08-14.md"),
