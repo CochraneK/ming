@@ -100,7 +100,7 @@ def check_graph_reader():
     dom = rendered_only(chrome_dump(TARGET, "#view=visuals&net=full", 9000))
     assert_has(
         dom,
-        r'<div class="v3-graph-reader" data-mode="full">',
+        r'<div class="v3-graph-reader" data-mode="full"[^>]*>',
         r'人物总图怎么读',
         r'data-v3-node-search',
         r'高连接入口',
