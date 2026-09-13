@@ -33,6 +33,7 @@ import validators as V  # noqa: E402
 
 SCOPES = ("full", "p1", "p2", "p3", "p4", "p5", "p6", "p7")
 DIST_DIR = BASE / "dist"
+SW_PATH = BASE / "sw.js"
 
 # 单文件模板里的历史遗留：某处模板字符串多了一个反引号，发布前统一抹平
 # （真正的替换在 generate_report.compose_document 里，此处只作说明锚点）。
@@ -57,7 +58,7 @@ def render_standalone(payload: dict) -> str:
 
 
 def render_web(payload: dict, out_dir: Path) -> dict:
-    """分离资源形态：写 index.html + assets/{app.css,app.js,data.js}。"""
+    """分离资源形态：写 index.html + assets/*，并带上页面注册的 sw.js。"""
     skeleton = G.TEMPLATE_PATH.read_text(encoding="utf-8")
     css = G.CSS_PATH.read_text(encoding="utf-8")
     js = G.JS_PATH.read_text(encoding="utf-8")
@@ -71,17 +72,28 @@ def render_web(payload: dict, out_dir: Path) -> dict:
 
     body = js.replace(_DATA_CONST, "", 1).replace(_INSIGHT_CONST, "", 1)
     (assets / "app.js").write_text(body, encoding="utf-8")
-    (assets / "data.js").write_text(
+    data_js = (
         "const DATA=%s;\nconst INSIGHT_DATA=%s;\n"
-        % (_json_for_script(payload), _json_for_script(G.INSIGHT_PAYLOAD)),
-        encoding="utf-8",
+        % (_json_for_script(payload), _json_for_script(G.INSIGHT_PAYLOAD))
     )
+    (assets / "data.js").write_text(data_js, encoding="utf-8")
+
+    # app.js 注册的是相对于页面根目录的 sw.js。旧版 web target 没有复制它，
+    # 导致分离资源版每次都触发「Service Worker 注册失败」提示。
+    sw = SW_PATH.read_text(encoding="utf-8")
+    (out_dir / "sw.js").write_text(sw, encoding="utf-8")
 
     html = skeleton.replace(_STYLE_ANCHOR, '<link rel="stylesheet" href="assets/app.css">')
     html = html.replace(_SCRIPT_ANCHOR, '<script src="assets/data.js"></script>\n<script src="assets/app.js"></script>')
     html = html.replace("__TITLE__", payload["scopeLabel"])
     (out_dir / "index.html").write_text(html, encoding="utf-8")
-    return {"index.html": len(html), "assets/app.css": len(css), "assets/app.js": len(body)}
+    return {
+        "index.html": len(html),
+        "assets/app.css": len(css),
+        "assets/app.js": len(body),
+        "assets/data.js": len(data_js),
+        "sw.js": len(sw),
+    }
 
 
 def check_render(payload: dict, findings: list) -> list:
