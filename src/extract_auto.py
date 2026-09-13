@@ -205,7 +205,7 @@ def main():
             print(f"[{n}/{len(todo)}] {k} 无正文，跳过")
             continue
         try:
-            content = call_model(title, body)
+            content = call_model(title, body, dense=dense)
             obj = extract_json(content)
             rec = {
                 "key": k,

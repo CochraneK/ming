@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-# 同步文档到 GitHub：README（根目录）+ .workbuddy/（memory 全部 + skill）。
+# 同步文档到 GitHub：README + 源码 + 数据 + .workbuddy/（memory + skill）。
 # 走 Git Database API（blob→tree→commit→PATCH refs），base_tree 继承其余文件。
-import os, json, base64, subprocess, tempfile
+# 2026-09-13 增强：① 先比 blob sha，**只上传有变化的文件**（避免每次重传 4MB index.html）；
+#                ② 每个 HTTP 调用失败重试 3 次（沙箱到 api.github.com 偶发 401/TLS 超时）。
+import os, json, base64, subprocess, tempfile, time, hashlib
 
 OWNER = "CochraneK"
 REPO  = "ming"
@@ -31,6 +33,10 @@ FILES = [
     ("src/append_batch.py", "src/append_batch.py"),
     ("src/_append_extract.py", "src/_append_extract.py"),
     ("src/_dump_chapter.py", "src/_dump_chapter.py"),
+    # 共享核心（2026-09-13 新增：生产与审计共用的年份/经纬度语义）
+    ("src/core/__init__.py", "src/core/__init__.py"),
+    ("src/core/year_parser.py", "src/core/year_parser.py"),
+    ("src/core/geo.py", "src/core/geo.py"),
     # 数据（增量层 + 成品）
     ("data/data.json", "data/data.json"),
     ("data/extract_raw.json", "data/extract_raw.json"),
@@ -51,6 +57,7 @@ FILES = [
     (".dump/_deploy_index_now.py", ".dump/_deploy_index_now.py"),
     (".dump/_sync_docs.py", ".dump/_sync_docs.py"),
     # 文档
+    ("report/Ming_全面重构方案.txt", "report/Ming_全面重构方案.txt"),
     (".workbuddy/skills/ming-report-engineering/SKILL.md", ".workbuddy/skills/ming-report-engineering/SKILL.md"),
     (".workbuddy/memory/MEMORY.md", ".workbuddy/memory/MEMORY.md"),
     (".workbuddy/memory/2026-08-14.md", ".workbuddy/memory/2026-08-14.md"),
@@ -61,6 +68,7 @@ FILES = [
     (".workbuddy/memory/2026-08-31.md", ".workbuddy/memory/2026-08-31.md"),
     (".workbuddy/memory/2026-09-03.md", ".workbuddy/memory/2026-09-03.md"),
     (".workbuddy/memory/2026-09-04.md", ".workbuddy/memory/2026-09-04.md"),
+    (".workbuddy/memory/2026-09-13.md", ".workbuddy/memory/2026-09-13.md"),
 ]
 
 ENV = {k: v for k, v in os.environ.items()}
@@ -69,30 +77,59 @@ for k in list(ENV):
         del ENV[k]
 
 def gh(method, path, input_obj=None):
-    cmd = ["gh", "api", "--method", method, path]
-    tmp = None
-    if input_obj is not None:
-        tmp = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
-        json.dump(input_obj, tmp, ensure_ascii=False)
-        tmp.close()
-        cmd += ["--input", tmp.name]
-    r = subprocess.run(cmd, capture_output=True, text=True, env=ENV)
-    if tmp:
-        try: os.unlink(tmp.name)
-        except: pass
-    if r.returncode != 0:
-        raise RuntimeError(f"gh {method} {path} failed:\n{r.stderr}\n{r.stdout}")
-    return json.loads(r.stdout) if r.stdout.strip() else {}
+    last = None
+    for attempt in range(3):
+        cmd = ["gh", "api", "--method", method, path]
+        tmp = None
+        if input_obj is not None:
+            tmp = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
+            json.dump(input_obj, tmp, ensure_ascii=False)
+            tmp.close()
+            cmd += ["--input", tmp.name]
+        r = subprocess.run(cmd, capture_output=True, text=True, env=ENV)
+        if tmp:
+            try: os.unlink(tmp.name)
+            except: pass
+        if r.returncode == 0:
+            return json.loads(r.stdout) if r.stdout.strip() else {}
+        last = f"gh {method} {path} failed:\n{r.stderr}\n{r.stdout}"
+        if attempt < 2:
+            print(f"  重试 {attempt+1}/2（{r.stderr.strip().splitlines()[-1][:60] if r.stderr.strip() else '?'}）")
+            time.sleep(2 + attempt * 3)
+    raise RuntimeError(last)
 
-# 1) blobs
+
+def local_blob_sha(data: bytes) -> str:
+    """git blob sha：与线上 tree 的 sha 同口径，用于跳过未变化文件。"""
+    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+
+
+# 1) 线上 tree（用于跳过未变化文件）
+remote_sha = {}
+try:
+    tree = gh("GET", f"{API}/git/trees/main?recursive=1")
+    remote_sha = {e["path"]: e["sha"] for e in tree.get("tree", []) if e.get("type") == "blob"}
+    print(f"线上文件 {len(remote_sha)} 个，开始比对…")
+except Exception as ex:
+    print("拉取线上 tree 失败（将全量上传）：", ex)
+
+# 2) blobs（只传变化的）
 tree_entries = []
+skipped = []
 for local, remote in FILES:
     full = os.path.join(BASE, local)
     with open(full, "rb") as fh:
-        b64 = base64.b64encode(fh.read()).decode("ascii")
+        raw = fh.read()
+    sha = local_blob_sha(raw)
+    if remote_sha.get(remote) == sha:
+        tree_entries.append({"path": remote, "mode": "100644", "type": "blob", "sha": sha})
+        skipped.append(remote)
+        continue
+    b64 = base64.b64encode(raw).decode("ascii")
     sha = gh("POST", f"{API}/git/blobs", {"content": b64, "encoding": "base64"})["sha"]
     tree_entries.append({"path": remote, "mode": "100644", "type": "blob", "sha": sha})
-    print(f"blob: {remote} ({os.path.getsize(full)} B)")
+    print(f"blob: {remote} ({len(raw)} B)")
+print(f"未变化跳过 {len(skipped)} 个 / 共 {len(FILES)} 个")
 
 # 2) base tree
 ref = gh("GET", f"{API}/git/refs/heads/main")
@@ -105,7 +142,7 @@ tree_sha = gh("POST", f"{API}/git/trees", {"base_tree": base_tree, "tree": tree_
 
 # 4) commit + 指针
 commit_sha = gh("POST", f"{API}/git/commits", {
-    "message": "Docs sync: engineering skill + workbuddy memory logs + readme",
+    "message": "Docs sync: src/core 共享核心 + 审计重写 + skill/memory（重构 Phase 1+2）",
     "tree": tree_sha,
     "parents": [head_sha],
 })["sha"]

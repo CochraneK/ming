@@ -71,7 +71,7 @@ tree_sha = gh("POST", f"{API}/git/trees", {
 
 # 4) commit
 commit_sha = gh("POST", f"{API}/git/commits", {
-    "message": "Deploy: 学科更名 XX学 + 17 学科洞察 + 人物卡语录替代关系 + README 同步",
+    "message": "Perf+fix: 移除 Python 力导布局（109.7s→2.3s）· 人物关系图只含人物（686人/1403边/孤立545）· 分部关系诱导子图 · 审计对齐最终模型+ERROR 退出码 · SW waitUntil · README 同步",
     "tree": tree_sha,
     "parents": [head_sha],
 })["sha"]

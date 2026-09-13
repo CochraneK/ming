@@ -34,14 +34,25 @@ allowed-tools: Bash,Read,Write,Edit,Grep,Glob
 - **路径用 `D:/` 风格绝对路径**：Windows 原生 python 不认 `/d/` POSIX 前缀。
 - **中文必须 UTF-8**：调用前 `export PYTHONUTF8=1`，否则中文报 `SyntaxError: invalid character`。
 - **中文命令行字面量乱码**：`-c "..."` 里直接写中文会损坏。逻辑写进 `.py` 文件维护，Bash 只负责调用。
+- **2026-09-13 实测：本会话 Bash 的 PATH 被裁过**——`ls / tail / dirname / find / agent-browser` 全部 `command not found`，但 `cd`、`echo`、绝对路径调用的 exe 仍可用。
+  - 对策：一切外部程序都用**绝对路径**调用（python / node 见上；需要 shell 工具时用 python 的 `os.listdir` / `Path.glob` 代替 `ls`、用 `io.open(...).read()` 代替 `cat`）。
+  - `agent-browser` 此会话不可用 → 前端验证改用 **Node 直跑渲染函数 + 数据不变量断言**（见「前端验证（无浏览器时）」）。
 
 标准调用样板：
 ```bash
 export PYTHONUTF8=1
 PY="/c/Users/cunyi/.workbuddy/binaries/python/versions/3.13.12/python.exe"
 cd "D:/2026/WB项目/明朝" && $PY src/merge.py        # 重建 data.json
-$PY src/generate_report.py                          # 重建 index.html
+$PY src/generate_report.py                          # 重建 index.html（全量约 2 秒）
+$PY src/audit_final.py                              # 终态审计（有 ERROR 返回 1）
 ```
+
+### 共享核心（src/core/，2026-09-13 新增）
+生产构建与审计**必须共用同一套语义**，禁止各写一份：
+- `src/core/year_parser.py` —— `year_bounds(value) -> (start, end)`；非数字年份（如「万历末年」）返回 `(None, None)`，即页面上的「年份待考」。`generate_report.py` 的 `year_bounds` 现在只是它的薄包装。
+- `src/core/geo.py` —— `is_valid_lat/lng`、`has_coords`、`coord_problem`。**禁止 `if not lat or not lng`**（0 是合法经纬度），一律 `is None` + 类型 + 范围 + NaN。
+- 起因（P1-05）：旧审计用 `if not event.get("year")` 判年份，报告用数值解析，于是「审计 6 个未知年份 vs 报告 7 个」长期对不上。
+
 
 ### 合并（src/merge.py）
 - 遍历 `extract_raw.json` 构建 `characters / locations / events / relations`，手动数据在之后注入，**重跑不丢**：
@@ -73,9 +84,32 @@ $PY src/generate_report.py                          # 重建 index.html
 - **懒加载**：Leaflet 由 `loadLeaflet()` 按需注入 unpkg css/js，**勿放回 `<head>`**（会阻塞首屏）。
 - **后台预热 `warmMap()`**：`requestIdleCallback` → `loadLeaflet()` → 屏外隐藏 div（400×300，left:-9999px）建 L.map([34.5,113],4) 预热瓦片 → 4s 后 remove。点开地图零等待；预热失败静默（SVG 点图兜底仍在）。
 
+## 全面重构落地（2026-09-13，对应 `report/Ming_全面重构方案.txt`）
+已完成 **Phase 1 正确性热修 + Phase 2 移除 Python 力导布局**；Phase 3~6（统一 ID 模型 / 拆分 generate_report / 测试 CI / deep link）待排期。
+
+- **构建提速 47 倍**：删掉 `build_relation_graph_full` 里 numpy 的 800 轮 O(n²) FR 布局，改为确定性廉价初始坐标（势力分扇区 + 扇区内螺旋，`math` 即可，无随机）；真正的力导向交给浏览器端 `fullStep()`（网格加速斥力 + 弹簧 + 中心引力）。**全量构建 109.7s → 2.3s**，且 numpy 依赖彻底移除（旧代码在 numpy 缺失时静默返回 `links: []`，构建"成功"但图是坏的）。
+- **人物关系图口径（方案 A）**：节点只允许 `chars` 里的人；`deg` 只在人物内部统计；`stats` 现为 `{nodes, edges, persons, connected, isolated, excludedNonPerson}`。实测 741 端点中 47 个非人物（东林党/东厂/内阁/后金/北京/明朝/黄河…）被排除 → **686 人 / 1403 边 / 孤立 545（44.3%）/ 排除 72 条含非人物端点的关系**。页面文案由 `fullSummaryHTML(g)` 单点生成（renderFullGraph 与 resetFullHighlight 共用），避免两处再漂移。
+- **分部关系 scope**：`build_scope()` 里 `relation_scope = "all" if scope=="full" else "induced"`，induced = 两端都在 `scope_names`（= 该部范围内至少有一章的人物）内。修复前 p1 有 754 条两边人物都不属于 p1 的串范围关系；修复后 p1~p7 全部"关系诱导子图干净"（审计 `R-SCOPE-00/01` 逐部验证）。payload 新增 `relationScope`，关系视图顶部如实标注。
+- **审计重写**：`audit_final.py` 现在**直接 `import generate_report as G` 调 `G.build_scope("full")`** 审最终模型（不再读中间文件另算口径），分级 INFO/WARNING/ERROR，有 ERROR `sys.exit(1)`。旧版 `[9]` 规则是 `for ...: pass` 的假实现，已换成真 stale 检查。
+- **误报陷阱**：geo_annotations 里 93 条"不在地点表"其实都是**旧称**（应天→南京、濠州→凤阳、平江→苏州），已由 `mentioned_as` 别名关联合并——判定 stale 必须"先查原名、再查别名"，否则虚报 93 条。只有同名的**朝鲜延安 vs 陕西延安**是真正待拆的同名异地。
+- **SW**：后台更新改为 `event.waitUntil(network)` 保活（原先 `return cached || network` 会让 worker 生命周期在 fetch 完成前结束）；`CACHE` bump 到 `v4`。
+- **前端小修**：`setupFullInteractions` 的 AbortController 提升为模块级 `_fgAbort`（原先挂在会被 innerHTML 替换的 canvas 上，window 级监听会累积泄漏）；`loadLeaflet()` 失败时 `_leafletPromise=null` 允许重试。
+
+### 前端验证（无浏览器时）
+`agent-browser` 不可用（或 PATH 被裁）时，用 Node 直接跑渲染函数 + 断言数据不变量，比肉眼看截图更靠谱：
+```javascript
+// node: 从 index.html 抽 DATA 与目标函数，eval 后断言
+const DATA = JSON.parse(html.match(/const DATA=(\{[\s\S]*?\});\s*\n/)[1]);
+const src  = html.match(/function fullSummaryHTML\(g\)\{[\s\S]*?\n\}/)[0]; eval(src);
+// 断言：节点 ⊆ 人物表、isolated == persons - connected、无悬空边、坐标落在画布内
+```
+改完内联 JS 先过 `node --check`（把 `<script>` 块抽成文件），再跑上面的断言。
+
+
 ## Service Worker（sw.js，根目录）
 - **只拦同源请求**做 stale-while-revalidate（先返缓存、后台更新）——重复访问秒开；**跨域请求（瓦片/unpkg）一律 `return` 不拦截**：`respondWith` 转发跨域 no-cors 图片请求会永久 pending（灰底红点事故根因）。
 - **后台更新必须 `fetch(req, {cache:'no-cache'})`**：否则 GitHub Pages 的 max-age=600 会让 SWR 拿到陈旧响应，用户连看多轮旧版。
+- **命中缓存时后台更新要 `event.waitUntil(network)` 保活**：只 `return cached` 的话 worker 可能在 fetch 完成前结束，更新被打断、旧版长期不换。
 - 改版时 bump `CACHE` 名（activate 自动清旧缓存）。用户报"内容没更新"时先 `gh api /repos/CochraneK/ming/git/blobs/<sha>` 拉线上文件解码验证，再归因缓存。
 
 ## 部署（GitHub Pages，沙箱内）
@@ -93,19 +127,6 @@ env -u HTTPS_PROXY -u HTTP_PROXY -u https_proxy -u http_proxy -u ALL_PROXY -u al
 ```python
 import hashlib
 sha = hashlib.sha1(b'blob %d\0' % len(data) + data).hexdigest()   # data=文件字节
-```
-- 输出对照时注意 `os.path.join` 结果用 `os.sep` 规范化，勿用 `lstrip('./')`（会把 `.dump`/`.workbuddy` 的首字符剥掉造成假差异）。
-- 临时清单文件放 `.dump/`，别放 `/tmp`（Windows python 不认）。
-- 比对后按需跑 `.dump/_sync_docs.py`（FILES 全量清单）补齐；`明朝那些事儿.txt`/`data/chapters.json` 有意排除。
-
-### 确认 GitHub 与本地的差异（哪些没传 / 哪些过时）
-```bash
-env -u HTTPS_PROXY -u HTTP_PROXY -u https_proxy -u http_proxy -u ALL_PROXY -u all_proxy   gh api "/repos/CochraneK/ming/git/trees/HEAD?recursive=1"   --jq '.tree[] | select(.type=="blob") | .path + " " + .sha' > .dump/_remote_tree.txt
-```
-本地逐文件算 git blob sha，与线上清单对比，三类结论：仅本地（未传）/ 两边都有但 sha 不同（线上过时）/ 一致：
-```python
-import hashlib
-sha = hashlib.sha1(b'blob %d ' % len(data) + data).hexdigest()   # data=文件字节
 ```
 - 输出对照时注意 `os.path.join` 结果用 `os.sep` 规范化，勿用 `lstrip('./')`（会把 `.dump`/`.workbuddy` 的首字符剥掉造成假差异）。
 - 临时清单文件放 `.dump/`，别放 `/tmp`（Windows python 不认）。
@@ -144,8 +165,11 @@ sha = hashlib.sha1(b'blob %d ' % len(data) + data).hexdigest()   # data=文件�
 | 地图灰底红点 | OSM 挂起 + SW 拦跨域 img | Esri 主源 + SW 不拦跨域（见地图节） |
 | 页面主区全空 / `Unexpected identifier '$'` | HTML_TEMPLATE 游离反引号 | 改 JS 前先 grep 紧邻反引号；`node -e "new Function(...)"` 校验 |
 | 需确认 GitHub 与本地差异（哪些没传） | 无现成命令，git 不可用 | blob sha 全量比对法（见「确认 GitHub 与本地的差异」节） |
-| 需确认 GitHub 与本地差异（哪些没传） | 无现成命令，git 不可用 | blob sha 全量比对法（见「确认 GitHub 与本地的差异」节） |
 | agent-browser eval 报 `Invalid regular expression` | 代码串含 `?` 或 `[attr]` 被误解析成正则 | 用 `getElementById`/`getElementsByTagName`/`dataset`；视口用 `set viewport <w> <h>` |
+| `ls`/`tail`/`dirname`/`agent-browser` 全部 command not found | 本会话 Bash 的 PATH 被裁（2026-09-13 实测） | 一切外部程序走绝对路径；列目录用 python `os.listdir`/`Path.glob`，读文件用 `io.open` |
+| 编辑工具报成功但文件内容没变 | 写入偶发未落盘 | 改完立刻 grep/读取复核，别只信返回值 |
+| 审计数字与页面差 1（6 vs 7 未知年份） | 审计自己另写一套判定 | 统一走 `src/core/`（见共享核心节） |
+| 构建要等两分钟 | Python 端 800 轮 numpy 力导布局 | 已移除；Python 只给确定性初始坐标（见重构节） |
 
 ## 典型任务脚本
 - 补录人物：`manual_persons.json` 写卡 → merge 注入 → `manual_relations.json` 加关系 → merge+generate → 部署。

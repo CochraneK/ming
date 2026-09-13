@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import math
 import os
 import re
 import sys
@@ -35,6 +36,10 @@ try:
     INSIGHT_PAYLOAD = {"sections": INSIGHT_SECTIONS, "refs": INSIGHT_REFS}
 except Exception:
     INSIGHT_PAYLOAD = {"sections": [], "refs": []}
+# 共享核心：年份解析与经纬度校验必须与 audit_final.py 用同一份实现，
+# 否则会出现「审计说 6 个未知年份、报告说 7 个」这类口径漂移。
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from core.year_parser import year_bounds as _shared_year_bounds
 PARTS = {
     "p1": "壹部 · 洪武大帝",
     "p2": "贰部 · 万国来朝",
@@ -59,12 +64,8 @@ def chapter_key(value: str):
 
 
 def year_bounds(value):
-    if value is None or value == "":
-        return None, None
-    years = [int(x) for x in re.findall(r"(?<!\d)(1[0-9]{3}|20[0-9]{2})(?!\d)", str(value))]
-    if not years:
-        return None, None
-    return years[0], years[-1]
+    """年份解析统一走 src/core/year_parser.py（与 audit_final.py 共用同一真源）。"""
+    return _shared_year_bounds(value)
 
 
 def canonical(name: str) -> str:
@@ -457,43 +458,46 @@ def build_visualizations(chars, events, relations, selected_keys, chapter_by_key
 
 
 def build_relation_graph_full(relations, chars):
-    """Force-directed layout of the whole-book character relationship graph.
+    """全书人物关系图数据（只含人物节点；坐标为廉价确定性初始布局）。
 
-    Coordinates are precomputed in Python (numpy FR) so the static report
-    needs no graph library at runtime. Returns nodes (with x/y), deduped
-    links (dominant category + raw count), viewBox bounds and summary stats.
+    与早期版本的三点不同：
+    1. 方案 A：节点只允许人物表 (chars) 内的人物。关系端点里的
+       「东林党 / 东厂 / 内阁 / 后金 / 北京 / 明朝 / 黄河」等非人物实体
+       一律不进入人物关系图，它们仍保留在关系卡片与详情里（标注端点类型）。
+    2. 不再跑 numpy 力导向布局（800 轮 x O(n^2)，实测让构建耗时约 110 秒）。
+       这里只给每个节点一个确定性的初始坐标（按势力分扇区 + 扇区内螺旋），
+       真正的布局由浏览器端 fullStep() 的实时力模拟完成。
+    3. stats.isolated 按「人物表 - 有任何人际关系的人物」计算，
+       与页面人物总数、关系图节点数三者自洽。
     """
     char_by_name = {c["name"]: c for c in chars}
+
+    # 1) 只保留两端都是人物表内实体的关系
+    person_relations = [r for r in relations
+                        if r["from"] in char_by_name and r["to"] in char_by_name]
+
+    # 2) degree / 邻接都在人物集合内统计
     deg = {}
-    for r in relations:
+    for r in person_relations:
         deg[r["from"]] = deg.get(r["from"], 0) + 1
         deg[r["to"]] = deg.get(r["to"], 0) + 1
+    connected = set(deg.keys())
+    isolated = len(char_by_name) - len(connected)
+    excluded = len(relations) - len(person_relations)
+
     if not deg:
-        return {"nodes": [], "links": [], "width": 0, "height": 0,
-                "stats": {"nodes": 0, "edges": 0, "isolated": len(chars)}}
-    try:
-        import numpy as np
-    except Exception:
-        # fall back to a deterministic circle layout
-        nodes = sorted(deg.keys(), key=lambda n: (-deg[n], n))
-        n = len(nodes)
-        step = 2 * 3.14159265 / max(n, 1)
-        out = [{"name": nm, "faction": char_by_name.get(nm, {}).get("faction", "") or "未知",
-                "tier": (char_by_name.get(nm, {}).get("faction", "") or "未知").split("·")[0],
-                "role": char_by_name.get(nm, {}).get("role", "") or "",
-                "degree": deg[nm], "r": round(min(3 + deg[nm] ** 0.5 * 1.2, 26), 1),
-                "x": round(680 + 640 * __import__("math").cos(i * step), 1),
-                "y": round(400 + 360 * __import__("math").sin(i * step), 1)}
-               for i, nm in enumerate(nodes)]
-        return {"nodes": out, "links": [], "width": 1360, "height": 800,
-                "stats": {"nodes": n, "edges": 0, "isolated": len(chars) - n}}
+        return {"nodes": [], "links": [], "width": 1360.0, "height": 800.0,
+                "stats": {"nodes": 0, "edges": 0, "persons": len(char_by_name),
+                          "connected": 0, "isolated": isolated,
+                          "excludedNonPerson": excluded}}
 
     nodes = sorted(deg.keys(), key=lambda n: (-deg[n], n))
-    idx = {name: i for i, name in enumerate(nodes)}
     n = len(nodes)
+    idx = {name: i for i, name in enumerate(nodes)}
 
+    # 3) 去重边（保留主导类别与原始条数）
     edge_groups = {}
-    for r in relations:
+    for r in person_relations:
         a, b = r["from"], r["to"]
         if a == b:
             continue
@@ -509,69 +513,72 @@ def build_relation_graph_full(relations, chars):
                          RELATION_CATEGORIES.index(c) if c in RELATION_CATEGORIES else 99))
         edges.append((i, j, dominant, grp["count"]))
 
-    rng = np.random.default_rng(20260826)
-    pos = rng.normal(0, 1, (n, 2)).astype(np.float64)
-    k = np.sqrt(1.0 / n) * 3.0
-    t = 0.2
-    gravity = 0.015
-    src = np.array([e[0] for e in edges], dtype=np.int64)
-    tgt = np.array([e[1] for e in edges], dtype=np.int64)
-    for _ in range(800):
-        diff = pos[None, :, :] - pos[:, None, :]
-        dist2 = (diff ** 2).sum(-1) + 1e-9
-        dist = np.sqrt(dist2)
-        rep = (k * k / dist)[..., None] * (diff / dist[..., None])
-        rep[np.arange(n), np.arange(n), 0] = 0.0
-        rep[np.arange(n), np.arange(n), 1] = 0.0
-        disp = rep.sum(0)
-        d2 = dist2[src, tgt]
-        dd = np.sqrt(d2) + 1e-9
-        att = (dd / k)[:, None] * (diff[src, tgt] / dd[:, None])
-        np.add.at(disp, src, -att)
-        np.add.at(disp, tgt, att)
-        disp -= gravity * pos
-        length = np.sqrt((disp ** 2).sum(1)) + 1e-9
-        limit = np.minimum(length, t) / length
-        pos += disp * limit[:, None]
-        t *= 0.993
+    # 4) 确定性初始布局：势力分扇区，扇区内螺旋（O(n)，无随机、无 numpy）
+    def tier_of(name):
+        return (char_by_name.get(name, {}).get("faction", "") or "未知").split("·")[0]
 
-    xs = pos[:, 0]; ys = pos[:, 1]
-    minx, maxx = float(xs.min()), float(xs.max())
-    miny, maxy = float(ys.min()), float(ys.max())
-    target_w = 1280.0
-    scale = target_w / max((maxx - minx), 1e-6)
-    pad = 40.0
-    norm_x = (xs - minx) * scale + pad
-    norm_y = (ys - miny) * scale + pad
-    height = float((maxy - miny) * scale + 2 * pad)
-    width = float(target_w + 2 * pad)
+    buckets = {}
+    for name in nodes:
+        buckets.setdefault(tier_of(name), []).append(name)
+    ordered_tiers = sorted(buckets.items(), key=lambda kv: (-len(kv[1]), kv[0]))
 
-    def tier(f):
-        return (f or "未知").split("·")[0]
-
+    total = max(n, 1)
     out_nodes = []
-    for i, name in enumerate(nodes):
-        c = char_by_name.get(name, {})
-        d = deg[name]
-        out_nodes.append({
-            "name": name,
-            "faction": c.get("faction", "") or "未知",
-            "tier": tier(c.get("faction", "") or "未知"),
-            "role": c.get("role", "") or "",
-            "degree": d,
-            "r": round(min(3 + d ** 0.5 * 1.0, 20), 1),
-            "x": round(float(norm_x[i]), 1),
-            "y": round(float(norm_y[i]), 1),
-        })
+    angle_cursor = -math.pi / 2.0
+    for tier_name, members in ordered_tiers:
+        share = len(members) / total
+        span = share * 2.0 * math.pi
+        members_sorted = sorted(members, key=lambda nm: (-deg[nm], nm))
+        count = max(len(members_sorted), 1)
+        for k, name in enumerate(members_sorted):
+            t = (k + 0.5) / count
+            angle = angle_cursor + span * t
+            radius = 240.0 + 26.0 * math.sqrt(k + 1) * (1.0 + 4.0 * share)
+            x = 680.0 + radius * math.cos(angle)
+            y = 400.0 + radius * 0.62 * math.sin(angle)
+            d = deg[name]
+            out_nodes.append({
+                "name": name,
+                "faction": char_by_name[name].get("faction", "") or "未知",
+                "tier": tier_name,
+                "role": char_by_name[name].get("role", "") or "",
+                "degree": d,
+                "r": round(min(3 + d ** 0.5 * 1.0, 20), 1),
+                "x": round(x, 1),
+                "y": round(y, 1),
+            })
+        angle_cursor += span
+
+    # 归一化到 1280 宽画布，保持比例
+    xs = [nd["x"] for nd in out_nodes]
+    ys = [nd["y"] for nd in out_nodes]
+    minx, maxx = min(xs), max(xs)
+    miny, maxy = min(ys), max(ys)
+    pad = 40.0
+    scale = 1280.0 / max(maxx - minx, 1.0)
+    for nd in out_nodes:
+        nd["x"] = round((nd["x"] - minx) * scale + pad, 1)
+        nd["y"] = round((nd["y"] - miny) * scale + pad, 1)
+    width = 1280.0 + 2 * pad
+    height = (maxy - miny) * scale + 2 * pad
+
     out_links = [{"source": nodes[i], "target": nodes[j], "category": cat, "count": cnt}
                  for (i, j, cat, cnt) in edges]
     return {
         "nodes": out_nodes,
         "links": out_links,
-        "width": round(width, 1),
-        "height": round(height, 1),
-        "stats": {"nodes": n, "edges": len(edges), "isolated": len(chars) - n},
+        "width": round(max(width, 1.0), 1),
+        "height": round(max(height, 1.0), 1),
+        "stats": {
+            "nodes": n,
+            "edges": len(edges),
+            "persons": len(char_by_name),
+            "connected": len(connected),
+            "isolated": isolated,
+            "excludedNonPerson": excluded,
+        },
     }
+
 
 
 def build_scope(scope: str):
@@ -714,6 +721,20 @@ def build_scope(scope: str):
         })
     locations.sort(key=lambda item: (item["region"], item["ancient"]))
 
+    # 分部范围的人物集合：用于关系范围过滤（P1-11）。
+    # 判定条件与下面 chars 的构造完全一致（该人物在本范围内至少有一章），
+    # 保证「关系留下的人」与「人物表里的人」是同一个集合。
+    scope_names = set()
+    for character in data.get("characters", []):
+        if set(character.get("chapters", [])) & selected_set:
+            scope_names.add(canonical(character.get("name", "未命名人物")))
+
+    # 关系范围策略（必须在 UI 上写明当前用的是哪一种）：
+    #   full    → all      ：全书报告保留全部关系
+    #   分部报告 → induced ：两端都在本范围内（严格局部图），
+    #               避免 p1 里出现 754 条两边人物都不属于 p1 的"串范围"关系。
+    relation_scope = "all" if scope == "full" else "induced"
+
     # Keep every relation in the report data.  The UI paginates it instead of
     # silently truncating it on character cards.
     relations = []
@@ -726,14 +747,18 @@ def build_scope(scope: str):
         # 仅按章节抽取的关系按所选范围过滤。
         if source_key not in selected_set and source_key != "curated" and source_key != "推导":
             continue
+        from_name = canonical(relation.get("from", "未命名"))
+        to_name = canonical(relation.get("to", "未命名"))
+        if relation_scope == "induced" and not (from_name in scope_names and to_name in scope_names):
+            continue
         ek = relation.get("endpoint_kind") or {}
         for _side, _raw in (("from", relation.get("from")), ("to", relation.get("to"))):
             _k = ek.get(_side)
             if _raw and _k and _k != "person":
                 endpoint_kinds[_raw] = _k
         relations.append({
-            "from": canonical(relation.get("from", "未命名")),
-            "to": canonical(relation.get("to", "未命名")),
+            "from": from_name,
+            "to": to_name,
             "rel": relation.get("rel", "关系待补"),
             "category": relation.get("category") or canon_relation_category(relation.get("rel", "")),
             "endpointKind": {"from": ek.get("from") or "person", "to": ek.get("to") or "person"},
@@ -970,6 +995,9 @@ def build_scope(scope: str):
     return {
         "scope": scope,
         "scopeLabel": scope_label,
+        # 关系范围策略：all=全书全部关系；induced=只保留两端都在本范围内的关系。
+        # 前端在关系视图里如实标注，避免读者误以为分部图是完整的全局网络。
+        "relationScope": relation_scope,
         "chapters": {key: chapter_by_key[key] for key in selected_keys},
         "locations": locations,
         "chapterLocations": chapter_locations,
@@ -1266,13 +1294,21 @@ function drawFull(){
   ctx.globalAlpha=1;ctx.restore();
 }
 /* 实时力模拟：网格加速斥力 + 弹簧 + 中心引力 + 微抖动（轻微飘动） */
-let fullSim=null,fullReduceMotion=false,_fullBound=false,_fullResizeBound=false;
+let fullSim=null,fullReduceMotion=false,_fullBound=false,_fullResizeBound=false,_fgAbort=null;
 function sizeFullCanvas(){if(!fullCanvas)return;const g=DATA.relationGraphFull;if(!g)return;const cssW=fullCanvas.parentElement.clientWidth||800;const cssH=Math.max(320,Math.min(cssW*(g.height/g.width),cssW*1.15));fullCssW=cssW;fullCssH=cssH;fullDpr=window.devicePixelRatio||1;fullCanvas.style.height=cssH+'px';fullCanvas.width=Math.round(cssW*fullDpr);fullCanvas.height=Math.round(cssH*fullDpr);fullCanvas.style.width=cssW+'px';const s=cssW/g.width;fullT={k:s,tx:0,ty:0};if(!_fullResizeBound){_fullResizeBound=true;let rt=null;window.addEventListener('resize',()=>{if(!fullCanvas)return;clearTimeout(rt);rt=setTimeout(()=>{sizeFullCanvas();drawFull();},120);});}}
 function initFullSim(){const g=DATA.relationGraphFull;if(!g||!g.nodes||!g.nodes.length){fullSim=null;return;}const nodes=g.nodes.map(nd=>({name:nd.name,x:nd.x,y:nd.y,vx:0,vy:0,r:nd.r,degree:nd.degree,faction:nd.faction,tier:nd.tier,role:nd.role,fixed:false}));const ix={};nodes.forEach((n,i)=>ix[n.name]=i);const links=g.links.map(l=>({a:ix[l.source],b:ix[l.target],category:l.category,count:l.count}));fullSim={nodes,ix,links,w:g.width,h:g.height,alpha:1,alphaTarget:0,raf:null,dragIdx:-1,reduced:fullReduceMotion};}
 function fullStep(){const S=fullSim;if(!S)return;const N=S.nodes,n=N.length;const k=24,rep=160,spring=0.02,gravity=0.018,cx=S.w/2,cy=S.h/2,alpha=S.alpha;const thermal=S.reduced?0:0.22;const cell=k*4;const grid=new Map();for(let i=0;i<n;i++){const nd=N[i];const gx=Math.floor(nd.x/cell),gy=Math.floor(nd.y/cell);const key=gx+'|'+gy;let arr=grid.get(key);if(!arr){arr=[];grid.set(key,arr);}arr.push(i);}for(let i=0;i<n;i++){const a=N[i];if(a.fixed)continue;let fx=0,fy=0;const gx=Math.floor(a.x/cell),gy=Math.floor(a.y/cell);for(let ox=-1;ox<=1;ox++)for(let oy=-1;oy<=1;oy++){const arr=grid.get((gx+ox)+'|'+(gy+oy));if(!arr)continue;for(let q=0;q<arr.length;q++){const j=arr[q];if(j===i)continue;const b=N[j];let dx=a.x-b.x,dy=a.y-b.y;let d2=dx*dx+dy*dy;if(d2<1e-3){dx=Math.random()-0.5;dy=Math.random()-0.5;d2=dx*dx+dy*dy+1e-3;}const d=Math.sqrt(d2);const f=rep/d2;fx+=dx/d*f;fy+=dy/d*f;}}fx+=(cx-a.x)*gravity;fy+=(cy-a.y)*gravity;a._fx=fx;a._fy=fy;}for(let e=0;e<S.links.length;e++){const l=S.links[e];const a=N[l.a],b=N[l.b];if(a.fixed&&b.fixed)continue;let dx=b.x-a.x,dy=b.y-a.y;let d=Math.sqrt(dx*dx+dy*dy)+1e-6;const f=(d-k)*spring;const fx=dx/d*f,fy=dy/d*f;if(!a.fixed){a._fx+=fx;a._fy+=fy;}if(!b.fixed){b._fx-=fx;b._fy-=fy;}}const damp=0.85,maxStep=12;for(let i=0;i<n;i++){const a=N[i];if(a.fixed){a.vx=0;a.vy=0;continue;}const jx=thermal?(Math.random()-0.5)*thermal:0;const jy=thermal?(Math.random()-0.5)*thermal:0;a.vx=(a.vx+a._fx*alpha+jx)*damp;a.vy=(a.vy+a._fy*alpha+jy)*damp;const sp=Math.hypot(a.vx,a.vy);if(sp>maxStep){a.vx*=maxStep/sp;a.vy*=maxStep/sp;}a.x+=a.vx;a.y+=a.vy;}S.alpha+=(S.alphaTarget-S.alpha)*0.02;if(S.alpha<0)S.alpha=0;}
 function fullLoop(){if(!fullSim)return;fullStep();drawFull();if(fullSim.alpha<0.02&&fullSim.dragIdx<0){const r=fullSim.raf;fullSim.raf=null;if(r)cancelAnimationFrame(r);return;}fullSim.raf=requestAnimationFrame(fullLoop);}
 function startFullSim(){if(!fullSim)initFullSim();if(fullSim&&!fullSim.raf){fullSim.raf=requestAnimationFrame(fullLoop);}}
 function stopFullSim(){if(fullSim&&fullSim.raf){cancelAnimationFrame(fullSim.raf);fullSim.raf=null;}}
+/* 关系统计口径统一入口：人物关系图只统计「人物↔人物」关系，
+   非人物端点（东林党/东厂/后金/北京…）被排除，这里把排除量如实标出。 */
+function fullSummaryHTML(g){
+  const pct=g.stats.persons?Math.round(g.stats.isolated*100/g.stats.persons):0;
+  return `<span>人物关系图：<strong>${g.stats.nodes}</strong> / ${g.stats.persons} 人 · <strong>${g.stats.edges}</strong> 条人物关系</span>`
+    +`<span>孤立人物 ${g.stats.isolated}（${pct}%，指无任何人物间关系）</span>`
+    +(g.stats.excludedNonPerson?`<span class="muted">另有 ${g.stats.excludedNonPerson} 条关系含非人物端点，未计入人物关系图</span>`:'');
+}
 function renderFullGraph(){
   const g=DATA.relationGraphFull;const sum=document.getElementById('fullSummary'),legend=document.getElementById('fullLegend'),canvas=document.getElementById('fullGraph');
   if(!g||!g.nodes||!g.nodes.length){if(sum)sum.innerHTML='<span>当前范围没有可绘制的关系图。</span>';return;}
@@ -1280,7 +1316,7 @@ function renderFullGraph(){
   fullCanvas=canvas;fullCtx=canvas.getContext('2d');_fgCache=null;fullHighlight=null;
   sizeFullCanvas();
   legend.innerHTML=(DATA.relationCategories||[]).map(c=>`<span><i class="cat-dot" style="--cat:${relCatColor(c)};margin-right:4px"></i>${esc(c)}</span>`).join('')+`<span class="muted"> · 点大小=关系数，颜色=势力大类 · 可拖拽节点</span>`;
-  sum.innerHTML=`<span>全书关系图：<strong>${g.stats.nodes}</strong> 名人物 · <strong>${g.stats.edges}</strong> 条关系</span><span>孤立人物 ${g.stats.isolated}</span>`;
+  sum.innerHTML=fullSummaryHTML(g);
   stopFullSim();            // 防止多次渲染叠加多个 rAF 循环（CPU 翻倍、收敛被加速）
   initFullSim();
   drawFull();
@@ -1289,11 +1325,13 @@ function renderFullGraph(){
   startFullSim();
 }
 function showFullNode(name){const g=DATA.relationGraphFull;const node=fgByName(name);if(!node)return;fullHighlight=name;const inc=new Set([name]);g.links.forEach(l=>{if(l.source===name)inc.add(l.target);if(l.target===name)inc.add(l.source)});const neigh=[...inc].filter(x=>x!==name);document.getElementById('fullSummary').innerHTML=`<span>已选：<strong>${esc(name)}</strong></span><span>${esc(node.faction||'势力待补')}</span><span>关系 ${node.degree} 条</span><span>邻域 ${neigh.length} 人</span>`;drawFull();}
-function resetFullHighlight(){fullHighlight=null;const g=DATA.relationGraphFull;if(g)document.getElementById('fullSummary').innerHTML=`<span>全书关系图：<strong>${g.stats.nodes}</strong> 名人物 · <strong>${g.stats.edges}</strong> 条关系</span><span>孤立人物 ${g.stats.isolated}</span>`;drawFull();}
+function resetFullHighlight(){fullHighlight=null;const g=DATA.relationGraphFull;if(g)document.getElementById('fullSummary').innerHTML=fullSummaryHTML(g);drawFull();}
 function setupFullInteractions(canvas){
-  // 用 AbortController：画布被替换后重新绑定时，自动注销上一轮的 window 级监听器，避免累积
-  if(canvas.__fgAbort){try{canvas.__fgAbort.abort()}catch(_){}}
-  const __ac=new AbortController();canvas.__fgAbort=__ac;const __sg={signal:__ac.signal};
+  // 用模块级 AbortController：画布被 innerHTML 替换后重新挂载时，先 abort 上一轮，
+  // window 级监听器随信号一并注销。（挂在 canvas 上会随旧画布一起被丢弃，
+  // 但 window 上的监听器不会，逐次累积 → 事件泄漏。）
+  if(_fgAbort){try{_fgAbort.abort()}catch(_){}}
+  _fgAbort=new AbortController();const __sg={signal:_fgAbort.signal};
   const hit=(mx,my)=>{const arr=fullSim?fullSim.nodes:DATA.relationGraphFull.nodes;let best=-1,bd=1e9;for(let i=0;i<arr.length;i++){const nd=arr[i];const sx=nd.x*fullT.k+fullT.tx,sy=nd.y*fullT.k+fullT.ty;const d=Math.hypot(sx-mx,sy-my);const rr=Math.max(nd.r*fullT.k,2.2)+6;if(d<rr&&d<bd){bd=d;best=i;}}return best;};
   let panning=false,lx=0,ly=0,moved=false,dragIdx=-1;
   canvas.addEventListener('wheel',e=>{e.preventDefault();const rect=canvas.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;const f=e.deltaY<0?1.12:1/1.12;const nk=Math.min(Math.max(fullT.k*f,0.15),14);const r=nk/fullT.k;fullT.tx=mx-(mx-fullT.tx)*r;fullT.ty=my-(my-fullT.ty)*r;fullT.k=nk;drawFull();},__sg);
@@ -1348,7 +1386,7 @@ function loadLeaflet(){
     document.head.appendChild(css);
     const s=document.createElement('script');
     s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    s.onload=()=>resolve();s.onerror=()=>reject(new Error('leaflet load failed'));
+    s.onload=()=>resolve();s.onerror=()=>{_leafletPromise=null;reject(new Error('leaflet load failed'));};
     document.head.appendChild(s);
   });
   return _leafletPromise;
@@ -1498,7 +1536,7 @@ function renderPrint(kind,list){
   $('#printArea').innerHTML=pages.join('');
 }
 function renderEvents(){const types=[...new Set(DATA.events.map(x=>x.type))].sort();const cats=DATA.eventCategories||[];const counts={};DATA.events.forEach(x=>{counts[x.category]=(counts[x.category]||0)+1});const list=DATA.events.filter(x=>(state.eventCategory==='全部类别'||x.category===state.eventCategory)&&(!state.eventQuery||`${x.name} ${x.location} ${x.participants.join(' ')}`.toLowerCase().includes(state.eventQuery.toLowerCase())));const page=slicePage(list,state.eventPage);$('#events').innerHTML=`<div class="section-head"><div><h2>事件索引</h2><p>${metrics.events} 件事件；年份待考的 ${metrics.unknownEvents} 件仍保留在索引中。</p></div></div><div class="panel"><div class="toolbar"><label>类别</label><select id="eventCategory"><option value="全部类别" ${state.eventCategory==='全部类别'?'selected':''}>全部类别（${DATA.events.length}）</option>${cats.map(c=>`<option value="${esc(c)}" ${state.eventCategory===c?'selected':''}>${esc(c)}（${counts[c]||0}）</option>`).join('')}</select><input class="search grow" id="eventQuery" value="${esc(state.eventQuery)}" placeholder="搜索事件、地点或参与者"></div><div class="table-wrap"><table class="data-table"><thead><tr><th>事件</th><th>年份</th><th>类别</th><th>原类型</th><th>地点</th><th>参与者</th><th>来源</th></tr></thead><tbody>${page.map(x=>`<tr><td><button class="link-button" data-event-id="${x.id}">${esc(x.name)}</button></td><td>${esc(x.year||'待考')}</td><td>${catBadge(x.category,eventCatColor(x.category))}</td><td class="muted">${esc(x.type)}</td><td>${esc(x.location)}</td><td>${esc(x.participants.slice(0,5).join('、'))}${x.participants.length>5?' …':''}</td><td>${x.sources.length}章</td></tr>`).join('')||'<tr><td colspan="7" class="empty">没有匹配事件</td></tr>'}</tbody></table></div>${pager(state.eventPage,list.length)}</div>`;$('#eventCategory').addEventListener('change',e=>{state.eventCategory=e.target.value;state.eventPage=1;renderEvents()});bindSearch('#eventQuery','eventQuery',()=>{state.eventPage=1;renderEvents()});const root=$('#events');bindPaging(root,delta=>{state.eventPage+=delta;renderEvents()});root.querySelectorAll('[data-event-id]').forEach(b=>b.addEventListener('click',()=>showEvent(DATA.events.find(x=>x.id===b.dataset.eventId))))}
-function renderRelations(){const cats=DATA.relationCategories||[];const list=DATA.relations.filter(x=>(state.relationCategory==='全部类别'||x.category===state.relationCategory)&&(!state.relationQuery||`${x.from} ${x.to} ${x.rel} ${x.sourceTitle}`.toLowerCase().includes(state.relationQuery.toLowerCase())));const page=slicePage(list,state.relationPage);const counts={};DATA.relations.forEach(x=>{counts[x.category]=(counts[x.category]||0)+1});$('#relations').innerHTML=`<div class="section-head"><div><h2>关系索引</h2><p>${metrics.relations} 条关系完整保留；自由文本关系已归入 ${cats.length} 个类别，原文仍可查。</p></div></div><div class="panel"><div class="toolbar"><label>类别</label><select id="relationCategory"><option value="全部类别" ${state.relationCategory==='全部类别'?'selected':''}>全部类别（${metrics.relations}）</option>${cats.map(c=>`<option ${state.relationCategory===c?'selected':''}>${esc(c)}</option>`).join('')}</select><span class="muted">当前类别 ${counts[state.relationCategory]||metrics.relations} 条</span><input class="search grow" id="relationQuery" value="${esc(state.relationQuery)}" placeholder="人物、关系或来源章节"></div><div class="table-wrap"><table class="data-table"><thead><tr><th>主体</th><th>类别</th><th>关系</th><th>对象</th><th>来源</th></tr></thead><tbody>${page.map(x=>`<tr><td>${esc(x.from)}${epTag(x.from,x.endpointKind&&x.endpointKind.from)}</td><td>${catBadge(x.category,relCatColor(x.category))}</td><td>${esc(x.rel)}</td><td>${esc(x.to)}${epTag(x.to,x.endpointKind&&x.endpointKind.to)}</td><td>${esc(x.sourceTitle)}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">没有匹配关系</td></tr>'}</tbody></table></div>${pager(state.relationPage,list.length)}</div>`;$('#relationCategory').addEventListener('change',e=>{state.relationCategory=e.target.value;state.relationPage=1;renderRelations()});bindSearch('#relationQuery','relationQuery',()=>{state.relationPage=1;renderRelations()});const root=$('#relations');bindPaging(root,delta=>{state.relationPage+=delta;renderRelations()})}
+function renderRelations(){const cats=DATA.relationCategories||[];const list=DATA.relations.filter(x=>(state.relationCategory==='全部类别'||x.category===state.relationCategory)&&(!state.relationQuery||`${x.from} ${x.to} ${x.rel} ${x.sourceTitle}`.toLowerCase().includes(state.relationQuery.toLowerCase())));const page=slicePage(list,state.relationPage);const counts={};DATA.relations.forEach(x=>{counts[x.category]=(counts[x.category]||0)+1});$('#relations').innerHTML=`<div class="section-head"><div><h2>关系索引</h2><p>${metrics.relations} 条关系完整保留；自由文本关系已归入 ${cats.length} 个类别，原文仍可查。${DATA.relationScope==='induced'?'当前为分部范围：只列出两端都属于本范围的关系（诱导子图），跨范围关系请切到全书报告查看。':'当前为全书范围：保留全部关系（含跨部关系）。'}</p></div></div><div class="panel"><div class="toolbar"><label>类别</label><select id="relationCategory"><option value="全部类别" ${state.relationCategory==='全部类别'?'selected':''}>全部类别（${metrics.relations}）</option>${cats.map(c=>`<option ${state.relationCategory===c?'selected':''}>${esc(c)}</option>`).join('')}</select><span class="muted">当前类别 ${counts[state.relationCategory]||metrics.relations} 条</span><input class="search grow" id="relationQuery" value="${esc(state.relationQuery)}" placeholder="人物、关系或来源章节"></div><div class="table-wrap"><table class="data-table"><thead><tr><th>主体</th><th>类别</th><th>关系</th><th>对象</th><th>来源</th></tr></thead><tbody>${page.map(x=>`<tr><td>${esc(x.from)}${epTag(x.from,x.endpointKind&&x.endpointKind.from)}</td><td>${catBadge(x.category,relCatColor(x.category))}</td><td>${esc(x.rel)}</td><td>${esc(x.to)}${epTag(x.to,x.endpointKind&&x.endpointKind.to)}</td><td>${esc(x.sourceTitle)}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">没有匹配关系</td></tr>'}</tbody></table></div>${pager(state.relationPage,list.length)}</div>`;$('#relationCategory').addEventListener('change',e=>{state.relationCategory=e.target.value;state.relationPage=1;renderRelations()});bindSearch('#relationQuery','relationQuery',()=>{state.relationPage=1;renderRelations()});const root=$('#relations');bindPaging(root,delta=>{state.relationPage+=delta;renderRelations()})}
 const HAN_NUM=['','一','二','三','四','五','六','七','八','九'];
 const hanNum=n=>{n=Math.round(n);if(n<=0)return String(n);if(n<=10)return HAN_NUM[n];if(n<20)return '十'+(n%10?HAN_NUM[n%10]:'');const t=Math.floor(n/10),u=n%10;return HAN_NUM[t]+'十'+(u?HAN_NUM[u]:'')};
 const reignOf=year=>{const y=Number(year);if(!y)return null;return (DATA.reigns||[]).find(r=>y>=r.start&&y<=r.end)||null};
