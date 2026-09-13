@@ -43,7 +43,7 @@ jobs:
       - name: 基础 CSS 历史去重冒烟
         run: |
           python src/normalize_css.py
-          git diff --check -- web/css/app.css
+          python src/normalize_css.py --check
 
       - name: 主题 CSS 镜像同步冒烟
         run: |
