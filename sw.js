@@ -13,8 +13,9 @@
 //     + 地点卡把「别称」与「书中提及」拆成两块渲染（app.js 有变更，必须 bump）。
 // v10：统一视觉层级与键盘焦点/跳转链接；web target 补齐 sw.js 并完整报告 data.js / sw.js 产物。
 // v11：V2 信息架构：12 个视图按全局/实体/探索分组；首页加入三条探索路径并统一地图/图谱/时间类视图语言。
+// v12：V3 产品体验：全局快捷搜索、首页数据叙事、图谱阅读器与邻域聚焦入口。
 const CACHE_PREFIX = 'ming-report-';
-const CACHE = CACHE_PREFIX + 'v11';
+const CACHE = CACHE_PREFIX + 'v12';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 
