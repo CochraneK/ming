@@ -3,15 +3,16 @@
 // 跨域资源（地图瓦片、unpkg Leaflet）一律不拦截，直接走原生网络。
 // 注意：后台更新用 cache:'no-cache' 绕过浏览器 HTTP 缓存——否则 GitHub Pages 的
 // max-age=600 会让 SWR 拿到陈旧响应，滞后被拉长到多个访问周期。
-// CACHE 名 bump（v2）会在 activate 时清空旧缓存，强制老用户下次刷新立即得到新版。
-const CACHE = 'ming-report-v2';
+// CACHE 名 bump（v3）会在 activate 时清空旧缓存，强制老用户下次刷新立即得到新版。
+const CACHE_PREFIX = 'ming-report-';
+const CACHE = CACHE_PREFIX + 'v3';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
+    await Promise.all(keys.filter(k => k.startsWith(CACHE_PREFIX) && k !== CACHE).map(k => caches.delete(k)));
     await self.clients.claim();
   })());
 });
