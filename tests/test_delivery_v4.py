@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V4 双交付：在线资源拆分与离线单文件必须来自同一构建入口。"""
+"""V4 双交付基线：在线资源拆分与离线单文件必须来自同一构建入口。"""
 from __future__ import annotations
 
 import tempfile
@@ -28,8 +28,11 @@ def test_web_target_externalizes_every_project_frontend_layer():
             "assets/app.css",
             "assets/theme.css",
             "assets/experience.css",
-            "assets/data.js",
+            "assets/boot-data.js",
+            "assets/data-full.js",
+            "assets/data-loader.js",
             "assets/app.js",
+            "assets/lazy-data.js",
             "assets/experience.js",
             "sw.js",
         }
@@ -38,9 +41,12 @@ def test_web_target_externalizes_every_project_frontend_layer():
         assert '<link rel="stylesheet" href="assets/app.css">' in html
         assert '<link rel="stylesheet" href="assets/theme.css">' in html
         assert '<link rel="stylesheet" href="assets/experience.css">' in html
-        assert '<script src="assets/data.js"></script>' in html
+        assert '<script src="assets/boot-data.js"></script>' in html
+        assert '<script src="assets/data-loader.js"></script>' in html
         assert '<script src="assets/app.js"></script>' in html
+        assert '<script src="assets/lazy-data.js"></script>' in html
         assert '<script src="assets/experience.js"></script>' in html
+        assert "assets/data-full.js" not in html
         assert "THEME_SYNC_START" not in html
         assert "EXPERIENCE_CSS_SYNC_START" not in html
         assert "EXPERIENCE_SYNC_START" not in html
@@ -49,13 +55,15 @@ def test_web_target_externalizes_every_project_frontend_layer():
         td.cleanup()
 
 
-def test_web_shell_is_small_and_data_is_separate():
+def test_web_shell_is_small_and_heavy_data_is_separate():
     td, out, _stats = _web_output()
     try:
         html_size = (out / "index.html").stat().st_size
-        data_size = (out / "assets" / "data.js").stat().st_size
+        boot_size = (out / "assets" / "boot-data.js").stat().st_size
+        full_size = (out / "assets" / "data-full.js").stat().st_size
         assert html_size < 80 * 1024
-        assert data_size > html_size * 5
+        assert boot_size < 96 * 1024
+        assert full_size > boot_size * 10
     finally:
         td.cleanup()
 
