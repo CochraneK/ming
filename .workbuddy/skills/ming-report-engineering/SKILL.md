@@ -112,10 +112,33 @@ const src  = html.match(/function fullSummaryHTML\(g\)\{[\s\S]*?\n\}/)[0]; eval(
 - **命中缓存时后台更新要 `event.waitUntil(network)` 保活**：只 `return cached` 的话 worker 可能在 fetch 完成前结束，更新被打断、旧版长期不换。
 - 改版时 bump `CACHE` 名（activate 自动清旧缓存）。用户报"内容没更新"时先 `gh api /repos/CochraneK/ming/git/blobs/<sha>` 拉线上文件解码验证，再归因缓存。
 
+### 合规巡检：线上绝不能有原书全文（2026-09-13 事故）
+
+`.gitignore` 里写着 `data/chapters.json` 不入库，但**它仍在公开仓库里**（4.5 MB / 168 章含 `body`，与本地份字节一致，早在 2026-09-04 的 `Add files via upload` 就混进去了——`.gitignore` 只挡 `git add`，挡不住 Contents/Git Database API 上传）。已从 main 移除，但历史提交仍可访问该 blob。
+
+**每次部署/同步后必跑（一条命令）**：
+```bash
+# 列出线上所有文件，人工确认没有禁书产物
+gh api "/repos/CochraneK/ming/git/trees/main?recursive=1" \
+  --jq '.tree[]|select(.type=="blob")|.path' | grep -Ei 'chapters\.json|明朝那些事儿'
+# 期望：无输出（chapters_index.json 只是章节元信息，无正文，可保留）
+```
+- 本地比对脚本 `.dump/_diff_remote.py`（blob sha 全量比对，输出「未传/过时/仅线上」三类）会自动把 `chapters.json` 列进「仅线上」——**看到这条就是事故**。
+- 移除方法：`.dump/_remove_book_text.py`（tree 里该 path 置 `sha: null` → 新 commit → PATCH refs，其它文件不动）。
+- 彻底清除需要**重写历史**（孤儿 commit + force PATCH refs），旧 commit 才不可达；GitHub 仍可能按 sha 直达 blob 直到 GC——真要彻底，需删库重建或找 GitHub Support。
+- 本项目部署脚本的 FILES 清单**有意排除**：`明朝那些事儿.txt`、`data/chapters.json`。新增文件时别把这两个顺手加进去。
+
 ## 部署（GitHub Pages，沙箱内）
 - 沙箱 `git`/`curl` 连不上 GitHub（loopback≠宿主），用 `gh` CLI（走宿主网络）；**`gh` 前必须 `env -u HTTPS_PROXY -u HTTP_PROXY -u https_proxy -u http_proxy -u ALL_PROXY -u all_proxy` 清代理**，否则报 `tls: first record...`。
-- 发布脚本 `.dump/_deploy_index_now.py`：部署 **index.html + sw.js + README.md 三文件**（Git Database API：blob→tree→commit→PATCH refs，字节级校验）。`gh 401` 但 `gh api /user` 正常 = 沙箱网络拦截，用 `dangerouslyDisableSandbox` 跑部署。
+- **沙箱 `env` 也可能不在 PATH** → 直接用 python 调脚本（脚本内部已自行剥掉代理变量再调 `gh`），别再套 `env -u`。
+- **沙箱到 api.github.com 会抖动**：同一脚本可能这次 401 Bad credentials、下次 TLS handshake timeout、再跑就成功。`.dump/_sync_docs.py` 已内置「只传变化文件 + 失败重试 3 次」；遇到 401/TLS 先原样重跑，别急着改配置。
+- 仓库目录**不是 git 仓库**（无 `.git`），一切发布走 `gh` API；`.dump/git-sync/` 是早期 git 推送方式留下的本地镜像，已弃用（可清理）。
+
+### 发布（.dump/_deploy_index_now.py）
+部署 **index.html + sw.js + README.md 三文件**（Git Database API：blob→tree→commit→PATCH refs，字节级校验）。`gh 401` 但 `gh api /user` 正常 = 沙箱网络拦截，用 `dangerouslyDisableSandbox` 跑部署。
 - 沙箱 gh token 无 `delete_repo` scope；重写历史用 Git Database API 建孤儿 commit + force PATCH refs。
+- **同步走 `.dump/_sync_docs.py`**（FILES 全量清单，含 src/core、report/、.workbuddy/skill+memory）；已加「blob sha 比对跳过未变化 + 重试 3 次」，51 个文件里通常只有几个真需要上传（4 MB 的 index.html 不再每次重传）。
+- 差异巡检用 `.dump/_diff_remote.py`（只读，三类结论）；**看到 `data/chapters.json` 出现在「仅线上」就立刻按「合规巡检」处理**。
 
 ### 确认 GitHub 与本地的差异（哪些没传 / 哪些过时）
 ```bash

@@ -56,6 +56,11 @@ FILES = [
     # 部署/同步脚本
     (".dump/_deploy_index_now.py", ".dump/_deploy_index_now.py"),
     (".dump/_sync_docs.py", ".dump/_sync_docs.py"),
+    (".dump/_diff_remote.py", ".dump/_diff_remote.py"),
+    (".dump/_remove_book_text.py", ".dump/_remove_book_text.py"),
+    # 工程文件（2026-09-13 从线上取回本地）
+    (".gitignore", ".gitignore"),
+    ("requirements.txt", "requirements.txt"),
     # 文档
     ("report/Ming_全面重构方案.txt", "report/Ming_全面重构方案.txt"),
     (".workbuddy/skills/ming-report-engineering/SKILL.md", ".workbuddy/skills/ming-report-engineering/SKILL.md"),
