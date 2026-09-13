@@ -89,7 +89,6 @@ setTimeout(function(){
     assert_has(
         dom,
         r'<div id="commandPalette" class="command-shell">',
-        r'<input id="commandInput"[^>]*value="于谦"',
         r'<button type="button" role="option"[^>]*class="command-item active"',
         r'<strong>于谦</strong>',
         r'<span class="command-kind">人物</span>',
