@@ -1,11 +1,11 @@
-/* ===== V5 在线数据加载器：boot 首屏 / full 深度数据 =====
+/* ===== V6 在线数据加载器：boot 首屏 / search 检索 / full 深度数据 =====
    仅用于 web target。standalone.html 仍把完整 DATA / INSIGHT_DATA 内联，不加载本文件。 */
 (function(){
 'use strict';
 if(typeof DATA==='undefined')return;
 
 const root=document.documentElement;
-let fullPromise=null;
+let fullPromise=null,searchPromise=null;
 
 function deepHashNeedsFull(){
   const raw=String(location.hash||'').replace(/^#/,'');
@@ -26,9 +26,41 @@ function mark(mode,reason){
   if(reason)root.dataset.mingDataReason=reason;
   else delete root.dataset.mingDataReason;
 }
+function markSearch(mode,reason){
+  root.dataset.mingSearch=mode;
+  if(reason)root.dataset.mingSearchReason=reason;
+  else delete root.dataset.mingSearchReason;
+}
 
 window.__MING_FULL_DATA_READY=window.__MING_FULL_DATA_READY===true;
+window.__MING_SEARCH_INDEX_READY=window.__MING_SEARCH_INDEX_READY===true;
 mark(window.__MING_FULL_DATA_READY?'full':'boot');
+markSearch(window.__MING_SEARCH_INDEX_READY?'ready':'idle');
+
+window.__MING_ENSURE_SEARCH_INDEX=function(reason){
+  if(window.__MING_FULL_DATA_READY)return Promise.resolve(null);
+  if(window.__MING_SEARCH_INDEX_READY)return Promise.resolve(window.__MING_SEARCH_INDEX__||null);
+  if(searchPromise)return searchPromise;
+  markSearch('loading',reason||'command');
+  searchPromise=new Promise((resolve,reject)=>{
+    const script=document.createElement('script');
+    script.src='assets/search-index.js';
+    script.dataset.mingSearchChunk='index';
+    script.onload=()=>{
+      if(!window.__MING_SEARCH_INDEX_READY){
+        reject(new Error('search-index.js 已加载但未标记 ready'));
+        return;
+      }
+      markSearch('ready',reason||'command');
+      resolve(window.__MING_SEARCH_INDEX__||null);
+    };
+    script.onerror=()=>reject(new Error('搜索索引加载失败'));
+    document.head.appendChild(script);
+  }).catch(err=>{
+    searchPromise=null;markSearch('error',reason||'command');throw err;
+  });
+  return searchPromise;
+};
 
 window.__MING_ENSURE_FULL_DATA=function(reason){
   if(window.__MING_FULL_DATA_READY)return Promise.resolve(DATA);
@@ -56,7 +88,7 @@ window.__MING_ENSURE_FULL_DATA=function(reason){
 
 /* 深链必须在 app.js 执行前拥有完整数据。当前脚本是 parser-blocking classic script，
    因而在 document 仍处于 loading 时用 document.write 插入同源 full chunk，可保证
-   后面的 app.js 看到的是完整 DATA；普通首页绝不会走这条路径。 */
+   后面的 app.js 看到的是完整 DATA；普通首页与仅打开全局搜索都不会走这条路径。 */
 if(!window.__MING_FULL_DATA_READY&&document.readyState==='loading'&&deepHashNeedsFull()){
   mark('loading','deep-link');
   document.write('<script src="assets/data-full.js" data-ming-data-chunk="full"><\/script>');

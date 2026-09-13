@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V5 boot/full lazy DATA 的结构、不丢数据与命令搜索钩子回归。"""
+"""V5 boot/full 基线 + V6 search-index 门控回归。"""
 from __future__ import annotations
 
 import json
@@ -37,7 +37,6 @@ def test_boot_plus_full_reconstructs_final_payload_losslessly():
     boot, full = build.split_web_payload(payload)
     merged = dict(boot)
     merged.update(full)
-    # boot 里的 relationGraphFull / 重字段空壳必须被 full 覆盖回最终模型。
     assert merged == payload
 
 
@@ -45,19 +44,24 @@ def test_lazy_loader_and_gate_have_expected_contract():
     loader = (ROOT / "web" / "js" / "data-loader.js").read_text(encoding="utf-8")
     gate = (ROOT / "web" / "js" / "lazy-data.js").read_text(encoding="utf-8")
     assert "__MING_ENSURE_FULL_DATA" in loader
+    assert "__MING_ENSURE_SEARCH_INDEX" in loader
     assert "deepHashNeedsFull" in loader
     assert "document.write" in loader
+    assert "assets/search-index.js" in loader
     assert "assets/data-full.js" in loader
     assert "__MING_FULL_DATA_READY" in loader
+    assert "__MING_SEARCH_INDEX_READY" in loader
     assert "const baseSetView=setView" in gate
     assert "正在加载完整知识库" in gate
     assert "__MING_AFTER_FULL_DATA" in gate
 
 
-def test_command_palette_lazy_hook_is_idempotent():
+def test_command_palette_search_index_hook_is_idempotent():
     source = sync_lazy_data.TARGET.read_text(encoding="utf-8")
     rendered = sync_lazy_data.render_source(source)
     assert sync_lazy_data.MARKER in rendered
-    assert "commandHasFullData" in rendered
-    assert "__MING_ENSURE_FULL_DATA('command')" in rendered
+    assert "commandHasSearchIndex" in rendered
+    assert "__MING_ENSURE_SEARCH_INDEX('command')" in rendered
+    assert "__MING_ENSURE_FULL_DATA('command-result:'" in rendered
+    assert "__MING_ENSURE_FULL_DATA('command')" not in rendered
     assert sync_lazy_data.render_source(rendered) == rendered

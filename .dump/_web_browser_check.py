@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V5 在线按需数据版的真实 Chrome 冒烟。"""
+"""V6 在线 boot / search / full 三层按需数据的真实 Chrome 冒烟。"""
 from __future__ import annotations
 
 import os
@@ -57,39 +57,73 @@ def check_home_stays_boot_only():
     assert_has(
         dom,
         r'<html[^>]*data-ming-data="boot"',
+        r'data-ming-search="idle"',
         r'<button type="button" class="command-trigger"',
         r'<section class="v3-story panel"',
         r'地点已定位',
         r'事件可纪年',
     )
-    if 'data-ming-data-chunk="full"' in dom:
-        raise AssertionError("普通首页意外加载了 full data chunk")
-    print("ok   V5 首页仅 boot 数据 + V3 增强层")
+    if 'data-ming-data-chunk="full"' in dom or 'data-ming-search-chunk="index"' in dom:
+        raise AssertionError("普通首页意外加载了按需数据 chunk")
+    print("ok   V6 首页仅 boot，search/full 均未加载")
 
 
-def check_command_palette_loads_full():
+def _command_probe(click_result: bool) -> Path:
     doc = TARGET.read_text(encoding="utf-8")
+    click_js = """
+  setTimeout(function(){
+    var bs=[].slice.call(document.querySelectorAll('[data-command-index]'));
+    var b=bs.find(function(x){return x.textContent.indexOf('于谦')>=0;});
+    if(b)b.click();
+  },700);
+""" if click_result else ""
     probe = """<script>
 setTimeout(function(){
   document.dispatchEvent(new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true}));
   var i=document.getElementById('commandInput');
   if(i){i.value='于谦';i.dispatchEvent(new Event('input',{bubbles:true}));}
+%s
 },120);
-</script>\n"""
-    probe_path = TARGET.parent / ".v5-command-probe.html"
+</script>\n""" % click_js
+    probe_path = TARGET.parent / (".v6-command-click-probe.html" if click_result else ".v6-command-probe.html")
+    probe_path.write_text(doc.replace("</body>", probe + "</body>", 1), encoding="utf-8")
+    return probe_path
+
+
+def check_command_palette_loads_search_only():
+    probe_path = _command_probe(False)
     try:
-        probe_path.write_text(doc.replace("</body>", probe + "</body>", 1), encoding="utf-8")
         dom = chrome_dump(probe_path, budget=9000)
     finally:
         probe_path.unlink(missing_ok=True)
     assert_has(
         dom,
-        r'<html[^>]*data-ming-data="full"',
-        r'data-ming-data-chunk="full"',
+        r'<html[^>]*data-ming-data="boot"',
+        r'data-ming-search="ready"',
+        r'data-ming-search-chunk="index"',
         r'<div id="commandPalette" class="command-shell">',
         r'<strong>于谦</strong>',
     )
-    print("ok   V5 Ctrl+K 触发 full → 于谦")
+    if 'data-ming-data-chunk="full"' in dom:
+        raise AssertionError("仅搜索于谦时不应加载 full data chunk")
+    print("ok   V6 Ctrl+K → search-index → 于谦，仍保持 boot")
+
+
+def check_command_entity_selection_then_loads_full():
+    probe_path = _command_probe(True)
+    try:
+        dom = chrome_dump(probe_path, budget=10500)
+    finally:
+        probe_path.unlink(missing_ok=True)
+    assert_has(
+        dom,
+        r'<html[^>]*data-ming-data="full"',
+        r'data-ming-search="ready"',
+        r'data-ming-data-chunk="full"',
+        r'id="characters" class="view active"',
+        r'于谦',
+    )
+    print("ok   V6 选择人物结果 → full → 人物视图")
 
 
 def check_deep_link_loads_full_before_app():
@@ -102,12 +136,13 @@ def check_deep_link_loads_full_before_app():
         r'人物总图怎么读',
         r'data-v3-node-search',
     )
-    print("ok   V5 deep link → full → 人物总图阅读器")
+    print("ok   V6 deep link → full → 人物总图阅读器")
 
 
 if __name__ == "__main__":
     if not TARGET.exists():
         raise SystemExit("目标文件不存在：%s" % TARGET)
     check_home_stays_boot_only()
-    check_command_palette_loads_full()
+    check_command_palette_loads_search_only()
+    check_command_entity_selection_then_loads_full()
     check_deep_link_loads_full_before_app()

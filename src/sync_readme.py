@@ -3,7 +3,7 @@
 
 README 是项目首页，但其中地点/事件等数字以及交付说明过去靠人工维护，数据勘误或
 发布架构调整后容易滞后。本脚本直接复用 ``generate_report.build_scope("full")`` 的
-最终模型口径，并同步少数明确标记的导航与 V5 双交付 / 按需数据说明，不碰长篇正文。
+最终模型口径，并同步少数明确标记的导航与 V6 boot/search/full 交付说明，不碰长篇正文。
 """
 from __future__ import annotations
 
@@ -89,7 +89,7 @@ def render_readme(source: str) -> str:
 
     text = re.sub(
         r"^基于《明朝那些事儿》七部 156 章全文抽取整理的.*$",
-        "基于《明朝那些事儿》七部 156 章全文抽取整理的静态知识库。在线版采用 V5 按需数据交付：轻量 `index.html` + 可缓存 `assets/`，首页只加载 `boot-data.js`，进入深度视图、使用全局搜索或打开深链时再加载 `data-full.js`；同时保留 `standalone.html` 单文件离线版。",
+        "基于《明朝那些事儿》七部 156 章全文抽取整理的静态知识库。在线版采用 V6 三层按需交付：首页只加载 `boot-data.js`；打开全局搜索时加载轻量 `search-index.js`；进入深度视图、选择实体结果或打开深链时才加载 `data-full.js`。同时保留 `standalone.html` 单文件离线版。",
         text,
         count=1,
         flags=re.MULTILINE,
@@ -97,8 +97,8 @@ def render_readme(source: str) -> str:
     text = _replace_one(
         text,
         r"^GitHub Pages：.*$",
-        "GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V5 在线按需版；`standalone.html` 为可下载 / 双击打开的完整离线版）",
-        "V5 在线入口",
+        "GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V6 在线按需版；`standalone.html` 为可下载 / 双击打开的完整离线版）",
+        "V6 在线入口",
     )
     text = text.replace(
         "python src/build.py                 # 构建全书单文件 index.html",
@@ -106,14 +106,14 @@ def render_readme(source: str) -> str:
     )
     text = re.sub(
         r"^\| `--target standalone\\\|web` \|.*$",
-        "| `--target standalone\\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联到 `standalone.html`；`web`＝输出到 `dist/<scope>/`，首页用 `assets/boot-data.js`，深度操作按需加载 `assets/data-full.js`，并拆分 CSS、业务 JS、V3/V5 体验脚本与 `sw.js` |",
+        "| `--target standalone\\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联到 `standalone.html`；`web`＝输出到 `dist/<scope>/`，按 `assets/boot-data.js` → `assets/search-index.js` → `assets/data-full.js` 三层按需加载，并拆分 CSS、业务 JS、体验脚本与 `sw.js` |",
         text,
         count=1,
         flags=re.MULTILINE,
     )
     text = re.sub(
-        r"^`standalone` 构建会把.*$",
-        "`standalone` 构建继续把模板、样式、业务脚本、体验层与完整 DATA 内联成一个文件；`web` 构建使用同一最终 payload 拆成 boot / full 两级数据与独立前端资源。两种产物共享同一业务模型和浏览器回归，不维护两套内容逻辑。",
+        r"^`standalone` 构建.*$",
+        "`standalone` 构建继续把模板、样式、业务脚本、体验层与完整 DATA 内联成一个文件；`web` 构建使用同一最终 payload 派生 boot / search / full 三层资源。搜索索引只保留检索与结果展示字段，实体详情仍以 full DATA 为唯一真源。",
         text,
         count=1,
         flags=re.MULTILINE,
@@ -122,7 +122,7 @@ def render_readme(source: str) -> str:
     marker = "<!-- README_STATS_SYNC -->"
     note = (
         "> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme.py` 从最终模型自动刷新；"
-        "发布同步工作流会同时维护在线 V5 `index.html + assets/` 与离线 `standalone.html`。"
+        "发布同步工作流会同时维护在线 V6 `index.html + assets/` 与离线 `standalone.html`。"
     )
     if marker not in text:
         anchor = "| 年谱 | 165 人 | 主要人物生卒横向展开，与年号对位 |\n"
@@ -134,7 +134,7 @@ def render_readme(source: str) -> str:
             text,
             r"^> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme\.py`.*$",
             note,
-            "V5 发布说明",
+            "V6 发布说明",
         )
 
     return text
@@ -148,10 +148,10 @@ def main(argv=None) -> int:
     source = README.read_text(encoding="utf-8")
     updated = render_readme(source)
     if updated == source:
-        print("README 已与最终模型和 V5 交付架构一致")
+        print("README 已与最终模型和 V6 交付架构一致")
         return 0
     if args.check:
-        print("README 与最终模型或 V5 交付架构不一致；请运行 python src/sync_readme.py", file=sys.stderr)
+        print("README 与最终模型或 V6 交付架构不一致；请运行 python src/sync_readme.py", file=sys.stderr)
         return 1
     README.write_text(updated, encoding="utf-8")
     print("README 已同步：%d → %d 字符" % (len(source), len(updated)))

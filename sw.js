@@ -16,8 +16,9 @@
 // v12：V3 产品体验：全局快捷搜索、首页数据叙事、图谱阅读器与邻域聚焦入口。
 // v13：V4 双交付：Pages 根入口切为分离资源版，standalone.html 保留离线单文件；CSS/JS/DATA 可独立缓存。
 // v14：V5 在线按需数据：首屏只加载 boot-data.js，深度视图 / 搜索 / 深链再取 data-full.js。
+// v15：V6 搜索分层：打开全局搜索只取轻量 search-index.js，选择实体后才加载 data-full.js。
 const CACHE_PREFIX = 'ming-report-';
-const CACHE = CACHE_PREFIX + 'v14';
+const CACHE = CACHE_PREFIX + 'v15';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 
@@ -38,8 +39,8 @@ self.addEventListener('fetch', (event) => {
   // no-cors 图片请求永久 pending（表现为灰底红点）。跨域资源直接走原生网络。
   if (url.origin !== self.location.origin) return;
 
-  // 同源导航与资源走 stale-while-revalidate。V5 后 boot-data.js 与 data-full.js
-  // 各自独立缓存：普通首页不会请求 full chunk，深度操作首次加载后则可重复命中缓存。
+  // 同源导航与资源走 stale-while-revalidate。V6 后 boot/search/full 三层独立缓存：
+  // 普通首页不请求 search/full；打开搜索只取轻量索引；深度操作首次加载 full 后可重复命中缓存。
   // 关键点：后台更新必须用 event.waitUntil() 保活——若只 return cached，
   // worker 生命周期可能在 fetch 完成前就结束，更新被中断，用户会长期看到旧版。
   event.respondWith((async () => {
