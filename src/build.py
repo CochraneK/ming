@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""统一构建入口（Phase 4 / V6 双交付 + 在线按需数据）。
+"""统一构建入口（Phase 4 / V7 双交付 + 视图级按需数据）。
 
      python src/build.py                          # 全书 → standalone.html（单文件）
      python src/build.py --scope p3               # 叁部 → report_p3.html
@@ -12,11 +12,9 @@
 - 本文件只做「调度 + 渲染 + 落盘 + 退出码」，不再包含业务逻辑。
 
 两个 target 的差别：
-- ``standalone``（默认）：CSS/JS/DATA 全部内联，产物是可直接双击打开的单文件，
-  作为离线携带 / 归档版本；默认全书文件名为 ``standalone.html``，避免误覆盖在线入口；
-- ``web``：项目 CSS/JS 分离，DATA 拆成 boot / search / full 三层。首页只加载几十 KiB
-  boot 数据；打开全局搜索时按需加载轻量检索目录；进入深度视图、选择实体或打开深链
-  时才加载 full chunk。三层均由同一最终 payload 派生，不维护第二套业务数据。
+- ``standalone``（默认）：CSS/JS/DATA 全部内联，产物是可直接双击打开的单文件；
+- ``web``：项目 CSS/JS 分离，DATA 由同一最终 payload 拆成 boot + search + 8 个互斥
+  领域 chunk。视图只加载自己的依赖；需要完整模型时再聚合加载全部领域块。
 """
 
 from __future__ import annotations
@@ -42,10 +40,26 @@ EXPERIENCE_JS_PATH = BASE / "web" / "js" / "experience.js"
 DATA_LOADER_JS_PATH = BASE / "web" / "js" / "data-loader.js"
 LAZY_DATA_JS_PATH = BASE / "web" / "js" / "lazy-data.js"
 
-# 首页真正消费的最终模型字段。其余字段进入 data-full.js。
-WEB_BOOT_KEYS = ("scope", "scopeLabel", "metrics", "cleaning", "distribution")
+# 首页 + 分布视图直接消费的轻量字段。分类枚举 / 年号也很小，放进 boot 后可让
+# 「分布」完全零额外请求，并让图谱/时间视图少依赖一个小块。
+WEB_BOOT_KEYS = (
+    "scope", "scopeLabel", "metrics", "cleaning", "distribution",
+    "reigns", "eraByPart", "eventCategories", "relationCategories",
+)
 
-# web target 下骨架里的两个主锚点整块替换（含外层标签），需要与骨架逐字一致。
+# 每个最终模型顶层字段只属于一个领域块，避免按页面复制数据。
+WEB_CHUNK_FIELDS = {
+    "characters": ("characters", "aliasIndex", "chapters", "quotes"),
+    "events": ("events",),
+    "space": ("locations", "chapterLocations", "voyages"),
+    "relations": ("relations", "endpointKinds", "relationScope"),
+    "time": ("timeline", "unknownTimeline", "lifespans"),
+    "graphs": ("visualizations", "relationGraphFull", "relationGraphEntities"),
+    "insight": ("insightIndex",),
+    "meta": ("model",),
+}
+WEB_CHUNKS = tuple(WEB_CHUNK_FIELDS)
+
 _STYLE_ANCHOR = "<style>\n/*{{INLINE_CSS}}*/</style>"
 _SCRIPT_ANCHOR = "<script>\n/*{{INLINE_JS}}*/</script>"
 _DATA_CONST = "const DATA=__DATA__;\n"
@@ -57,12 +71,11 @@ def _json_for_script(obj) -> str:
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
 
-def split_web_payload(payload: dict) -> tuple[dict, dict]:
-    """把最终模型拆成首屏 boot 与延迟 full；不复制业务实体。"""
+def split_web_chunks(payload: dict) -> tuple[dict, dict[str, dict]]:
+    """把最终 DATA 无损分区成 boot + 互斥领域块。"""
     boot = {key: payload[key] for key in WEB_BOOT_KEYS if key in payload}
 
-    # app.js 在定义阶段会建立地点索引并做完整性存在性检查。这里给重字段放空壳，
-    # 让首页可直接启动；full chunk 用 Object.assign 替换成真实数组 / 字典。
+    # app.js 启动阶段会立即访问这几项；用空壳保证首页可启动，后续领域块覆盖它们。
     boot.update({
         "characters": [],
         "locations": [],
@@ -71,7 +84,7 @@ def split_web_payload(payload: dict) -> tuple[dict, dict]:
         "chapters": {},
     })
 
-    # V3 首页数据故事只需要一个关系网络入口，不值得为此首访加载 203 KiB 全图。
+    # 首页数据故事只需一个最高连接入口，不值得首访加载完整 200+ KiB 人物图。
     nodes = list((payload.get("relationGraphFull") or {}).get("nodes") or [])
     hub = max(nodes, key=lambda x: (x.get("degree", 0), x.get("name", "")), default=None)
     boot["relationGraphFull"] = {
@@ -79,14 +92,25 @@ def split_web_payload(payload: dict) -> tuple[dict, dict]:
         "links": [],
     }
 
-    full = {key: value for key, value in payload.items() if key not in WEB_BOOT_KEYS}
-    return boot, full
+    chunks: dict[str, dict] = {}
+    claimed = set(WEB_BOOT_KEYS)
+    for name, fields in WEB_CHUNK_FIELDS.items():
+        chunk = {}
+        for key in fields:
+            if key in payload:
+                chunk[key] = payload[key]
+                claimed.add(key)
+        chunks[name] = chunk
+
+    unknown = sorted(set(payload) - claimed)
+    if unknown:
+        raise SystemExit("V7 未分配的最终 payload 字段：%s" % ", ".join(unknown))
+    return boot, chunks
 
 
 def build_search_index(payload: dict) -> dict:
     """从最终模型派生轻量命令搜索目录；只保留检索/展示字段，不复制详情对象。"""
     rows = []
-
     for x in payload.get("characters") or []:
         p = x.get("profile") or {}
         aliases = [str(v) for v in (x.get("aliases") or []) if v]
@@ -120,12 +144,22 @@ def build_search_index(payload: dict) -> dict:
         search = " ".join(v for v in [title, year, category, event_type, location, *participants] if v).lower()
         meta = " · ".join(v for v in [year, category, location] if v)
         rows.append({"kind": "event", "id": event_id, "title": title, "meta": meta, "search": search})
-
     return {"rows": rows}
 
 
+def _chunk_script(name: str, data: dict) -> str:
+    """生成一个领域块脚本；insight 块同时携带独立 INSIGHT_DATA。"""
+    insight = "Object.assign(INSIGHT_DATA,%s);\n" % _json_for_script(G.INSIGHT_PAYLOAD) if name == "insight" else ""
+    return (
+        "Object.assign(DATA,%s);\n%s"
+        "window.__MING_DATA_CHUNKS__=window.__MING_DATA_CHUNKS__||{};\n"
+        "window.__MING_DATA_CHUNKS__[%s]=true;\n"
+        "document.dispatchEvent(new CustomEvent('ming:data-chunk',{detail:{name:%s}}));\n"
+        % (_json_for_script(data), insight, json.dumps(name), json.dumps(name))
+    )
+
+
 def _externalize_generated_block(source: str, *, tag: str, generated_from: str, replacement: str) -> str:
-    """把模板里的生成镜像块替换成外链，且要求恰好命中一次。"""
     pattern = re.compile(
         r'<%s\s+data-generated-from="%s">.*?</%s>'
         % (tag, re.escape(generated_from), tag),
@@ -138,12 +172,11 @@ def _externalize_generated_block(source: str, *, tag: str, generated_from: str, 
 
 
 def render_standalone(payload: dict) -> str:
-    """单文件形态：直接复用 generate_report 的注入实现，杜绝两套口径。"""
     return G.compose_document(payload)
 
 
 def render_web(payload: dict, out_dir: Path) -> dict:
-    """在线形态：HTML / CSS / JS 分离，DATA 拆成 boot + search + lazy full。"""
+    """在线形态：HTML/CSS/JS 分离，DATA 按 boot/search/领域块按需交付。"""
     skeleton = G.TEMPLATE_PATH.read_text(encoding="utf-8")
     css = G.CSS_PATH.read_text(encoding="utf-8")
     js = G.JS_PATH.read_text(encoding="utf-8")
@@ -173,10 +206,12 @@ def render_web(payload: dict, out_dir: Path) -> dict:
     body = js.replace(_DATA_CONST, "", 1).replace(_INSIGHT_CONST, "", 1)
     (assets / "app.js").write_text(body, encoding="utf-8")
 
-    boot_payload, full_payload = split_web_payload(payload)
+    boot_payload, chunks = split_web_chunks(payload)
     search_index = build_search_index(payload)
     boot_js = (
-        "const DATA=%s;\nconst INSIGHT_DATA={\"sections\":[],\"refs\":[]};\n"
+        "const DATA=%s;\n"
+        "const INSIGHT_DATA={\"sections\":[],\"refs\":[]};\n"
+        "window.__MING_DATA_CHUNKS__={};\n"
         % _json_for_script(boot_payload)
     )
     search_js = (
@@ -186,34 +221,25 @@ def render_web(payload: dict, out_dir: Path) -> dict:
         "document.dispatchEvent(new CustomEvent('ming:search-index'));\n"
         % _json_for_script(search_index)
     )
-    full_js = (
-        "Object.assign(DATA,%s);\n"
-        "Object.assign(INSIGHT_DATA,%s);\n"
-        "window.__MING_FULL_DATA_READY=true;\n"
-        "document.documentElement.dataset.mingData='full';\n"
-        "document.dispatchEvent(new CustomEvent('ming:data-full'));\n"
-        % (_json_for_script(full_payload), _json_for_script(G.INSIGHT_PAYLOAD))
-    )
     (assets / "boot-data.js").write_text(boot_js, encoding="utf-8")
     (assets / "search-index.js").write_text(search_js, encoding="utf-8")
-    (assets / "data-full.js").write_text(full_js, encoding="utf-8")
 
-    # app.js 注册的是相对于页面根目录的 sw.js。这里必须按 bytes 原样复制：
-    # read_text/write_text 会把 CRLF 规范化成 LF，使发布工作流的逐字节一致性检查误报。
+    chunk_scripts = {}
+    for name, data in chunks.items():
+        content = _chunk_script(name, data)
+        chunk_scripts[name] = content
+        (assets / ("data-%s.js" % name)).write_text(content, encoding="utf-8")
+
     sw_bytes = SW_PATH.read_bytes()
     (out_dir / "sw.js").write_bytes(sw_bytes)
 
     html = skeleton.replace(_STYLE_ANCHOR, '<link rel="stylesheet" href="assets/app.css">')
     html = _externalize_generated_block(
-        html,
-        tag="style",
-        generated_from="web/css/theme.css",
+        html, tag="style", generated_from="web/css/theme.css",
         replacement='<link rel="stylesheet" href="assets/theme.css">',
     )
     html = _externalize_generated_block(
-        html,
-        tag="style",
-        generated_from="web/css/experience.css",
+        html, tag="style", generated_from="web/css/experience.css",
         replacement='<link rel="stylesheet" href="assets/experience.css">',
     )
     html = html.replace(
@@ -224,14 +250,13 @@ def render_web(payload: dict, out_dir: Path) -> dict:
         '<script src="assets/lazy-data.js"></script>',
     )
     html = _externalize_generated_block(
-        html,
-        tag="script",
-        generated_from="web/js/experience.js",
+        html, tag="script", generated_from="web/js/experience.js",
         replacement='<script src="assets/experience.js"></script>',
     )
     html = html.replace("__TITLE__", payload["scopeLabel"])
     (out_dir / "index.html").write_text(html, encoding="utf-8")
-    return {
+
+    written = {
         "index.html": len(html),
         "assets/app.css": len(css),
         "assets/theme.css": len(theme_css),
@@ -239,16 +264,17 @@ def render_web(payload: dict, out_dir: Path) -> dict:
         "assets/app.js": len(body),
         "assets/boot-data.js": len(boot_js),
         "assets/search-index.js": len(search_js),
-        "assets/data-full.js": len(full_js),
         "assets/data-loader.js": len(data_loader_js),
         "assets/lazy-data.js": len(lazy_data_js),
         "assets/experience.js": len(experience_js),
         "sw.js": len(sw_bytes),
     }
+    for name, content in chunk_scripts.items():
+        written["assets/data-%s.js" % name] = len(content)
+    return written
 
 
 def check_render(payload: dict, findings: list) -> list:
-    """渲染层自检：锚点是否齐全、替换后是否残留占位符。"""
     doc = render_standalone(payload)
     for token in ("__DATA__", "__INSIGHT_DATA__", "__TITLE__"):
         if token in doc:
@@ -258,9 +284,7 @@ def check_render(payload: dict, findings: list) -> list:
     if not doc.rstrip().endswith("</html>"):
         findings.append(V.Finding(V.ERROR, "V-TPL-03", "渲染结果未正常闭合 </html>"))
     if len(doc) < 500_000:
-        findings.append(
-            V.Finding(V.WARNING, "V-TPL-04", "渲染结果仅 %d 字符，远小于历史规模，可能数据缺失" % len(doc))
-        )
+        findings.append(V.Finding(V.WARNING, "V-TPL-04", "渲染结果仅 %d 字符，远小于历史规模，可能数据缺失" % len(doc)))
     skeleton = G.TEMPLATE_PATH.read_text(encoding="utf-8")
     for anchor in (_STYLE_ANCHOR, _SCRIPT_ANCHOR):
         if anchor not in skeleton:
@@ -308,7 +332,6 @@ def main(argv=None) -> int:
     if V.has_errors(findings):
         print("[!] 存在 ERROR，已中止构建（数据自相矛盾，不要发布）", file=sys.stderr)
         return 2
-
     if args.check:
         print("[3/3] --check：未写入任何文件")
         return 0
@@ -322,9 +345,9 @@ def main(argv=None) -> int:
     else:
         out.mkdir(parents=True, exist_ok=True)
         written = render_web(payload, out)
-        print("[3/3] 分离资源已生成 %s" % out)
+        print("[3/3] V7 视图级分离资源已生成 %s" % out)
         for name, size in written.items():
-            print("      %-24s %d 字节/字符" % (name, size))
+            print("      %-28s %d 字节/字符" % (name, size))
     return 0
 
 
