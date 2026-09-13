@@ -121,10 +121,14 @@ function ensureStory(){
 const overview=document.getElementById('overview');if(overview&&window.MutationObserver)new MutationObserver(()=>requestAnimationFrame(ensureStory)).observe(overview,{childList:true});ensureStory();
 
 /* ------------------------------ 图谱阅读器 / 聚焦降噪 ------------------------------ */
-function graphForReader(){return state.netMode==='entity'&&DATA.relationGraphEntities?DATA.relationGraphEntities:DATA.relationGraphFull;}
-function graphReaderHTML(){
-  const g=graphForReader()||{nodes:[],links:[]},entity=state.netMode==='entity';const hubs=[...(g.nodes||[])].sort((a,b)=>(b.degree||0)-(a.degree||0)||String(a.name).localeCompare(String(b.name),'zh-CN')).slice(0,8);
-  return '<div class="v3-graph-reader" data-mode="'+safe(state.netMode)+'"><div class="v3-graph-reader-head"><div><span class="v3-eyebrow">GRAPH READER</span><strong>'+(entity?'实体总图':'人物总图')+'怎么读</strong><p>节点越大，关系度数越高；线条颜色表示关系类别。点击节点后，无关节点自动降到 12% 不透明度，用邻域聚焦降低视觉噪声。</p></div><button type="button" class="action" data-v3-reset>复位全图</button></div>'+
+function readerMode(){
+  const select=document.getElementById('netMode'),mode=(select&&select.value)||state.netMode;
+  return mode==='full'||mode==='entity'?mode:'ego';
+}
+function graphForReader(mode){const m=mode||readerMode();return m==='entity'&&DATA.relationGraphEntities?DATA.relationGraphEntities:DATA.relationGraphFull;}
+function graphReaderHTML(mode){
+  const m=mode||readerMode(),g=graphForReader(m)||{nodes:[],links:[]},entity=m==='entity';const hubs=[...(g.nodes||[])].sort((a,b)=>(b.degree||0)-(a.degree||0)||String(a.name).localeCompare(String(b.name),'zh-CN')).slice(0,8);
+  return '<div class="v3-graph-reader" data-mode="'+safe(m)+'"><div class="v3-graph-reader-head"><div><span class="v3-eyebrow">GRAPH READER</span><strong>'+(entity?'实体总图':'人物总图')+'怎么读</strong><p>节点越大，关系度数越高；线条颜色表示关系类别。点击节点后，无关节点自动降到 12% 不透明度，用邻域聚焦降低视觉噪声。</p></div><button type="button" class="action" data-v3-reset>复位全图</button></div>'+
     '<div class="v3-graph-tools"><label>定位节点 <input type="search" data-v3-node-search placeholder="输入人物或实体名，Enter 聚焦"></label><span class="v3-graph-status" role="status" aria-live="polite">'+(g.nodes||[]).length+' 节点 · '+(g.links||[]).length+' 关系</span></div>'+
     '<div class="v3-hubs"><span>高连接入口</span>'+hubs.map(n=>'<button type="button" data-v3-focus="'+safe(n.name)+'"><b>'+safe(n.name)+'</b><small>'+(n.degree||0)+' 条</small></button>').join('')+'</div>'+
     '<div class="v3-graph-explain"><span><i class="v3-dot node"></i>节点大小 = 关系度数</span><span><i class="v3-line"></i>线颜色 = 关系类别</span><span><i class="v3-dot focus"></i>点击 = 只突出一跳邻域</span>'+(entity?'<span>实体图包含人物、地点、机构、政权；节点总数不能读作人物数。</span>':'<span>人物图仅保留人物↔人物关系，适合观察人物关系结构。</span>')+'</div></div>';
@@ -139,14 +143,22 @@ function bindGraphReader(root){
   const input=root.querySelector('[data-v3-node-search]');if(input)input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();focusGraphName(input.value,root);}});
 }
 function ensureGraphReader(){
-  const host=document.getElementById('visuals');if(!host)return;let reader=host.querySelector('.v3-graph-reader');
-  if(state.netMode==='ego'){if(reader)reader.remove();return;}
-  const full=document.getElementById('fullNet');if(!full)return;
-  if(reader&&reader.dataset.mode!==state.netMode){reader.remove();reader=null;}
-  if(!reader){const box=document.createElement('div');box.innerHTML=graphReaderHTML();reader=box.firstElementChild;full.parentNode.insertBefore(reader,full);}
-  bindGraphReader(reader);
+  const host=document.getElementById('visuals');if(!host)return false;let reader=host.querySelector('.v3-graph-reader');const mode=readerMode();
+  if(mode==='ego'){if(reader)reader.remove();return false;}
+  const full=host.querySelector('#fullNet');if(!full)return false;
+  if(reader&&reader.dataset.mode!==mode){reader.remove();reader=null;}
+  if(!reader){const box=document.createElement('div');box.innerHTML=graphReaderHTML(mode);reader=box.firstElementChild;full.parentNode.insertBefore(reader,full);}
+  bindGraphReader(reader);return true;
 }
-const visuals=document.getElementById('visuals');if(visuals&&window.MutationObserver)new MutationObserver(()=>requestAnimationFrame(ensureGraphReader)).observe(visuals,{childList:true,subtree:true});ensureGraphReader();
+let graphRetryTimer=null;
+function scheduleGraphReader(){
+  requestAnimationFrame(ensureGraphReader);
+  clearTimeout(graphRetryTimer);graphRetryTimer=setTimeout(ensureGraphReader,180);
+}
+const visuals=document.getElementById('visuals');if(visuals&&window.MutationObserver)new MutationObserver(scheduleGraphReader).observe(visuals,{childList:true,subtree:true});
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='netMode')setTimeout(scheduleGraphReader,0)});
+window.addEventListener('hashchange',()=>setTimeout(scheduleGraphReader,40));
+scheduleGraphReader();setTimeout(ensureGraphReader,500);
 
 window.__MING_EXPERIENCE_READY=true;
 })();
