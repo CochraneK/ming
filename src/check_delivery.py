@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
-"""V5 在线交付体积与结构门禁。
+"""V6 在线交付体积与结构门禁。
 
-V4 把 HTML 与资源拆开；V5 进一步把 DATA 拆为小型 boot 与按需 full。这里同时守：
-- HTML 壳不能重新膨胀；
-- boot-data.js 必须保持首屏级体积；
-- data-full.js 不能被 index.html 直接引用；
-- CSS / JS / DATA 仍保持独立资源，避免退回单体交付。
+V5 把 DATA 拆为 boot / full；V6 再加入独立 search-index，让打开全局搜索不必下载 full。
+这里同时守：HTML/首访壳、boot、搜索索引、full，以及三者的加载边界。
 """
 from __future__ import annotations
 
@@ -21,6 +18,8 @@ SHELL_WARN = 384 * KIB
 SHELL_HARD = 512 * KIB
 BOOT_WARN = 64 * KIB
 BOOT_HARD = 96 * KIB
+SEARCH_WARN = 512 * KIB
+SEARCH_HARD = 768 * KIB
 FULL_WARN = int(5.5 * MIB)
 FULL_HARD = 6 * MIB
 
@@ -30,6 +29,7 @@ REQUIRED = (
     "assets/theme.css",
     "assets/experience.css",
     "assets/boot-data.js",
+    "assets/search-index.js",
     "assets/data-full.js",
     "assets/data-loader.js",
     "assets/app.js",
@@ -64,10 +64,14 @@ def main(argv=None) -> int:
 
     index = root / "index.html"
     boot = root / "assets" / "boot-data.js"
+    search = root / "assets" / "search-index.js"
     full = root / "assets" / "data-full.js"
     index_size = index.stat().st_size
-    # 首访 shell：除 full chunk 与 sw 外，其余都属于首页解析路径。
-    shell_paths = [root / name for name in REQUIRED if name not in ("index.html", "assets/data-full.js", "sw.js")]
+    # 首访 shell：search/full 均是按需 chunk，sw 也不参与首屏解析。
+    shell_paths = [
+        root / name for name in REQUIRED
+        if name not in ("index.html", "assets/search-index.js", "assets/data-full.js", "sw.js")
+    ]
     shell_size = index_size + sum(p.stat().st_size for p in shell_paths)
 
     html = index.read_text(encoding="utf-8")
@@ -84,8 +88,9 @@ def main(argv=None) -> int:
     ):
         if asset not in html:
             structural_errors.append("index.html 未引用 %s" % asset)
-    if "assets/data-full.js" in html:
-        structural_errors.append("index.html 直接引用 data-full.js，首访将失去 lazy 优势")
+    for lazy_asset in ("assets/search-index.js", "assets/data-full.js"):
+        if lazy_asset in html:
+            structural_errors.append("index.html 直接引用 %s，按需加载边界失效" % lazy_asset)
     if (root / "assets" / "data.js").exists():
         structural_errors.append("仍生成旧 assets/data.js，可能回退到 V4 全量首访")
 
@@ -94,6 +99,7 @@ def main(argv=None) -> int:
         ("online index", index_size, INDEX_WARN, INDEX_HARD),
         ("online first-load shell", shell_size, SHELL_WARN, SHELL_HARD),
         ("boot-data.js", boot.stat().st_size, BOOT_WARN, BOOT_HARD),
+        ("lazy search-index.js", search.stat().st_size, SEARCH_WARN, SEARCH_HARD),
         ("lazy data-full.js", full.stat().st_size, FULL_WARN, FULL_HARD),
     ):
         passed = _report_budget(label, value, warn, hard) and passed
@@ -103,7 +109,7 @@ def main(argv=None) -> int:
         passed = False
     if not passed:
         return 1
-    print("V5 在线按需交付结构与体积预算通过。")
+    print("V6 在线 boot/search/full 按需交付结构与体积预算通过。")
     return 0
 
 
