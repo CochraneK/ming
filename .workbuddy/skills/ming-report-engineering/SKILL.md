@@ -10,7 +10,7 @@ description: >
   "抽取是否充分""还能抽取吗""召回探测""检查 CSS/前端""合并数据""manual_*.json"
   "洞察""学科""为什么报告没更新""地图灰了""gh 报错 tls""python 中文乱码"；
   或任何涉及 D:/2026/WB项目/明朝 仓库的构建/发布/数据质量任务。
-version: 3.1.0
+version: 3.2.0
 agent_created: true
 allowed-tools: Bash,Read,Write,Edit,Grep,Glob
 ---
@@ -63,7 +63,10 @@ $PY src/audit_final.py                              # 终态审计（有 ERROR �
 
 ### 合并（src/merge.py）
 - 遍历 `extract_raw.json` 构建 `characters / locations / events / relations`，手动数据在之后注入，**重跑不丢**：
-  - `data/manual_corrections.json` —— 分块 `event_years / character_merges / character_alias_remove / character_faction / character_role / location_fixes / relation_fixes{flip,drop}`，在**关系构建之前**应用。
+  - `data/manual_corrections.json` —— 分块 `event_years / character_merges / character_alias_remove / character_faction / character_role / location_splits / location_splits_by_chapter / location_fixes / relation_fixes{flip,drop}`。**注意加载时机**：`event_years` 等在地点/关系构建之后应用；但 `location_splits*` 必须在**地点归一化之前**加载（`merge.py` 里提前单独 `load_json` 一次，且 `MANUAL_CORR` 路径提为常量复用），否则同名异地会被并成同一条。
+  - **同名异地拆分（判据越靠前越优先）**：① `location_splits_by_chapter = {章节key: {片段: 新名}}` —— 两章同名却非一地。实例：`p5-c17` 的「龙山」是朝鲜汉城近郊日军粮仓（李如松令查大受夜袭焚毁），而 `p4-c17` 的「龙山」是浙江慈溪东南（戚继光龙山之战）；② `location_splits = {原始地点串: {片段: 新名}}` —— 同章里复合串带出。实例：`延安府/清州` 里的「延安府」是朝鲜黄海道延安（黑田长政 1592 攻城不下），与 `p7-c14` 张献忠籍贯的陕西延安府同名；③ `LOCATION_CANON` 全局归一兜底。**判据必须落在「章节 / 原始串」上，只按片段名判不够**——两条同名地点的片段名本来就相同。拆分后 `location_fixes` 与 geo 坐标都要按**新名**书写。
+  - `data/manual_event_years.json` —— 未知年份事件补年，**只回填 `year` 为 `""`/`None` 的事件**（`if e.get("year") in ("", None)`）；`year` 非空的错误年份要走 `manual_corrections.event_years`（覆盖式）。`year` 支持**区间串**：`"1376-1385"` 会经 `year_bounds()` 解出 `year_start/year_end`，时间轴按起年排序并渲染区间；`normalize_year()` 只对纯四位数字转 int，区间串原样保留。补年必须写 `source` + `note`，通行说法而非书中明载的再加 `approx: true`。
+  - `data/geo_annotations.json` —— 主地点坐标库（`{ancient, lng, lat, modern_address, trace_type, status, note}`），`merge.py` 用 `geo.get(n)` 填充。只在**现代对应明确**时才补；坐标取自现代行政区中心的，`status` 要如实写「现代行政区中心（待核验）」而不是「已定位」。非地理实体（如《西游记》虚构的「车迟国」）给 `status: "非实地"` 且不给 `lng/lat`，别硬凑坐标。
   - `data/manual_lifespans.json` —— 生年不详用「卒年-55」占位并标 `life_estimated`，年谱虚线条渲染，绝不冒充已知年份；新增分组需在 `renderChronicle` 的 `GROUP_COLORS` 补色。
   - `data/manual_persons.json` —— 补录独立人物卡。
   - `data/derived_chapter_persons.json` —— `src/derive_coverage.py` 产出（每章正文最长匹配已知指称 ≥6 次登记出场），只为已有人物卡补记录。
@@ -266,6 +269,8 @@ sha = hashlib.sha1(b'blob %d\0' % len(data) + data).hexdigest()   # data=文件�
 | 打印空白 | `display:none` 隐藏了打印容器 | 隐藏容器内控件而非容器 |
 | 搜索框中文断输 | 监听 input 全量重渲染 | 用 `bindSearch()` |
 | 新地点 TypeError | 注入晚于归一化循环 | 移到循环之前 |
+| 同名地点被并成一条 | 拆分判据只按「片段名」，而两处片段名本来就相同 | 用 `location_splits_by_chapter`（按章节）或 `location_splits`（按原始串） |
+| 补年写了却不生效 | `manual_event_years` 只回填 `year` 为空的事件，而该事件 `year` 是非空串（如「万历末年」） | 改走 `manual_corrections.event_years`（覆盖式） |
 | 地点 `lat>90` | GAZ 纬经写反 | 校验 `(lng,lat,今址,类型)` |
 | 关系被测成漏抽 | 别名未归一伪影 | 用规范名口径比对 |
 | 报告没更新 | SW 缓存 / FILES 清单缺文件 | bump CACHE；补 FILES |

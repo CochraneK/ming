@@ -31,6 +31,7 @@ REIGNS = os.path.join(BASE, "data", "reigns.json")
 LIFESPANS = os.path.join(BASE, "data", "lifespans.json")
 VOYAGES = os.path.join(BASE, "data", "voyages.json")
 OUT = os.path.join(BASE, "data", "data.json")
+MANUAL_CORR = os.path.join(BASE, "data", "manual_corrections.json")
 
 
 def load_json(path, default):
@@ -111,6 +112,16 @@ def split_location_fragments(name):
     return fragments or [name]
 
 raw = load_json(RAW, [])
+# 同名异地拆分（data/manual_corrections.json），必须在地点归一化循环「之前」加载：
+#  - location_splits：键=抽取的「原始地点串」，值={片段: 新名}
+#      例 {"延安府/清州": {"延安府": "延安府（朝鲜）"}}
+#      用于「同一章里两个地名被一个复合串带出来」的情形。
+#  - location_splits_by_chapter：键=章节 key，值={片段: 新名}
+#      例 {"p5-c17": {"龙山": "龙山（朝鲜）"}}
+#      用于「两章用了同一个地名，但所指并非一地」的情形（如朝鲜龙山 vs 浙江慈溪龙山）。
+_LOCAL_CORR = load_json(MANUAL_CORR, {})
+LOCATION_SPLITS = _LOCAL_CORR.get("location_splits") or {}
+LOCATION_SPLITS_BY_CHAPTER = _LOCAL_CORR.get("location_splits_by_chapter") or {}
 geo = {}
 if os.path.exists(GEO):
     for g in json.load(open(GEO, encoding="utf-8")):
@@ -205,8 +216,14 @@ for ch in raw:
             d["chapters"].append(k)
     for l in ch.get("locations", []):
         original_ancient = l["ancient"]
+        # 同名异地（两级）：① 按「章节」限定（朝鲜龙山 vs 浙江龙山），
+        # ② 按「原始串」限定（p5-c13 的『延安府/清州』里的延安府）；最后走全局归一
+        _split_map = LOCATION_SPLITS.get(original_ancient) or {}
+        _chapter_map = LOCATION_SPLITS_BY_CHAPTER.get(k) or {}
         canonical_fragments = []
         for fragment in split_location_fragments(original_ancient):
+            fragment = _chapter_map.get(fragment, fragment)
+            fragment = _split_map.get(fragment, fragment)
             canonical_fragments.append(LOCATION_CANON.get(fragment, fragment))
         canonical_fragments = list(dict.fromkeys(canonical_fragments))
         for n in canonical_fragments:
@@ -260,7 +277,7 @@ if manual_years:
                 e["year_note"] = my["note"]
 
 # ===== 人工勘误（data/manual_corrections.json）：重跑 merge 不丢，覆盖抽取结果 =====
-CORRECTIONS = load_json(os.path.join(BASE, "data", "manual_corrections.json"), {})
+CORRECTIONS = load_json(MANUAL_CORR, {})
 
 # 1) 事件年份勘误（源=记忆/通用明史，写入 year_source 保持源透明）
 for _name, _c in (CORRECTIONS.get("event_years") or {}).items():

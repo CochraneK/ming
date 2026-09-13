@@ -16797,8 +16797,11 @@
       "chapters": [
         "p1-c28"
       ],
-      "trace_type": "地名",
-      "status": "抽取待补"
+      "modern_address": "河北雄安新区雄县赵北口（白洋淀十二连桥之一）",
+      "lng": 116.074,
+      "lat": 38.862,
+      "trace_type": "古战场",
+      "status": "已定位"
     },
     {
       "ancient": "滹沱河",
@@ -16825,8 +16828,11 @@
       "chapters": [
         "p1-c28"
       ],
+      "modern_address": "河北涿州楼桑（《明史·张玉传》作『抵楼桑』）",
+      "lng": 116.02,
+      "lat": 39.49,
       "trace_type": "地名",
-      "status": "抽取待补"
+      "status": "现代行政区中心（待核验）"
     },
     {
       "ancient": "德州",
@@ -18550,8 +18556,11 @@
       "chapters": [
         "p3-c13"
       ],
-      "trace_type": "地名",
-      "status": "抽取待补"
+      "modern_address": "山西应县（明应州城外五里寨）",
+      "lng": 113.19,
+      "lat": 39.55,
+      "trace_type": "古战场",
+      "status": "现代行政区中心（待核验）"
     },
     {
       "ancient": "武昌",
@@ -18795,8 +18804,11 @@
       "chapters": [
         "p3-c19"
       ],
+      "modern_address": "江西大余（明南安府，王守仁终老地）",
+      "lng": 114.36,
+      "lat": 25.4,
       "trace_type": "地名",
-      "status": "抽取待补"
+      "status": "现代行政区中心（待核验）"
     },
     {
       "ancient": "天泉桥",
@@ -19702,15 +19714,16 @@
     {
       "ancient": "龙山",
       "mentioned_as": [
-        "慈溪东南，戚继光初战倭处",
-        "日军粮仓，查大受夜烧，致日军断粮"
+        "慈溪东南，戚继光初战倭处"
       ],
       "chapters": [
-        "p4-c17",
-        "p5-c17"
+        "p4-c17"
       ],
-      "trace_type": "地名",
-      "status": "抽取待补"
+      "modern_address": "浙江慈溪东南（戚继光龙山之战）",
+      "lng": 121.45,
+      "lat": 30.05,
+      "trace_type": "古战场",
+      "status": "现代行政区中心（待核验）"
     },
     {
       "ancient": "雁门岭",
@@ -20252,8 +20265,10 @@
       "chapters": [
         "p5-c4"
       ],
-      "trace_type": "地名",
-      "status": "抽取待补"
+      "modern_address": "（文学典故，非地理实体）",
+      "trace_type": "文学典故",
+      "status": "非实地",
+      "note": "《西游记》虚构国名，原书借以指代嘉靖崇道灭佛之风，并非明代实际地名，故不绘入圣地地图，也不计入「待考」。"
     },
     {
       "ancient": "宣大",
@@ -20650,21 +20665,21 @@
       "status": "已定位"
     },
     {
-      "ancient": "延安府",
+      "ancient": "延安府（朝鲜）",
       "mentioned_as": [
         "延安府/清州",
-        "黑田长政被赵宪民兵击败丢城",
-        "张献忠籍贯（陕西）"
+        "黑田长政被赵宪民兵击败丢城"
       ],
       "chapters": [
-        "p5-c13",
-        "p7-c14"
+        "p5-c13"
       ],
-      "modern_address": "今陕西延安",
-      "lng": 109.49,
-      "lat": 36.59,
-      "trace_type": "地名",
-      "status": "已定位"
+      "modern_address": "今朝鲜黄海南道延安郡",
+      "lng": 126.0833,
+      "lat": 37.9167,
+      "trace_type": "古战场",
+      "status": "已定位",
+      "note": "1592 年壬辰倭乱延安之战：十月三日黑田长政率三千余人攻城，三日不下，反被城内守军突袭大败。原书 p5-c13 明确标注『延安府（朝鲜地名）』，与陕西延安府同名异地，2026-09-13 拆分为独立条目。坐标取 GeoNames 1866571 / Wikidata Q27243563（37.9167N, 126.0833E）。勘误：mentioned_as『赵宪民兵』实指同章清州之战（赵宪部夺回清州），延安守将为李廷馣。",
+      "correction_source": "WebSearch 核实（黑田长政·延安之战；GeoNames 1866571）"
     },
     {
       "ancient": "清州",
@@ -20797,6 +20812,22 @@
       "lat": 37.8,
       "trace_type": "古战场",
       "status": "已定位"
+    },
+    {
+      "ancient": "龙山（朝鲜）",
+      "mentioned_as": [
+        "龙山",
+        "日军粮仓，查大受夜烧，致日军断粮"
+      ],
+      "chapters": [
+        "p5-c17"
+      ],
+      "modern_address": "朝鲜汉城（王京）近郊，今韩国首尔龙山",
+      "lng": 126.96,
+      "lat": 37.53,
+      "trace_type": "古战场",
+      "status": "已定位",
+      "note": "壬辰倭乱日军龙山大仓所在，距汉城约 5 公里；万历二十一年（1593）李如松密令查大受、李如梅夜袭焚毁十三座大仓。与浙江慈溪龙山同名异地，2026-09-13 拆分。"
     },
     {
       "ancient": "蔚山",
@@ -21313,8 +21344,12 @@
       "chapters": [
         "p6-c7"
       ],
-      "trace_type": "地名",
-      "status": "抽取待补"
+      "modern_address": "辽宁宽甸（明宽奠六堡：宽奠/长奠/永奠/大奠/新奠/孤山）",
+      "lng": 124.745,
+      "lat": 40.737,
+      "trace_type": "古战场",
+      "status": "已定位",
+      "note": "万历初年李成梁、张学颜移建，万历三十四年(1606)李成梁以孤悬难守为由弃守，迁民六万四千余户。坐标取今宽甸满族自治县（原宽奠堡所在）。"
     },
     {
       "ancient": "萨尔浒",
@@ -21409,8 +21444,12 @@
       "chapters": [
         "p6-c10"
       ],
-      "trace_type": "地名",
-      "status": "抽取待补"
+      "modern_address": "北京紫禁城乾清宫暖阁",
+      "lng": 116.397,
+      "lat": 39.918,
+      "trace_type": "宫禁建筑",
+      "status": "已定位",
+      "note": "移宫案中李选侍藏朱由校处，王安骗其出。坐标取紫禁城（乾清宫）。"
     },
     {
       "ancient": "广宁",
@@ -21581,8 +21620,11 @@
       "chapters": [
         "p6-c12"
       ],
-      "trace_type": "地名",
-      "status": "抽取待补"
+      "modern_address": "辽宁丹东（鸭绿江入海口，与朝鲜隔江）",
+      "lng": 124.4,
+      "lat": 40.12,
+      "trace_type": "古战场",
+      "status": "现代行政区中心（待核验）"
     },
     {
       "ancient": "中前所",
@@ -21767,8 +21809,11 @@
       "chapters": [
         "p7-c1"
       ],
-      "trace_type": "地名",
-      "status": "抽取待补"
+      "modern_address": "辽宁葫芦岛塔山附近（明松锦战场）",
+      "lng": 120.95,
+      "lat": 40.85,
+      "trace_type": "古战场",
+      "status": "现代行政区中心（待核验）"
     },
     {
       "ancient": "大凌河城",
@@ -22037,8 +22082,12 @@
       "chapters": [
         "p7-c11"
       ],
+      "modern_address": "山东登州（今蓬莱）、莱州一带",
+      "lng": 120.76,
+      "lat": 37.81,
       "trace_type": "地名",
-      "status": "抽取待补"
+      "status": "现代行政区中心（待核验）",
+      "note": "明登莱巡抚辖区，跨登州、莱州二府；坐标取登州府治蓬莱。"
     },
     {
       "ancient": "吴桥",
@@ -22261,6 +22310,20 @@
       "lat": 37.87,
       "trace_type": "地名",
       "status": "坐标来自内置地名词典（待核验）"
+    },
+    {
+      "ancient": "延安府",
+      "mentioned_as": [
+        "张献忠籍贯（陕西）"
+      ],
+      "chapters": [
+        "p7-c14"
+      ],
+      "modern_address": "今陕西延安",
+      "lng": 109.49,
+      "lat": 36.59,
+      "trace_type": "地名",
+      "status": "已定位"
     },
     {
       "ancient": "汝阳",
@@ -22664,8 +22727,11 @@
       "chapters": [
         "p7-c20"
       ],
-      "trace_type": "地名",
-      "status": "抽取待补"
+      "modern_address": "辽宁锦州南松山主峰（当地称乳头峰，距锦州城南约六里）",
+      "lng": 121.05,
+      "lat": 41.05,
+      "trace_type": "古战场",
+      "status": "现代行政区中心（待核验）"
     },
     {
       "ancient": "笔架山",
@@ -24281,11 +24347,13 @@
         "朱元璋"
       ],
       "location": "南京",
-      "year": "",
+      "year": "1376-1385",
       "chapters": [
         "p1-c18"
       ],
-      "category": "案件刑狱"
+      "category": "案件刑狱",
+      "year_source": "WebSearch/明史",
+      "year_note": "两案合提，原书仅『提及』无独立纪年。空印案有洪武九年(1376)与十五年(1382)两说（《明史·刑法志》作十五年，《国榷》《先府君行状》考为八年末/九年）；郭桓案确定洪武十八年(1385)。故取首尾区间"
     },
     {
       "name": "空印案",
@@ -26703,11 +26771,14 @@
         "朱祁镇"
       ],
       "location": "北京",
-      "year": "",
+      "year": "1424-1427",
       "chapters": [
         "p2-c13"
       ],
-      "category": "宫廷变故"
+      "category": "宫廷变故",
+      "year_source": "WebSearch/通行说法",
+      "year_approx": true,
+      "year_note": "原书 p2-c13 明言『出生年月日不详』。入宫通行说法为永乐末年（约1424 永乐二十二年），侍奉皇太子在宣德二年(1427)立朱祁镇为太子之后。区间为推定，故标 approx"
     },
     {
       "name": "宣宗崩五顾命",
@@ -30576,11 +30647,13 @@
         "翟銮"
       ],
       "location": "肃州",
-      "year": "",
+      "year": 1539,
       "chapters": [
         "p4-c8"
       ],
-      "category": "军事战争"
+      "category": "军事战争",
+      "year_source": "WebSearch/明史",
+      "year_note": "嘉靖十八年(1539)杨博随大学士翟銮巡视九边，至肃州遇属番数百遮道邀赏，杨博设仪卫训斥化解（《明史·列傳第一百二》）。原书 p4-c8『到了肃州，竟然碰上了劫道的』即此事"
     },
     {
       "name": "陆炳救嘉靖出火海",
@@ -30603,11 +30676,13 @@
         "陆炳"
       ],
       "location": "北京",
-      "year": "",
+      "year": 1539,
       "chapters": [
         "p4-c8"
       ],
-      "category": "案件刑狱"
+      "category": "案件刑狱",
+      "year_source": "原书 p4-c8",
+      "year_note": "原书明写：嘉靖十八年(1539)陆炳救驾后升锦衣卫指挥使，『上任后干的第一件事』即平反诏狱冤狱"
     },
     {
       "name": "严世蕃论天下三人",
@@ -36467,11 +36542,15 @@
         "梅之焕"
       ],
       "location": "北京",
-      "year": "万历末年",
+      "year": 1620,
       "chapters": [
         "p6-c13"
       ],
-      "category": "政治斗争"
+      "category": "政治斗争",
+      "year_source": "WebSearch/原书 p6-c13",
+      "year_approx": true,
+      "year_note": "原书作『万历末年』（非数字，被判待考）。语境为明光宗去世(1620)前后党争：浙党成员提议掘张居正坟『修理一顿』，东林党借机发难痛斥三党。具体年份史无明载，取语境年",
+      "year_corrected": true
     },
     {
       "name": "汪文言分化齐楚浙三党",
@@ -66698,6 +66777,21 @@
       ]
     },
     {
+      "name": "空印案与郭桓案（提及）",
+      "year": "1376-1385",
+      "year_start": 1376,
+      "year_end": 1385,
+      "type": "大案",
+      "category": "案件刑狱",
+      "location": "南京",
+      "participants": [
+        "朱元璋"
+      ],
+      "chapters": [
+        "p1-c18"
+      ]
+    },
+    {
       "name": "占城国进贡事件",
       "year": 1379,
       "year_start": 1379,
@@ -69382,6 +69476,22 @@
       ],
       "chapters": [
         "p2-c11"
+      ]
+    },
+    {
+      "name": "王振净身入宫教太子",
+      "year": "1424-1427",
+      "year_start": 1424,
+      "year_end": 1427,
+      "type": "其他",
+      "category": "宫廷变故",
+      "location": "北京",
+      "participants": [
+        "王振",
+        "朱祁镇"
+      ],
+      "chapters": [
+        "p2-c13"
       ]
     },
     {
@@ -73906,6 +74016,37 @@
       ],
       "chapters": [
         "p4-c7"
+      ]
+    },
+    {
+      "name": "杨博智退蛮番救翟銮",
+      "year": 1539,
+      "year_start": 1539,
+      "year_end": 1539,
+      "type": "其他",
+      "category": "军事战争",
+      "location": "肃州",
+      "participants": [
+        "杨博",
+        "翟銮"
+      ],
+      "chapters": [
+        "p4-c8"
+      ]
+    },
+    {
+      "name": "陆炳平反诏狱冤狱",
+      "year": 1539,
+      "year_start": 1539,
+      "year_end": 1539,
+      "type": "其他",
+      "category": "案件刑狱",
+      "location": "北京",
+      "participants": [
+        "陆炳"
+      ],
+      "chapters": [
+        "p4-c8"
       ]
     },
     {
@@ -80198,6 +80339,25 @@
       ]
     },
     {
+      "name": "张居正掘坟之议引发三党裂痕",
+      "year": 1620,
+      "year_start": 1620,
+      "year_end": 1620,
+      "type": "党争",
+      "category": "政治斗争",
+      "location": "北京",
+      "participants": [
+        "浙党",
+        "东林党",
+        "楚党",
+        "官应震",
+        "梅之焕"
+      ],
+      "chapters": [
+        "p6-c13"
+      ]
+    },
+    {
       "name": "李选侍胁迫封后",
       "year": 1620,
       "year_start": 1620,
@@ -84484,25 +84644,6 @@
       ]
     },
     {
-      "name": "张居正掘坟之议引发三党裂痕",
-      "year": "万历末年",
-      "year_start": null,
-      "year_end": null,
-      "type": "党争",
-      "category": "政治斗争",
-      "location": "北京",
-      "participants": [
-        "浙党",
-        "东林党",
-        "楚党",
-        "官应震",
-        "梅之焕"
-      ],
-      "chapters": [
-        "p6-c13"
-      ]
-    },
-    {
       "name": "朱棣生母碽妃之谜",
       "year": "",
       "year_start": null,
@@ -84517,68 +84658,6 @@
       ],
       "chapters": [
         "p2-c1"
-      ]
-    },
-    {
-      "name": "杨博智退蛮番救翟銮",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "军事战争",
-      "location": "肃州",
-      "participants": [
-        "杨博",
-        "翟銮"
-      ],
-      "chapters": [
-        "p4-c8"
-      ]
-    },
-    {
-      "name": "王振净身入宫教太子",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "宫廷变故",
-      "location": "北京",
-      "participants": [
-        "王振",
-        "朱祁镇"
-      ],
-      "chapters": [
-        "p2-c13"
-      ]
-    },
-    {
-      "name": "空印案与郭桓案（提及）",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "大案",
-      "category": "案件刑狱",
-      "location": "南京",
-      "participants": [
-        "朱元璋"
-      ],
-      "chapters": [
-        "p1-c18"
-      ]
-    },
-    {
-      "name": "陆炳平反诏狱冤狱",
-      "year": "",
-      "year_start": null,
-      "year_end": null,
-      "type": "其他",
-      "category": "案件刑狱",
-      "location": "北京",
-      "participants": [
-        "陆炳"
-      ],
-      "chapters": [
-        "p4-c8"
       ]
     }
   ],
@@ -86194,8 +86273,8 @@
   },
   "meta": {
     "source_chapters": 156,
-    "geo_annotated": 654,
-    "located_locations": 520,
+    "geo_annotated": 655,
+    "located_locations": 533,
     "cleaning": {
       "person_merges": 24,
       "person_merged_names": [
@@ -86233,10 +86312,10 @@
         "王宫女→王恭妃"
       ],
       "corrections": {
-        "event_years": 10,
+        "event_years": 11,
         "character_faction": 5,
         "character_role": 2,
-        "location_fixes": 1,
+        "location_fixes": 2,
         "relation_flipped": 20,
         "relation_dropped": 8,
         "lifespan_added": 93,
@@ -86466,7 +86545,7 @@
         "庐州": [
           "和州、江浦、庐州"
         ],
-        "延安府": [
+        "延安府（朝鲜）": [
           "延安府/清州"
         ],
         "延平": [
@@ -86670,6 +86749,9 @@
         ],
         "黄山": [
           "紫金山、太湖、普陀山、雁荡山、九华山、黄山、武夷山、庐山、泰山、华山、衡山、嵩山、终南山"
+        ],
+        "龙山（朝鲜）": [
+          "龙山"
         ]
       },
       "selfloop_dropped": 3,
