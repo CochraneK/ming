@@ -77,7 +77,9 @@ def test_web_target_copies_service_worker_and_reports_all_assets():
             assert (out / name).exists(), "web target 缺少 %s" % name
             assert name in written, "构建统计漏报 %s" % name
             assert written[name] > 0
-        assert (out / "sw.js").read_text(encoding="utf-8") == B.SW_PATH.read_text(encoding="utf-8")
+        # 发布工作流用 cmp 做逐字节校验，所以换行符也必须保持原样。
+        assert (out / "sw.js").read_bytes() == B.SW_PATH.read_bytes()
+        assert written["sw.js"] == len(B.SW_PATH.read_bytes())
 
 
 def test_service_worker_cache_bumped_for_frontend_change():
