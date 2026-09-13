@@ -18,7 +18,7 @@
 - **共享核心**：`src/core/{year_parser,geo,faction_profile,graph_layout}.py`。生产与审计必须共用，勿再各写一份。`geo` **禁止 `if not lat`**（0 是合法值）。
 - **洞察报告**：19 节 = 18 学科 + 综合；3.1 万字 / 71 条 APA（全部 WebSearch 核实）。学科素材已饱和，勿再立新学科。
 - **人物卡**：卡背「书内语录」替代关系行（13 人，全部原文核实）；搜索命中姓名**或别名**（`aliasIndex` 444 + `matchesQuery()`），无命中才显示空态。
-- **地图**：Leaflet 懒加载 + 首屏空闲后台预热（用户明确要求，勿改成仅 hover）+ hover/touchstart 即时预热；瓦片主源 Esri + `tileerror≥6` 回退 OSM；SW 只拦同源、`cache:'no-cache'`、后台更新 `event.waitUntil` 保活；**CACHE `ming-report-v6`**。
+- **地图**：Leaflet 懒加载 + 首屏空闲后台预热（用户明确要求，勿改成仅 hover）+ hover/touchstart 即时预热；瓦片主源 Esri + `tileerror≥6` 回退 OSM；SW 只拦同源、`cache:'no-cache'`、后台更新 `event.waitUntil` 保活；**CACHE `ming-report-v7`**（第六轮内容勘误 bump，v6→v7）。
 - **统一错误 UI（P3-03）**：`failBar()/dismissFail()/reportRuntimeError()` 底部提示条，5 类接入（数据缺失 / 主脚本未初始化 / 渲染异常 / Leaflet 失败 / 瓦片全失败）；**启动守卫是独立 `<script>` 且排在主脚本之前**（主脚本解析失败时它仍能跑）；`app.js` 内**禁止静默空 catch**（有测试断言）。
 - **URL deep link（Phase 6）**：`#view=…&person=…&detail=1&event=…&place=…&era=…&map=…&q=…&net=…&from=…&to=…`；`person=` 支持别名 + 滚动闪烁定位；打开详情写回地址栏；`mark.hl` 高亮；tabs `role=tablist/tab/tabpanel` + 方向键；三张纯图形（canvas/热力图/网络 SVG）均有 `role="img"` + 描述性 `aria-label`。
 

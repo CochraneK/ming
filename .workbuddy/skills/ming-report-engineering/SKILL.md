@@ -195,7 +195,7 @@ const src  = html.match(/function fullSummaryHTML\(g\)\{[\s\S]*?\n\}/)[0]; eval(
 - **只拦同源请求**做 stale-while-revalidate（先返缓存、后台更新）——重复访问秒开；**跨域请求（瓦片/unpkg）一律 `return` 不拦截**：`respondWith` 转发跨域 no-cors 图片请求会永久 pending（灰底红点事故根因）。
 - **后台更新必须 `fetch(req, {cache:'no-cache'})`**：否则 GitHub Pages 的 max-age=600 会让 SWR 拿到陈旧响应，用户连看多轮旧版。
 - **命中缓存时后台更新要 `event.waitUntil(network)` 保活**：只 `return cached` 的话 worker 可能在 fetch 完成前结束，更新被打断、旧版长期不换。
-- 改版时 bump `CACHE` 名（activate 自动清旧缓存；当前 **`ming-report-v6`**）。用户报"内容没更新"时先 `gh api /repos/CochraneK/ming/git/blobs/<sha>` 拉线上文件解码验证，再归因缓存。
+- 改版时 bump `CACHE` 名（activate 自动清旧缓存；当前 **`ming-report-v7`**）。**纯数据勘误轮也要 bump**——否则老用户首屏仍走 SWR 返旧缓存，要第二次刷新才见新数据。用户报"内容没更新"时先 `gh api /repos/CochraneK/ming/git/blobs/<sha>` 拉线上文件解码验证，再归因缓存。
 - 新版本就绪时可提示刷新：`navigator.serviceWorker.addEventListener('controllerchange', …)` → `failBar('swUpdate', …, {retry:()=>location.reload()})`。
 
 ### 合规巡检：线上绝不能有原书全文（2026-09-13 事故）
