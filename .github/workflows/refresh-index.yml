@@ -33,6 +33,9 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: 规范化前端动态统计口径
+        run: python src/normalize_frontend.py
+
       - name: 规范化基础 CSS
         run: python src/normalize_css.py
 
@@ -56,12 +59,12 @@ jobs:
             echo "main 已有更新；放弃本次旧快照回写，由更新提交触发的新任务负责。"
             exit 0
           fi
-          if git diff --quiet -- web/css/app.css web/template/index.html README.md index.html; then
-            echo "基础 CSS / 主题镜像 / V3 体验镜像 / README.md / index.html 已与源码一致，无需提交。"
+          if git diff --quiet -- web/js/app.js web/css/app.css web/template/index.html README.md index.html; then
+            echo "动态统计 / 基础 CSS / 主题镜像 / V3 体验镜像 / README.md / index.html 已与源码一致，无需提交。"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add web/css/app.css web/template/index.html README.md index.html
-          git commit -m "chore: refresh generated report and experience mirror"
+          git add web/js/app.js web/css/app.css web/template/index.html README.md index.html
+          git commit -m "chore: refresh generated report and dynamic metrics"
           git push origin HEAD:main
