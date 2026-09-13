@@ -1,0 +1,54 @@
+name: Refresh generated index
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "web/**"
+      - "data/**"
+      - "sw.js"
+      - ".github/workflows/refresh-index.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-generated-index
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: 重建根目录报告产物
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: 构建 standalone 根产物
+        run: python src/build.py --scope full --out index.html --quiet
+
+      - name: 仅在产物变化时回写 main
+        shell: bash
+        run: |
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo "main 已有更新；放弃本次旧快照回写，由更新提交触发的新任务负责。"
+            exit 0
+          fi
+          if git diff --quiet -- index.html; then
+            echo "index.html 已与源码一致，无需提交。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "chore: refresh generated report"
+          git push origin HEAD:main
