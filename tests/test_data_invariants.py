@@ -178,3 +178,31 @@ def test_entity_graph_is_deterministic():
     assert a["stats"] == b["stats"]
     assert [(n["name"], n["x"], n["y"]) for n in a["nodes"]] == \
            [(n["name"], n["x"], n["y"]) for n in b["nodes"]]
+
+
+def test_insight_index_is_symmetric():
+    """洞察联动索引：正向（每节命中哪些实体）与反向（实体被哪几节提到）必须互为逆表。
+
+    一旦漂移，前端要么漏链（反向查不到章节），要么链到空白（正向没有对应表面形式）。
+    同时校验通称黑名单没有泄漏——否则正文里每个「宦官」都会被链成某个人物卡。
+    """
+    from core.insight_link import GENERIC_BLOCK
+
+    ix = _support.payload("full").get("insightIndex") or {}
+    assert ix, "payload 缺少 insightIndex（构建期未接入？）"
+    sections = ix.get("sections") or {}
+    alias = ix.get("alias") or {}
+    by_person = ix.get("byPerson") or {}
+    assert len(sections) >= 15, "索引到的章节数异常少：%d" % len(sections)
+    assert len(by_person) >= 50, "反向索引到的人物数异常少：%d" % len(by_person)
+
+    for sid, hits in sections.items():
+        for surface in hits.get("p", []):
+            canonical = alias.get(surface, surface)
+            assert sid in (by_person.get(canonical) or []),                 "正向有 %s/%s，反向 byPerson 却查不到该节" % (sid, surface)
+            assert surface not in GENERIC_BLOCK, "通称 %r 泄漏进人物联动" % surface
+
+    for canonical, sids in by_person.items():
+        for sid in sids:
+            surfaces = (sections.get(sid) or {}).get("p") or []
+            assert any(alias.get(s, s) == canonical for s in surfaces),                 "反向 %s→%s，正向该节却查不到这个人的任何表面形式" % (canonical, sid)

@@ -48,6 +48,8 @@ FILES = [
     # 共享核心（2026-09-13 第二轮：势力结构化 P2-03 / 双模式图布局 Phase 6）
     ("src/core/faction_profile.py", "src/core/faction_profile.py"),
     ("src/core/graph_layout.py", "src/core/graph_layout.py"),
+    # 共享核心（洞察实体联动：正向/反向索引，构建期生成）
+    ("src/core/insight_link.py", "src/core/insight_link.py"),
     # 数据（增量层 + 成品）
     ("data/data.json", "data/data.json"),
     ("data/extract_raw.json", "data/extract_raw.json"),

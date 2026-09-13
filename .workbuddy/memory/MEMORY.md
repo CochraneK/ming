@@ -17,8 +17,8 @@
 - **统一 ID（Phase 3）**：`entity_id()` → `person:朱由检`；`relation_id()` = `relation:<sha1[:12]>`；payload 带 `model:{schemaVersion:3,entityTypes,idIndex}` 与 `relationGraphEntities`。
 - **共享核心**：`src/core/{year_parser,geo,faction_profile,graph_layout}.py`。生产与审计必须共用，勿再各写一份。`geo` **禁止 `if not lat`**（0 是合法值）。
 - **洞察报告**：19 节 = 18 学科 + 综合；3.1 万字 / 71 条 APA（全部 WebSearch 核实）。学科素材已饱和，勿再立新学科。
-- **人物卡**：卡背「书内语录」替代关系行（13 人，全部原文核实）；搜索命中姓名**或别名**（`aliasIndex` 444 + `matchesQuery()`），无命中才显示空态。
-- **地图**：Leaflet 懒加载 + 首屏空闲后台预热（用户明确要求，勿改成仅 hover）+ hover/touchstart 即时预热；瓦片主源 Esri + `tileerror≥6` 回退 OSM；SW 只拦同源、`cache:'no-cache'`、后台更新 `event.waitUntil` 保活；**CACHE `ming-report-v7`**（第六轮内容勘误 bump，v6→v7）。
+- **人物卡**：卡背「书内语录」替代关系行（**66 人**，全部原文核实）；搜索命中姓名**或别名**（`aliasIndex` 444 + `matchesQuery()`），无命中才显示空态。语录抽取法见下「人物卡语录扩面」。
+- **地图**：Leaflet 懒加载 + 首屏空闲后台预热（用户明确要求，勿改成仅 hover）+ hover/touchstart 即时预热；瓦片主源 Esri + `tileerror≥6` 回退 OSM；SW 只拦同源、`cache:'no-cache'`、后台更新 `event.waitUntil` 保活；**CACHE `ming-report-v8`**（洞察联动+语录扩面 bump，v7→v8）。
 - **统一错误 UI（P3-03）**：`failBar()/dismissFail()/reportRuntimeError()` 底部提示条，5 类接入（数据缺失 / 主脚本未初始化 / 渲染异常 / Leaflet 失败 / 瓦片全失败）；**启动守卫是独立 `<script>` 且排在主脚本之前**（主脚本解析失败时它仍能跑）；`app.js` 内**禁止静默空 catch**（有测试断言）。
 - **URL deep link（Phase 6）**：`#view=…&person=…&detail=1&event=…&place=…&era=…&map=…&q=…&net=…&from=…&to=…`；`person=` 支持别名 + 滚动闪烁定位；打开详情写回地址栏；`mark.hl` 高亮；tabs `role=tablist/tab/tabpanel` + 方向键；三张纯图形（canvas/热力图/网络 SVG）均有 `role="img"` + 描述性 `aria-label`。
 
@@ -34,7 +34,7 @@
 - **增量勘误层**（重跑 merge 不丢）：`manual_corrections.json` / `manual_lifespans.json` / `manual_persons.json` / `derived_chapter_persons.json` / `event_places.json`（注入须在归一化循环**之前**）/ `geo_annotations.json` / `manual_event_years.json`。
 - **同名异地两级拆分（第六轮新增，`merge.py`）**：`location_splits`（键=`原始地点串`，如 `延安府/清州` → `延安府（朝鲜）`）+ `location_splits_by_chapter`（键=`章节key`，如 `p5-c17` → 龙山（朝鲜））。**判据必须落在「章节」或「原始串」上**——两处同名地点的片段名本来就相同，只按片段名拆不开。**两处 splits 必须在「地点归一化循环之前」加载**（其余勘误块仍在关系构建前应用），归一化后才走 `location_fixes`/geo 坐标（坐标须按新名书写）。
 - **关系约定**：亲属「长辈→晚辈」；端点类型按 人物→地点→政权→派系机构→其他 判定。
-- **前端铁律**：CSS 单行模板查 `count('{')-count('}')`；搜索框一律 `bindSearch()`；`load_json()` 只收 Path；改 JS 后 `node --check web/js/app.js`；`Path.as_uri()` 需绝对路径；`.dump/` 新脚本记得进同步清单。
+- **前端铁律**：CSS 单行模板查 `count('{')-count('}')`；搜索框一律 `bindSearch()`；`load_json()` 只收 Path；改 JS 后 `node --check web/js/app.js`；`Path.as_uri()` 需绝对路径；`.dump/` 新脚本记得进同步清单。**取全局数据禁止写 `window.DATA`——`DATA` 是脚本作用域的 `const`，不是 window 属性，恒为 undefined 且**不抛错**（表现为"新功能静默失效、0 个节点"）；一律用裸标识符 `typeof DATA!=='undefined' && DATA.x`。
 - **体积铁律**：骨架（含注释）里**绝不书写数据占位符名**——字符串替换会把整份 payload 注入两遍（实测 5.6MB→11.4MB）；改注入相关代码后跑 `doc.count('"scopeLabel"')==1` 自检。
 - **环境**：Bash 的 PATH 可能被裁（`ls`/`tail`/`dirname`/`env`/`rm`/`head`/`grep` 消失）→ 外部程序一律绝对路径（python 3.13.12 / node 22.22.2-3 / Chrome），列目录用 `os.listdir`，管线过滤改用 Python。编辑工具偶发「报成功但没落盘」→ 改完复核。
 - **召回探测**：`src/discover_persons.py` 三信号，用 merge 后规范名口径（别名未归一是伪影）。
@@ -45,8 +45,10 @@
 - **本轮修掉的真实缺陷**（都是自查发现，非用户报告）：① 骨架注释里的占位符导致 payload 注入两遍；② `const activeGraph` 自递归（栈溢出打挂图谱）；③ `#fullNet` 显示表达式漏 `entity` 模式（深链进来空白/两块同显）；④ `_extract_origin` 过严漏掉 2~4 字府县籍贯（22→26）。
 
 ## 未完成工作清单（内容层，非工程层）
-1. **人物卡语录扩面**（高）：现有 13/1231（`data/character_quotes.json`，dict 首键 `_comment`）。**候选池已探测**：正文中「姓名+言语动词（说/道/曰/答/问/骂/叹/笑/哭/怒/喊…）+ 引号」命中 **77 人**，扣掉已入库 13 → **71 个候选**（含少量误报，如单字「高」「乃公」，实收前须逐条原文核实）。前批可用：罗复仁、常遇春、朱棣、蓝玉、朱祁镇、也先、张辅、石亨、朱允炆、黄子澄、铁铉、解缙、张居正、杨士奇、杨荣、冯保、魏忠贤、徐有贞、杨善、曹吉祥、张軏、王文、李贤、曹钦、韩雍、朱祐樘、怀恩、杨廷和、李东阳、江彬、张钦、朱宸濠、孙燧、许逵、蒋瑶、朱厚熜…。**收编纪律**：语录必须先在原书 txt 命中原文，规范名入 JSON。
-2. **洞察实体联动**（高）：19 节正文的人物/事件/地点可点击 + 反向「相关洞察」入口。
+1. **人物卡语录扩面 ✅ 已落地**（第六轮）：`data/character_quotes.json` **13 → 66 人（+51）**，dict 首键 `_comment`。**抽取法（可复用）**：在 `data/chapters.json` 里正则找 `规范名 + (0–6 个非句界字) + 言语动词 + 引号`，取引号内 4–50 字作语录；**两条硬约束**——① 人名**前一字必须是句界/逗号**（排除「Y对X说」把 X 当主语的误归属）；② 人名与动词之间**不得含句界**（排除「他大笑，X…」式串句）。抽出后必看整句上下文确认归属，再 `json.dump(ensure_ascii=False, indent=2)` 写回，键为人物规范名（错键会被 V-QUOTE 判 ghost）。
+   - **踩坑**：`chapters.json` 是 **list（168 条）不是 dict**——写 `sorted(chapters.items()) if isinstance(...,dict) else []` 会静默返回 0 条（本项目已栽两次）；正文含 `\n`，**中间产物不能用 TSV**（会被换行撑裂成多条），直接抽完就地合并或存 JSON。
+   - 样例已收：魏忠贤「若要杀我，何须今日？」/ 蒋瑶「国库没有钱！我只有这些东西了。」/ 海瑞「胡宗宪的儿子，又不是胡宗宪，管他作甚？」/ 张钦「绝不开关！死就死，死而不朽！」/ 罗复仁「臣家穷，只能将就了。」
+2. **洞察实体联动 ✅ 已落地**（第六轮）：19 节正文里的人物/地点/事件**可点击**（点开人物卡/地点/事件详情），人物/事件/地点详情页有**反向「相关洞察」**入口（chip → 滚到该节并高亮）。构建期 `src/core/insight_link.py` 出 `insightIndex`（正向 `sections{sid:{p,l,e}}` + 反向 `byPerson/byPlace/byEvent` + `alias/placeAlias/titles`）；渲染期 `linkifyInsight()` **只改文本节点**（TreeWalker + SHOW_TEXT，跳过 `a/button/script/style/code` 祖先），不碰标签属性。规模：人物 207 次命中/97 人、地点 92 次/57 个、事件 17 次/14 件。`GENERIC_BLOCK` 滤掉通称（宦官/给事中/太平/明初…），绰号与庙号保留。有 `test_insight_index_is_symmetric` 守正反向互逆。
 3. **未定位地点 30 个**（原 41，中）：多为漠北蒙古草原地名（15 世纪定位困难且有争议），按「宁可留空不可猜错」纪律不动；`车迟国` 已标 `status:"非实地"`。剩余可考者进 `geo_annotations.json` 或 `event_places.json`。
 4. **未知年份事件 2 件**（原 7，中）：仅余「严世蕃论天下三人」（纯对话场景）与「朱棣生母碽妃之谜」（后世身世考据），均无可靠纪年。补年机制：空 `year` 走 `manual_event_years.json`（只回填），非空但不可解析（如「万历末年」）走 `manual_corrections.event_years`（覆盖式）。
 5. **同名异地拆分 ✅ 已落地**（第六轮）：`延安府`（陕西延安 109.49/36.59 vs 朝鲜黄海道延安 126.08/37.92）、`龙山`（浙江慈溪 121.45/30.05 vs 朝鲜汉城龙山 126.96/37.53）两组已分离，各自只挂对应章节。机制见上「同名异地两级拆分」。审计 R-GEO-03 后续仍可能提示其他候选取对。

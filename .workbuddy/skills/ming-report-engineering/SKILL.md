@@ -195,7 +195,7 @@ const src  = html.match(/function fullSummaryHTML\(g\)\{[\s\S]*?\n\}/)[0]; eval(
 - **只拦同源请求**做 stale-while-revalidate（先返缓存、后台更新）——重复访问秒开；**跨域请求（瓦片/unpkg）一律 `return` 不拦截**：`respondWith` 转发跨域 no-cors 图片请求会永久 pending（灰底红点事故根因）。
 - **后台更新必须 `fetch(req, {cache:'no-cache'})`**：否则 GitHub Pages 的 max-age=600 会让 SWR 拿到陈旧响应，用户连看多轮旧版。
 - **命中缓存时后台更新要 `event.waitUntil(network)` 保活**：只 `return cached` 的话 worker 可能在 fetch 完成前结束，更新被打断、旧版长期不换。
-- 改版时 bump `CACHE` 名（activate 自动清旧缓存；当前 **`ming-report-v7`**）。**纯数据勘误轮也要 bump**——否则老用户首屏仍走 SWR 返旧缓存，要第二次刷新才见新数据。用户报"内容没更新"时先 `gh api /repos/CochraneK/ming/git/blobs/<sha>` 拉线上文件解码验证，再归因缓存。
+- 改版时 bump `CACHE` 名（activate 自动清旧缓存；当前 **`ming-report-v8`**）。**数据勘误轮与前端改动轮都要 bump**——否则老用户首屏仍走 SWR 返旧缓存，要第二次刷新才见新数据。用户报"内容没更新"时先 `gh api /repos/CochraneK/ming/git/blobs/<sha>` 拉线上文件解码验证，再归因缓存。
 - 新版本就绪时可提示刷新：`navigator.serviceWorker.addEventListener('controllerchange', …)` → `failBar('swUpdate', …, {retry:()=>location.reload()})`。
 
 ### 合规巡检：线上绝不能有原书全文（2026-09-13 事故）
@@ -256,6 +256,19 @@ sha = hashlib.sha1(b'blob %d\0' % len(data) + data).hexdigest()   # data=文件�
 - **召回探测必须用 merge 后规范名口径**（别名未归一是伪影）；逐章对比用数字感知排序 `(part, chap)`。
 - 结论口径：书中实际出现的人物基本已建卡，剩余为极边角（每章 1 次提及），不建议强行补录。
 
+## 洞察报告实体联动（正向 + 反向）
+
+- **构建期** `src/core/insight_link.py` → `build_insight_index()` 扫各节正文（去标签压空白），
+  产出 `insightIndex` 进 payload：`sections{sid:{p,l,e}}`（该节命中的表面形式，长名优先）、
+  `alias`/`placeAlias`（表面形式→规范名）、`byPerson`/`byPlace`/`byEvent`（反向）、`titles`。
+- **渲染期** `linkifyInsight()`：只遍历**文本节点**（`createTreeWalker` + `SHOW_TEXT`），
+  跳过 `a,button,script,style,code` 祖先，命中即包成 `<button class="ins-link ins-p|ins-l|ins-e" data-ins-*>`；
+  绝不改标签与属性，所以不会破坏原文里的 `<strong>/<h4>`。
+- **反向入口** `insightBlock(kind,key)` 插在人物/事件/地点详情模板里 → `.ins-chip` → `gotoInsight(sid)` 滚到 `#ins-<sid>` 并高亮。
+- **纪律**：只做整名子串匹配、≥2 字；`GENERIC_BLOCK` 滤掉通称（宦官/给事中/太平/明初…），
+  否则正文里每个「宦官」都会被链成某个人物卡。绰号（九千岁）与庙号（太祖/万历）指向明确，保留。
+- 规模参考：19 节 → 人物 207 次命中 / 97 人，地点 92 次 / 57 个，事件 17 次 / 14 件。
+
 ## 常见故障速查
 
 | 现象 | 根因 | 修法 |
@@ -270,6 +283,11 @@ sha = hashlib.sha1(b'blob %d\0' % len(data) + data).hexdigest()   # data=文件�
 | 搜索框中文断输 | 监听 input 全量重渲染 | 用 `bindSearch()` |
 | 新地点 TypeError | 注入晚于归一化循环 | 移到循环之前 |
 | 同名地点被并成一条 | 拆分判据只按「片段名」，而两处片段名本来就相同 | 用 `location_splits_by_chapter`（按章节）或 `location_splits`（按原始串） |
+| 新功能「没报错但没效果」（0 个链接/0 个节点） | 用 `window.DATA` 取数：**`DATA` 是脚本作用域的 `const`，不是 window 属性**，恒为 undefined，函数直接 return 且**不抛错** | 用裸标识符判空：`(typeof DATA!=='undefined'&&DATA.x)\|\|null`（本项目已踩） |
+| 洞察正文实体不联动 | 索引没进 payload / linkify 未在 innerHTML 之后调用 | 构建期 `core/insight_link.py` 出 `insightIndex`；`renderInsight()` 末尾调 `linkifyInsight()` |
+| 脚本跑完 **0 条结果**（无报错） | `data/chapters.json` 是 **list（168 条）不是 dict**；`sorted(chapters.items()) if isinstance(...,dict) else []` 的 else 留空就静默空转（本项目栽过两次） | 一律写 `else [(str(i),c) for i,c in enumerate(chapters)]`；**先 print `type()/len()` 再跑逻辑** |
+| 中间 TSV 解析只拿到 2~3 条 | `chapters[].body` 含 `\n`，写 TSV 会把一条记录撑裂成多行（143 行里仅 2 行完整 4 列） | 中间产物用 JSON，或抽完就地合并；字段先 `re.sub(r'\s+','',s)` |
+| 语录归属张冠李戴 | 只按「人名+动词」抽，会命中「他大笑，X…」/「Y对X说」 | ①人名**前一字须是句界/逗号**；②人名与动词间**不得含句界**；抽完必看整句上下文 |
 | 补年写了却不生效 | `manual_event_years` 只回填 `year` 为空的事件，而该事件 `year` 是非空串（如「万历末年」） | 改走 `manual_corrections.event_years`（覆盖式） |
 | 地点 `lat>90` | GAZ 纬经写反 | 校验 `(lng,lat,今址,类型)` |
 | 关系被测成漏抽 | 别名未归一伪影 | 用规范名口径比对 |

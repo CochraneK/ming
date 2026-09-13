@@ -147,7 +147,7 @@ function personDetailHTML(x){
  if(p.origin)extraBlocks.push(`<div class="detail-block"><strong>籍贯</strong><p>${esc(p.origin)}</p></div>`);
  if(p.jinshi_year)extraBlocks.push(`<div class="detail-block"><strong>科举</strong><p>${esc(p.jinshi_year)} 年中进士</p></div>`);
  if(p.note)extraBlocks.push(`<div class="detail-block detail-wide"><strong>备注</strong><p>${esc(p.note)}</p></div>`);
- return `<div class="detail-grid"><div class="detail-block"><strong>身份</strong><p>${esc(x.role)}</p></div><div class="detail-block"><strong>生卒</strong><p>${esc(x.life)}</p></div><div class="detail-block"><strong>状态</strong><p>${esc(x.status)}</p></div><div class="detail-block detail-wide"><strong>势力 / 政治归属</strong>${powerHtml}</div>${extraBlocks.join('')}<div class="detail-block detail-wide"><strong>别名</strong><p>${esc((x.aliases||[]).join('、')||'无')}</p></div><div class="detail-block detail-wide"><strong>涉及事件（${x.events.length}）</strong>${x.events.length?`<ul class="event-list">${x.events.slice(0,12).map(n=>`<li><button class="link-button" data-event-name="${esc(n)}">${esc(n)}</button></li>`).join('')}</ul>`:`<p class="muted">书中未作为事件参与者出现。</p>`}</div><div class="detail-block detail-wide"><strong>同章上下文事件（${x.contextEvents.length}）</strong>${x.contextEvents.length?`<ul class="event-list">${x.contextEvents.slice(0,15).map(n=>`<li><button class="link-button" data-event-name="${esc(n)}">${esc(n)}</button></li>`).join('')}</ul><p class="muted">书中同章提及，非本人物直接参与（可作关联线索）</p>`:`<p class="muted">同章亦无其它事件记录。</p>`}</div><div class="detail-block detail-wide"><strong>关系</strong><p>${relHtml}</p></div><div class="detail-block detail-wide"><strong>来源章节</strong><div class="source-row">${chapterChips(x.chapters.map(k=>({key:k,...DATA.chapters[k]})))}</div></div>${x.derivedCount?`<div class="detail-block detail-wide"><strong>出场口径</strong><p>共 ${x.chapters.length} 章，其中 ${x.derivedCount} 章为文本反查推导（本章正文出现至少 6 次自动登记，与 LLM 抽取区分）</p></div>`:''}</div>`;
+ return `<div class="detail-grid"><div class="detail-block"><strong>身份</strong><p>${esc(x.role)}</p></div><div class="detail-block"><strong>生卒</strong><p>${esc(x.life)}</p></div><div class="detail-block"><strong>状态</strong><p>${esc(x.status)}</p></div><div class="detail-block detail-wide"><strong>势力 / 政治归属</strong>${powerHtml}</div>${extraBlocks.join('')}<div class="detail-block detail-wide"><strong>别名</strong><p>${esc((x.aliases||[]).join('、')||'无')}</p></div>${insightBlock('person',x.name)}<div class="detail-block detail-wide"><strong>涉及事件（${x.events.length}）</strong>${x.events.length?`<ul class="event-list">${x.events.slice(0,12).map(n=>`<li><button class="link-button" data-event-name="${esc(n)}">${esc(n)}</button></li>`).join('')}</ul>`:`<p class="muted">书中未作为事件参与者出现。</p>`}</div><div class="detail-block detail-wide"><strong>同章上下文事件（${x.contextEvents.length}）</strong>${x.contextEvents.length?`<ul class="event-list">${x.contextEvents.slice(0,15).map(n=>`<li><button class="link-button" data-event-name="${esc(n)}">${esc(n)}</button></li>`).join('')}</ul><p class="muted">书中同章提及，非本人物直接参与（可作关联线索）</p>`:`<p class="muted">同章亦无其它事件记录。</p>`}</div><div class="detail-block detail-wide"><strong>关系</strong><p>${relHtml}</p></div><div class="detail-block detail-wide"><strong>来源章节</strong><div class="source-row">${chapterChips(x.chapters.map(k=>({key:k,...DATA.chapters[k]})))}</div></div>${x.derivedCount?`<div class="detail-block detail-wide"><strong>出场口径</strong><p>共 ${x.chapters.length} 章，其中 ${x.derivedCount} 章为文本反查推导（本章正文出现至少 6 次自动登记，与 LLM 抽取区分）</p></div>`:''}</div>`;
 }
 function showPerson(name){
  const x=DATA.characters.find(y=>y.name===name);if(!x)return false;
@@ -236,6 +236,7 @@ function renderInsight(){
   const refs=D.refs.map(r=>`<li>${r}</li>`).join('');
   const lastSec=D.sections[D.sections.length-1];
   $('#insight').innerHTML=`<div class="section-head"><div><h2>跨学科洞察报告</h2><p>基于《明朝那些事儿》知识图谱（156 章 · 1231 人物 · 581 地点 · 1106 事件 · 2324 关系）的 ${D.sections.length-1} 学科交叉解读，末章「${esc(lastSec?lastSec.discipline:'综合')}」收束全篇。文内引用采用 APA 格式，参考文献列于文末。</p></div><span class="status draft">交叉解读 · 供批判性阅读</span></div><nav class="insight-toc" aria-label="学科目录"><div class="insight-toc-head"><strong>目录 · ${D.sections.length} 镜</strong><span>点击卡片直达 · 综合收束于末</span></div><div class="insight-toc-grid">${toc}</div></nav><div class="insight-body">${secs}</div><section class="insight-refs"><div class="section-head"><div><h3>参考文献（APA 7）</h3><p>含主源《明朝那些事儿》与各学科支撑文献；数据集以本项目聚合结果为准。</p></div></div><ol class="insight-ref-list">${refs}</ol></section>`;
+  linkifyInsight();
 }
 function distributionTeaser(){const d=DATA.distribution,s=d.stats,total=s.total,highest=[...d.chapters].sort((a,b)=>b.density-a.density)[0],lowest=[...d.chapters].sort((a,b)=>a.density-b.density)[0];return `<div class="panel distribution-teaser"><div class="section-head"><div><h2 style="font-size:18px">抽取分布诊断</h2><p>${esc(d.judgement.overall)} 详细分部、章节、密度和层级结构见“分布”。</p></div><button class="action" data-open-view="distribution">查看分布</button></div><div class="distribution-stat-grid"><div class="distribution-stat"><strong>CV ${total.cv}</strong><span>章节总抽取量的相对离散度</span></div><div class="distribution-stat"><strong>密度 ${s.density.cv}</strong><span>每万字密度的相对离散度</span></div><div class="distribution-stat"><strong>${esc(highest.title)}</strong><span>最高密度 ${highest.density}/万字</span></div><div class="distribution-stat"><strong>${esc(lowest.title)}</strong><span>最低密度 ${lowest.density}/万字</span></div></div></div>`}
 function renderDistribution(){const d=DATA.distribution,s=d.stats,labels={characters:'人物',locations:'地点',events:'事件',relations:'关系'},colors={characters:'legend-character',locations:'legend-location',events:'legend-event',relations:'legend-relation'},sortLabels={order:'原书章节顺序',total:'总量从高到低',density:'密度从高到低',characters:'人物数从高到低',locations:'地点数从高到低',events:'事件数从高到低',relations:'关系数从高到低'};const chapterRows=d.chapters.map((item,index)=>({...item,_index:index}));const filtered=chapterRows.filter(item=>state.distributionPart==='全部七部'||item.partKey===state.distributionPart);const sorted=[...filtered].sort((a,b)=>{if(state.distributionSort==='order')return a._index-b._index;return b[state.distributionSort]-a[state.distributionSort]||a._index-b._index});const distPageSize=12;const page=sorted.slice((state.distributionPage-1)*distPageSize,state.distributionPage*distPageSize);const maxPart=Math.max(...d.parts.map(x=>x.total),1),maxChapter=Math.max(...chapterRows.map(x=>x.total),1),maxDensity=Math.max(...chapterRows.map(x=>x.density),1);const segment=(item,key,extra='')=>`<span class="${extra||'part-segment'} ${colors[key]}" style="width:${item.total?item[key]*100/item.total:0}%" title="${labels[key]} ${item[key]}"></span>`;const parts=d.parts.map(item=>`<div class="part-row"><div class="part-label"><strong>${esc(item.part)}</strong><span>${item.chapters}章 · 占章节抽取量 ${item.share}%</span></div><div class="part-bar" style="width:${item.total*100/maxPart}%">${segment(item,'characters')}${segment(item,'locations')}${segment(item,'events')}${segment(item,'relations')}</div><div class="part-values">${item.total}</div><div class="part-density">${item.density}/万字</div></div>`).join('');const chapterItems=page.map(item=>`<div class="chapter-row"><div class="chapter-name"><strong title="${esc(item.title)}">${esc(item.title)}</strong><span>${esc(item.part)} · ${item.textLength.toLocaleString()}字</span></div><div class="chapter-bars"><div class="chapter-track" style="width:${item.total*100/maxChapter}%">${segment(item,'characters','chapter-segment legend-character')}${segment(item,'locations','chapter-segment legend-location')}${segment(item,'events','chapter-segment legend-event')}${segment(item,'relations','chapter-segment legend-relation')}</div><div class="density-track" title="每万字 ${item.density}"><span style="width:${item.density*100/maxDensity}%"></span></div></div><div class="chapter-value">${item.total}条</div><div class="chapter-density">${item.density}/万</div></div>`).join('')||'<div class="empty">没有匹配章节</div>';const eraByPart=DATA.eraByPart||[];const eraMax=Math.max(...eraByPart.map(r=>r.total),1);const _pre=(DATA.reigns||[]).length?DATA.reigns[0].start:1368;const eraLegend='<span><i class="legend-dot" style="background:#9d9a8d"></i>明兴之前（'+_pre+' 前）</span>'+(DATA.reigns||[]).map((r,i)=>`<span><i class="legend-dot" style="background:${reignColor(i)}"></i>${esc(r.era)}</span>`).join('')+'<span><i class="legend-dot" style="background:#9d9a8d"></i>甲申之后（1644 后）</span>';const eraRows=eraByPart.map(r=>`<div class="part-row"><div class="part-label"><strong>${esc(r.part)}</strong><span>可纪年事件 ${r.total} 件 · ${r.segCount} 个年号段</span></div><div class="part-bar" style="width:${r.total*100/eraMax}%">${r.segments.map(sg=>`<span class="part-segment" style="width:${sg.count*100/r.total}%;background:${sg.order===0||sg.order===99?'#9d9a8d':reignColor(sg.order-1)}" title="${esc(sg.era)} · ${sg.count} 件"></span>`).join('')}</div><div class="part-values">${r.total}</div><div class="part-density">${r.segCount}段</div></div>`).join('')||'<div class="empty">暂无可纪年事件</div>';const entities=d.layers.entities.map(item=>`<li>${esc(item.label)} ${item.count}个实体 · ${item.chapterTotal}章次抽取</li>`).join('');const evidence=d.layers.evidence.map(item=>`<li>${esc(item.label)} ${item.count} · ${esc(item.detail)}</li>`).join('');$('#distribution').innerHTML=`<div class="section-head"><div><h2>抽取分布与层级</h2><p>${esc(DATA.scopeLabel)} · 章节级原始抽取诊断，和全局实体结果分开计数。</p></div><span class="status draft">分布不等于质量结论</span></div><div class="distribution-intro"><div class="distribution-callout"><span class="signal">判断</span><h3>${esc(d.judgement.overall)}</h3><p>总体 CV ${s.total.cv}；地点 CV ${s.locations.cv}，密度 CV ${s.density.cv}。最高与最低密度相差 ${d.judgement.densityRatio} 倍，说明章节长度和内容类型都需要纳入解释。</p></div><div class="distribution-stat-grid"><div class="distribution-stat"><strong>${s.total.median}</strong><span>章节总量中位数 · P25 ${s.total.p25} / P75 ${s.total.p75}</span></div><div class="distribution-stat" title="CV=标准差÷均值，衡量各章之间分布的不均程度（>0.5 即明显不均）。四维=人物/地点/事件/关系，此处取 CV 最大者。"><strong>${s[d.judgement.strongestDimension] ? s[d.judgement.strongestDimension].cv : s.locations.cv}</strong><span>${({characters:'人物',locations:'地点',events:'事件',relations:'关系'})[d.judgement.strongestDimension]||'地点'}数 CV · 四类中最不均匀</span></div><div class="distribution-stat"><strong>${s.density.max}</strong><span>最高每万字密度</span></div><div class="distribution-stat"><strong>${s.density.min}</strong><span>最低每万字密度</span></div></div></div><div class="panel"><div class="section-head"><div><h2 style="font-size:18px">一、分部层</h2><p>横向长度按分部总抽取量共享尺度，条内按人物、地点、事件、关系组成。</p></div></div><div class="distribution-legend"><span><i class="legend-dot legend-character"></i>人物</span><span><i class="legend-dot legend-location"></i>地点</span><span><i class="legend-dot legend-event"></i>事件</span><span><i class="legend-dot legend-relation"></i>关系</span><span>右侧为总量 / 每万字密度</span></div><div class="distribution-scale"><span>分部总抽取量</span><span>最大 ${maxPart} 条</span></div><div class="part-list">${parts}</div></div><div class="panel"><div class="section-head"><div><h2 style="font-size:18px">二、章节层</h2><p>四类计数均为章节内唯一项；上条为总量，下条为每万字密度。</p></div></div><div class="toolbar"><label>部次</label><select id="distPart"><option>全部七部</option>${d.parts.map(x=>`<option value="${x.partKey}" ${state.distributionPart===x.partKey?'selected':''}>${esc(x.part)}</option>`).join('')}</select><label>排序</label><select id="distSort">${Object.entries(sortLabels).map(([key,label])=>`<option value="${key}" ${state.distributionSort===key?'selected':''}>${label}</option>`).join('')}</select><span class="muted grow">共 ${filtered.length} 章 · 总量条形共享尺度 ${maxChapter} 条 · 密度按正文长度折算</span></div><div class="chapter-header"><span>章节</span><span>总量 / 密度</span><span>总量</span><span>每万字</span></div><div class="chapter-list-dist">${chapterItems}</div>${pager(state.distributionPage,sorted.length,distPageSize)}</div><div class="panel"><div class="section-head"><div><h2 style="font-size:18px">三、结果层级</h2><p>从来源章节到实体、关系网络，再落到可回溯的证据入口。</p></div></div><div class="layer-flow"><div class="layer-node"><small>01 · SOURCE</small><strong>${esc(d.layers.source.label)}</strong><b>${d.layers.source.count}章</b><span>${esc(d.layers.source.detail)}</span></div><div class="layer-connector" aria-hidden="true"></div><div class="layer-node"><small>02 · ENTITIES</small><strong>实体抽取</strong><b>${d.layers.entities.length}类</b><ul class="layer-list">${entities}</ul></div><div class="layer-connector" aria-hidden="true"></div><div class="layer-node"><small>03 · NETWORK</small><strong>${esc(d.layers.network.label)}</strong><b>${d.layers.network.count}条</b><span>章节内合计 ${d.layers.network.chapterTotal} 条关系抽取。</span></div><div class="layer-connector" aria-hidden="true"></div><div class="layer-node"><small>04 · TRACE</small><strong>来源追溯</strong><b>${d.layers.evidence.length}类</b><ul class="layer-list">${evidence}</ul></div></div><div class="panel"><div class="section-head"><div><h2 style="font-size:18px">四、分部 × 年号</h2><p>可纪年事件按来源分部与在位年号段堆叠；条宽按总量共享尺度，悬停查看各段件数。</p></div></div><div class="distribution-legend">${eraLegend}</div><div class="part-list">${eraRows}</div></div><div class="distribution-foot">口径说明：章节层按单章内唯一姓名、地点古名、事件名、关系三元组计数；实体层按合并后的全局实体计数，跨章节重复出现不会被误加成实体总数。</div></div>`;$('#distPart').addEventListener('change',e=>{state.distributionPart=e.target.value;state.distributionPage=1;renderDistribution()});$('#distSort').addEventListener('change',e=>{state.distributionSort=e.target.value;state.distributionPage=1;renderDistribution()});const root=$('#distribution');bindPaging(root,delta=>{state.distributionPage+=delta;renderDistribution()})}
@@ -363,7 +364,7 @@ function renderLocations(){
  root.querySelectorAll('[data-location-id]').forEach(b=>b.addEventListener('click',()=>{const x=DATA.locations.find(y=>y.id===b.dataset.locationId);if(!x)return;openDetail(x.ancient,locationDetailHTML(x,'event'));bindEventNameClicks()}));
  root.querySelectorAll('[data-event-name]').forEach(b=>b.addEventListener('click',()=>{const event=DATA.events.find(x=>x.name===b.dataset.eventName);if(event)showEvent(event)}));
 }
-function showEvent(event){openDetail(event.name,`<div class="detail-grid"><div class="detail-block"><strong>时间</strong><p>${esc(event.year||'年份待考')}${event.year_source?` <span class="src-tag">${event.year_approx?'约·':''}来源：${esc(event.year_source)}</span>`:''}${event.year_note?` <span class="src-note">（${esc(event.year_note)}）</span>`:''}</p></div><div class="detail-block"><strong>类别</strong><p>${catBadge(event.category,eventCatColor(event.category))}</p></div><div class="detail-block"><strong>原类型</strong><p>${esc(event.type)}</p></div><div class="detail-block"><strong>地点</strong><p>${eventLocationChips(event)}</p></div><div class="detail-block"><strong>参与者</strong><p>${esc(event.participants.join('、')||'未标注')}</p></div><div class="detail-block detail-wide"><strong>来源章节</strong><div class="source-row">${chapterChips(event.sources)}</div></div></div>`)}
+function showEvent(event){openDetail(event.name,`<div class="detail-grid">${insightBlock('event',event.name)}<div class="detail-block"><strong>时间</strong><p>${esc(event.year||'年份待考')}${event.year_source?` <span class="src-tag">${event.year_approx?'约·':''}来源：${esc(event.year_source)}</span>`:''}${event.year_note?` <span class="src-note">（${esc(event.year_note)}）</span>`:''}</p></div><div class="detail-block"><strong>类别</strong><p>${catBadge(event.category,eventCatColor(event.category))}</p></div><div class="detail-block"><strong>原类型</strong><p>${esc(event.type)}</p></div><div class="detail-block"><strong>地点</strong><p>${eventLocationChips(event)}</p></div><div class="detail-block"><strong>参与者</strong><p>${esc(event.participants.join('、')||'未标注')}</p></div><div class="detail-block detail-wide"><strong>来源章节</strong><div class="source-row">${chapterChips(event.sources)}</div></div></div>`)}
 function locationDetailHTML(x, evtAttr){
   const evs=(x.directEvents||[]).map(n=>DATA.events.find(e=>e.name===n)).filter(Boolean);
   const people=[...new Set(evs.flatMap(e=>e.participants||[]))];
@@ -373,7 +374,7 @@ function locationDetailHTML(x, evtAttr){
   const relPeople=x.relatedPeople||[];
   const ph=people.length?esc(people.slice(0,15).join('、')):(relPeople.length?esc(relPeople.slice(0,15).join('、')):'无（或未标注）');
   const phNote=people.length?'':'<span class="muted">（来自同章上下文事件）</span>';
-  return `<div class="detail-grid"><div class="detail-block"><strong>今址</strong><p>${esc(x.modern)}</p></div><div class="detail-block"><strong>书中身份</strong><p>${esc(x.trace)}</p></div><div class="detail-block"><strong>别称</strong><p>${esc((x.mentionedAs||[]).join('、')||'无')}</p></div><div class="detail-block"><strong>坐标</strong><p>${x.lat==null?'未定位':`${x.lat}, ${x.lng}`}</p></div><div class="detail-block detail-wide"><strong>书中直接关联事件（${evs.length}）</strong>${eventsHtml}${relatedHtml}</div><div class="detail-block detail-wide"><strong>书中涉及人物 ${phNote}</strong><p>${ph}</p></div><div class="detail-block detail-wide"><strong>来源章节</strong><div class="source-row">${chapterChips(x.chapters)}</div></div><div class="detail-block detail-wide"><strong>核验备注</strong><p>${esc(x.note||'暂无')}</p></div></div>`;
+  return `<div class="detail-grid">${insightBlock('place',x.ancient)}<div class="detail-block"><strong>今址</strong><p>${esc(x.modern)}</p></div><div class="detail-block"><strong>书中身份</strong><p>${esc(x.trace)}</p></div><div class="detail-block"><strong>别称</strong><p>${esc((x.mentionedAs||[]).join('、')||'无')}</p></div><div class="detail-block"><strong>坐标</strong><p>${x.lat==null?'未定位':`${x.lat}, ${x.lng}`}</p></div><div class="detail-block detail-wide"><strong>书中直接关联事件（${evs.length}）</strong>${eventsHtml}${relatedHtml}</div><div class="detail-block detail-wide"><strong>书中涉及人物 ${phNote}</strong><p>${ph}</p></div><div class="detail-block detail-wide"><strong>来源章节</strong><div class="source-row">${chapterChips(x.chapters)}</div></div><div class="detail-block detail-wide"><strong>核验备注</strong><p>${esc(x.note||'暂无')}</p></div></div>`;
 }
 function bindEventNameClicks(){const dlg=$('#detailDialog');if(!dlg)return;dlg.querySelectorAll('[data-event-name],[data-loc-event]').forEach(b=>b.addEventListener('click',()=>{const nm=b.dataset.eventName||b.dataset.locEvent;const ev=DATA.events.find(e=>e.name===nm);if(ev)showEvent(ev)}))}
 function showLocation(x){// 非地图视图（例如从事件详情、地点卡片点入）时，dock 位于隐藏面板内，内容看不见；改用弹窗展示
@@ -697,6 +698,87 @@ function applyDeepLink(){
     }
   }finally{_hashApplying=false}
 }
+
+/* ===== 洞察联动：正文实体可点击 + 详情页反向入口 =====
+   索引由构建期 core/insight_link.py 生成（DATA.insightIndex），这里只消费结果：
+   正向=把该节命中的人物/地点/事件名包成按钮；反向=详情页列出「相关洞察」章节。
+   只改文本节点，绝不碰标签与属性，避免破坏原文里的 <strong>/<h4> 结构。*/
+// 注意：DATA 是脚本作用域的 const（不是 window 的属性），
+// 这里必须用裸标识符 typeof 判空——写 window.DATA 会恒为 undefined（已踩过）。
+function insightIdx(){return (typeof DATA!=='undefined'&&DATA.insightIndex)||null}
+function insightChips(kind,key){
+  const IX=insightIdx();if(!IX)return '';
+  const map=kind==='person'?IX.byPerson:kind==='place'?IX.byPlace:IX.byEvent;
+  const sids=(map&&map[key])||[];if(!sids.length)return '';
+  return sids.map(sid=>'<button class="ins-chip" type="button" data-ins-goto="'+esc(sid)+'">'+esc((IX.titles&&IX.titles[sid])||sid)+'</button>').join('');
+}
+function insightBlock(kind,key){
+  const chips=insightChips(kind,key);if(!chips)return '';
+  return '<div class="detail-block detail-wide"><strong>相关洞察</strong><p class="ins-chips">'+chips+'</p></div>';
+}
+function gotoInsight(sid){
+  if(state.view!=='insight'){setView('insight');rerender('insight')}
+  writeHash({view:'insight'});
+  const el=document.getElementById('ins-'+sid);
+  if(el){el.scrollIntoView({behavior:'smooth',block:'start'});el.classList.add('ins-hl');setTimeout(function(){el.classList.remove('ins-hl')},1800)}
+}
+function linkifyInsight(){
+  const IX=insightIdx();if(!IX||!IX.sections)return;
+  const arts=document.querySelectorAll('#insight article.insight-sec');
+  for(let ai=0;ai<arts.length;ai++){
+    const art=arts[ai],sid=(art.id||'').replace(/^ins-/,''),hits=IX.sections[sid];
+    if(!hits)continue;
+    const items=[];
+    (hits.p||[]).forEach(function(s){items.push([s,'p',(IX.alias||{})[s]||s])});
+    (hits.l||[]).forEach(function(s){items.push([s,'l',(IX.placeAlias||{})[s]||s])});
+    (hits.e||[]).forEach(function(s){items.push([s,'e',s])});
+    if(!items.length)continue;
+    items.sort(function(a,b){return b[0].length-a[0].length});  // 长名优先，短名不截断长名
+    const bySurface={};items.forEach(function(it){if(!(it[0] in bySurface))bySurface[it[0]]=it});
+    const re=new RegExp(items.map(function(it){return it[0].replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}).join('|'),'g');
+    const walker=document.createTreeWalker(art,NodeFilter.SHOW_TEXT,null);
+    const nodes=[];let n;
+    while((n=walker.nextNode())){
+      if(!n.nodeValue||!n.nodeValue.trim())continue;
+      const par=n.parentElement;
+      if(!par||par.closest('a,button,script,style,code'))continue;
+      nodes.push(n);
+    }
+    nodes.forEach(function(node){
+      const text=node.nodeValue;re.lastIndex=0;
+      if(!re.test(text)){re.lastIndex=0;return}
+      re.lastIndex=0;
+      const frag=document.createDocumentFragment();let last=0,m;
+      while((m=re.exec(text))){
+        if(m.index>last)frag.appendChild(document.createTextNode(text.slice(last,m.index)));
+        const it=bySurface[m[0]];
+        if(it){
+          const b=document.createElement('button');
+          b.className='ins-link ins-'+it[1];b.type='button';b.textContent=m[0];
+          b.setAttribute('data-ins-'+it[1],it[2]);
+          b.title=it[1]==='p'?'查看人物卡':it[1]==='l'?'查看地点':'查看事件';
+          frag.appendChild(b);
+        }else{frag.appendChild(document.createTextNode(m[0]))}
+        last=m.index+m[0].length;
+      }
+      if(last<text.length)frag.appendChild(document.createTextNode(text.slice(last)));
+      node.parentNode.replaceChild(frag,node);
+    });
+  }
+}
+document.addEventListener('click',function(e){
+  const t=e.target;
+  const lnk=t&&t.closest?t.closest('.ins-link'):null;
+  if(lnk){
+    if(lnk.getAttribute('data-ins-p')){showPerson(lnk.getAttribute('data-ins-p'));return}
+    if(lnk.getAttribute('data-ins-l')){const loc=DATA.locations.find(function(l){return l.ancient===lnk.getAttribute('data-ins-l')});if(loc)showLocation(loc);return}
+    if(lnk.getAttribute('data-ins-e')){const ev=DATA.events.find(function(x){return x.name===lnk.getAttribute('data-ins-e')});if(ev)showEvent(ev);return}
+    return;
+  }
+  const chip=t&&t.closest?t.closest('.ins-chip'):null;
+  if(chip&&chip.getAttribute('data-ins-goto'))gotoInsight(chip.getAttribute('data-ins-goto'));
+});
+
 window.addEventListener('hashchange',applyDeepLink);
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>writeHash(Object.assign({view:b.dataset.view},entityHash(null,null),{from:null,to:null}))));
 /* 打开详情时把实体写进地址栏——复制地址即可分享同一张卡 */

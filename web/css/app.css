@@ -120,3 +120,21 @@ mark.hl{background:#f6dd93;color:#2f2a22;border-radius:2px;padding:0 1px;box-sha
 .fail-close:hover{background:var(--wash);color:var(--ink)}
 @media(max-width:640px){.fail-host{left:10px;right:10px;bottom:10px}.fail-bar{left:10px;right:10px;bottom:10px;flex-wrap:wrap}}
 @media print{.fail-host,.fail-bar{display:none}}
+
+/* ===== 洞察联动 =====
+   正文里的人物/地点/事件由 linkifyInsight() 包成按钮（.ins-link），
+   详情页的「相关洞察」是 .ins-chip；三种实体用下划线样式与颜色区分，
+   避免读者把地名误当人名。--disc 由各节内联设置，人物链接直接继承学科色。 */
+.insight-sec .ins-link{display:inline;padding:0;margin:0;border:0;background:none;font:inherit;
+  color:var(--disc,#8d3025);cursor:pointer;
+  text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
+.insight-sec .ins-link:hover,.insight-sec .ins-link:focus-visible{
+  text-decoration-style:solid;background:rgba(0,0,0,.05);outline:none}
+.insight-sec .ins-link.ins-l{color:#2e7d64;text-decoration-style:dashed}
+.insight-sec .ins-link.ins-e{color:#6a4b9c;text-decoration-style:wavy}
+.ins-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 0}
+.ins-chip{font:inherit;font-size:12px;line-height:1.7;padding:3px 10px;border-radius:999px;cursor:pointer;
+  border:1px solid rgba(141,48,37,.32);background:rgba(141,48,37,.06);color:#8d3025}
+.ins-chip:hover,.ins-chip:focus-visible{background:rgba(141,48,37,.14);outline:none}
+.ins-hl{animation:ins-hl 1.8s ease-out}
+@keyframes ins-hl{from{background:rgba(184,139,53,.26)}to{background:transparent}}

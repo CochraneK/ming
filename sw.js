@@ -8,8 +8,9 @@
 // v6：P2-03 势力结构化 / Phase 6 双模式图 / P2-10 时间轴区间 / P3-03 统一错误 UI / P3-01 体积压缩。
 // v7：第六轮内容勘误（同名异地两级拆分：延安府 陕西/朝鲜、龙山 浙江/朝鲜；事件补年 7→2；地点定位 41→30）。
 //     虽只改数据、前端未动，但 bump 可让老用户免于「SWR 首次返旧缓存」的一拍延迟，立即拿到新版数据。
+// v8：洞察实体联动 + 书内语录扩面（app.js / app.css 有变更，属前端改动，必须 bump）。
 const CACHE_PREFIX = 'ming-report-';
-const CACHE = CACHE_PREFIX + 'v7';
+const CACHE = CACHE_PREFIX + 'v8';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 

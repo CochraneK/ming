@@ -141,6 +141,22 @@ CASES = [
                 r'当前筛选 1400—1450 年（命中 \d+ / \d+ 件）'],
         "no": [],
     },
+    {
+        "name": "洞察联动 · 正文实体可点击",
+        "hash": "#view=insight",
+        # ins-link 由 linkifyInsight() 在渲染后插入 DOM，必须匹配真实渲染出的 button 标签
+        "yes": [r'id="insight" class="view active"',
+                r'<button class="ins-link ins-p"[^>]*data-ins-p="',
+                r'<button class="ins-link ins-l"[^>]*data-ins-l="'],
+        "no": [],
+    },
+    {
+        "name": "洞察联动 · 详情页反向入口（王守仁）",
+        "hash": "#view=characters&person=%E7%8E%8B%E5%AE%88%E4%BB%81&detail=1",
+        "yes": [r'<dialog id="detailDialog" open', r'相关洞察', r'class="ins-chip"[^>]*data-ins-goto="'],
+        "no": [],
+    },
+
 ]
 
 

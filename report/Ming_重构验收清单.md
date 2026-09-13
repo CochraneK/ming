@@ -23,7 +23,7 @@
 | P1-09 审计无论发现什么 exit 0 | ✅ | 定义 INFO / WARNING / ERROR 三级；有 ERROR → **退出码 1**（build `--check` 结构不变量 ERROR → **退出码 2**）。CI 依次跑 构建门禁 → 单测 → 深审，任一失败即红 |
 | P1-10 `extract_auto.py --dense` 无效 | ✅ | 已修为 `call_model(title, body, dense=dense)`，参数真正透传 |
 | P1-11 分部 scope 关系串范围 | ✅ | 全书 = `all`，分部(p1~p7) = **`induced`（两端人物都在本范围内）**；payload 带 `relationScope`，关系视图顶部有范围标注 |
-| P1-12 SW stale-while-revalidate 不可靠 | ✅ | 后台更新用 `event.waitUntil(network.catch(...))` 保活；`CACHE='ming-report-v6'`（第六轮内容勘误起 bump 至 `v7`），`activate` 时清理所有同前缀旧缓存 |
+| P1-12 SW stale-while-revalidate 不可靠 | ✅ | 后台更新用 `event.waitUntil(network.catch(...))` 保活；`CACHE='ming-report-v6'`（第六轮起 bump 至 `v7`，洞察联动/语录扩面后为 `v8`），`activate` 时清理所有同前缀旧缓存 |
 
 ## 二、P2 级重要改进（8 完成 / 1 部分 / 1 有意不做）
 

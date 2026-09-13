@@ -52,6 +52,9 @@ from core.graph_layout import (
     _deterministic_layout as _graph_layout,
     graph_kind_label,
 )
+# 共享核心：洞察报告的「实体 ↔ 章节」双向索引（人物/地点/事件可点击 + 反向入口）。
+# 只在构建期算一次，前端按节命中的表面形式做文本替换，不做运行时全量扫描。
+from core.insight_link import build_insight_index
 PARTS = {
     "p1": "壹部 · 洪武大帝",
     "p2": "贰部 · 万国来朝",
@@ -1153,6 +1156,11 @@ def build_scope(scope: str):
         "eraByPart": era_rows,
         "endpointKinds": endpoint_kinds,
         "quotes": {k: v for k, v in load_json(BASE / "data" / "character_quotes.json", {}).items() if k != "_comment"},
+        # 洞察联动双向索引：正向=每节命中哪些人物/地点/事件（渲染期把名字变链接），
+        # 反向=每个实体被哪几节提到（详情页显示「相关洞察」）。只在构建期算一次。
+        "insightIndex": build_insight_index(
+            chars, data.get("locations", []), data.get("events", []), INSIGHT_SECTIONS
+        ),
     }
 
 
