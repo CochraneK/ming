@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""统一构建入口（Phase 4 / V7 双交付 + 视图级按需数据）。
+"""统一构建入口（Phase 4 / V8 双交付 + 人物详情二级按需数据）。
 
      python src/build.py                          # 全书 → standalone.html（单文件）
      python src/build.py --scope p3               # 叁部 → report_p3.html
@@ -13,13 +13,15 @@
 
 两个 target 的差别：
 - ``standalone``（默认）：CSS/JS/DATA 全部内联，产物是可直接双击打开的单文件；
-- ``web``：项目 CSS/JS 分离，DATA 由同一最终 payload 拆成 boot + search + 8 个互斥
-  领域 chunk。视图只加载自己的依赖；需要完整模型时再聚合加载全部领域块。
+- ``web``：项目 CSS/JS 分离，DATA 由同一最终 payload 拆成 boot + search + 领域 chunk。
+  V8 再把人物域拆成轻量 ``characters`` 卡片索引与 ``character-details`` 详情补丁；
+  人物列表 / 年谱不再为单个详情提前下载完整人物关系与上下文。
 """
 
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import re
 import sys
@@ -47,9 +49,11 @@ WEB_BOOT_KEYS = (
     "reigns", "eraByPart", "eventCategories", "relationCategories",
 )
 
-# 每个最终模型顶层字段只属于一个领域块，避免按页面复制数据。
+# characters 顶层字段在 V8 是唯一的传输级例外：列表/卡片所需字段先进入
+# data-characters.js，完整详情以 name -> patch 的形式进入 data-character-details.js。
+# 其它最终模型顶层字段仍只属于一个领域块，避免按页面复制数据。
 WEB_CHUNK_FIELDS = {
-    "characters": ("characters", "aliasIndex", "chapters", "quotes"),
+    "characters": ("aliasIndex", "chapters", "quotes"),
     "events": ("events",),
     "space": ("locations", "chapterLocations", "voyages"),
     "relations": ("relations", "endpointKinds", "relationScope"),
@@ -58,7 +62,18 @@ WEB_CHUNK_FIELDS = {
     "insight": ("insightIndex",),
     "meta": ("model",),
 }
-WEB_CHUNKS = tuple(WEB_CHUNK_FIELDS)
+WEB_CHUNKS = (
+    "characters", "character-details", "events", "space", "relations",
+    "time", "graphs", "insight", "meta",
+)
+
+# 人物列表和打印卡真正读取的字段。events/contextEvents 只需前三项作卡片摘要；
+# profile 只保留 cleanCardFields() 在卡面使用的 label/origin/note。打开详情时再
+# 用 character-details 中的完整字段覆盖，最终对象与 generate_report 输出逐值一致。
+CHARACTER_CARD_KEYS = (
+    "name", "faction", "role", "life", "aliases", "chapters", "summary", "status",
+)
+CHARACTER_CARD_PROFILE_KEYS = ("label", "origin", "note")
 
 _STYLE_ANCHOR = "<style>\n/*{{INLINE_CSS}}*/</style>"
 _SCRIPT_ANCHOR = "<script>\n/*{{INLINE_JS}}*/</script>"
@@ -71,8 +86,41 @@ def _json_for_script(obj) -> str:
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
 
+def split_character_transport(characters: list[dict]) -> tuple[list[dict], dict[str, dict]]:
+    """把人物对象拆成卡片摘要 + 详情补丁；应用补丁后必须逐值恢复原对象。"""
+    summaries = []
+    details = {}
+    for character in characters:
+        summary = {
+            key: copy.deepcopy(character[key])
+            for key in CHARACTER_CARD_KEYS
+            if key in character
+        }
+        summary["events"] = copy.deepcopy((character.get("events") or [])[:3])
+        summary["contextEvents"] = copy.deepcopy((character.get("contextEvents") or [])[:3])
+        profile = character.get("profile")
+        if isinstance(profile, dict):
+            summary["profile"] = {
+                key: copy.deepcopy(profile[key])
+                for key in CHARACTER_CARD_PROFILE_KEYS
+                if key in profile
+            }
+
+        detail = {
+            key: copy.deepcopy(value)
+            for key, value in character.items()
+            if key not in summary or summary[key] != value
+        }
+        name = str(character.get("name") or "")
+        if not name:
+            raise SystemExit("V8 人物详情拆分遇到空姓名")
+        summaries.append(summary)
+        details[name] = detail
+    return summaries, details
+
+
 def split_web_chunks(payload: dict) -> tuple[dict, dict[str, dict]]:
-    """把最终 DATA 无损分区成 boot + 互斥领域块。"""
+    """把最终 DATA 无损变换成 boot + 领域块；人物详情采用可逆补丁。"""
     boot = {key: payload[key] for key in WEB_BOOT_KEYS if key in payload}
 
     # app.js 启动阶段会立即访问这几项；用空壳保证首页可启动，后续领域块覆盖它们。
@@ -92,9 +140,20 @@ def split_web_chunks(payload: dict) -> tuple[dict, dict[str, dict]]:
         "links": [],
     }
 
-    chunks: dict[str, dict] = {}
-    claimed = set(WEB_BOOT_KEYS)
+    summaries, details = split_character_transport(payload.get("characters") or [])
+    chunks: dict[str, dict] = {
+        "characters": {
+            **{key: payload[key] for key in WEB_CHUNK_FIELDS["characters"] if key in payload},
+            "characters": summaries,
+        },
+        "character-details": {"details": details},
+    }
+    claimed = set(WEB_BOOT_KEYS) | {"characters"}
+    claimed.update(WEB_CHUNK_FIELDS["characters"])
+
     for name, fields in WEB_CHUNK_FIELDS.items():
+        if name == "characters":
+            continue
         chunk = {}
         for key in fields:
             if key in payload:
@@ -104,8 +163,22 @@ def split_web_chunks(payload: dict) -> tuple[dict, dict[str, dict]]:
 
     unknown = sorted(set(payload) - claimed)
     if unknown:
-        raise SystemExit("V7 未分配的最终 payload 字段：%s" % ", ".join(unknown))
+        raise SystemExit("V8 未分配的最终 payload 字段：%s" % ", ".join(unknown))
     return boot, chunks
+
+
+def reconstruct_web_payload(boot: dict, chunks: dict[str, dict]) -> dict:
+    """Python 侧模拟浏览器加载全部 V8 chunk，验证传输变换严格可逆。"""
+    merged = copy.deepcopy(boot)
+    for name in WEB_CHUNKS:
+        if name == "character-details":
+            continue
+        merged.update(copy.deepcopy(chunks[name]))
+
+    details = (chunks.get("character-details") or {}).get("details") or {}
+    for character in merged.get("characters") or []:
+        character.update(copy.deepcopy(details.get(character.get("name"), {})))
+    return merged
 
 
 def build_search_index(payload: dict) -> dict:
@@ -148,14 +221,22 @@ def build_search_index(payload: dict) -> dict:
 
 
 def _chunk_script(name: str, data: dict) -> str:
-    """生成一个领域块脚本；insight 块同时携带独立 INSIGHT_DATA。"""
+    """生成领域块脚本；人物详情块写入补丁仓，insight 块同时携带 INSIGHT_DATA。"""
+    if name == "character-details":
+        body = (
+            "window.__MING_CHARACTER_DETAILS__=Object.assign(window.__MING_CHARACTER_DETAILS__||{},%s);\n"
+            "if(window.__MING_APPLY_CHARACTER_DETAILS__)window.__MING_APPLY_CHARACTER_DETAILS__();\n"
+            % _json_for_script(data.get("details") or {})
+        )
+    else:
+        body = "Object.assign(DATA,%s);\n" % _json_for_script(data)
     insight = "Object.assign(INSIGHT_DATA,%s);\n" % _json_for_script(G.INSIGHT_PAYLOAD) if name == "insight" else ""
     return (
-        "Object.assign(DATA,%s);\n%s"
+        body + insight +
         "window.__MING_DATA_CHUNKS__=window.__MING_DATA_CHUNKS__||{};\n"
         "window.__MING_DATA_CHUNKS__[%s]=true;\n"
         "document.dispatchEvent(new CustomEvent('ming:data-chunk',{detail:{name:%s}}));\n"
-        % (_json_for_script(data), insight, json.dumps(name), json.dumps(name))
+        % (json.dumps(name), json.dumps(name))
     )
 
 
@@ -176,7 +257,7 @@ def render_standalone(payload: dict) -> str:
 
 
 def render_web(payload: dict, out_dir: Path) -> dict:
-    """在线形态：HTML/CSS/JS 分离，DATA 按 boot/search/领域块按需交付。"""
+    """在线形态：HTML/CSS/JS 分离，DATA 按 boot/search/领域块/人物详情按需交付。"""
     skeleton = G.TEMPLATE_PATH.read_text(encoding="utf-8")
     css = G.CSS_PATH.read_text(encoding="utf-8")
     js = G.JS_PATH.read_text(encoding="utf-8")
@@ -212,6 +293,7 @@ def render_web(payload: dict, out_dir: Path) -> dict:
         "const DATA=%s;\n"
         "const INSIGHT_DATA={\"sections\":[],\"refs\":[]};\n"
         "window.__MING_DATA_CHUNKS__={};\n"
+        "window.__MING_CHARACTER_DETAILS__={};\n"
         % _json_for_script(boot_payload)
     )
     search_js = (
@@ -225,8 +307,8 @@ def render_web(payload: dict, out_dir: Path) -> dict:
     (assets / "search-index.js").write_text(search_js, encoding="utf-8")
 
     chunk_scripts = {}
-    for name, data in chunks.items():
-        content = _chunk_script(name, data)
+    for name in WEB_CHUNKS:
+        content = _chunk_script(name, chunks[name])
         chunk_scripts[name] = content
         (assets / ("data-%s.js" % name)).write_text(content, encoding="utf-8")
 
@@ -345,7 +427,7 @@ def main(argv=None) -> int:
     else:
         out.mkdir(parents=True, exist_ok=True)
         written = render_web(payload, out)
-        print("[3/3] V7 视图级分离资源已生成 %s" % out)
+        print("[3/3] V8 人物详情二级按需资源已生成 %s" % out)
         for name, size in written.items():
             print("      %-28s %d 字节/字符" % (name, size))
     return 0
