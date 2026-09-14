@@ -15,9 +15,7 @@
 <header class="app-header"><div class="header-inner">
   <h1 class="brand">明朝那些事儿 · 七部全书</h1><div id="headerStat" class="header-stat"></div>
   <nav class="tabs" aria-label="报告视图">
-    <div class="nav-cluster" role="group" aria-label="全局叙事"><span class="nav-cluster-label" aria-hidden="true">全局</span><button data-view="overview" class="active">总览</button><button data-view="distribution">分布</button><button data-view="timeline">时间轴</button><button data-view="dynasty">帝王</button><button data-view="chronicle">年谱</button></div>
-    <div class="nav-cluster" role="group" aria-label="实体索引"><span class="nav-cluster-label" aria-hidden="true">实体</span><button data-view="characters">人物</button><button data-view="locations">地点</button><button data-view="events">事件</button><button data-view="relations">关系</button></div>
-    <div class="nav-cluster" role="group" aria-label="探索分析"><span class="nav-cluster-label" aria-hidden="true">探索</span><button data-view="visuals">图谱</button><button data-view="map">地图</button><button data-view="insight">洞察</button></div>
+    <button data-view="overview" class="active">总览</button><button data-view="distribution">分布</button><button data-view="visuals">图谱</button><button data-view="locations">地点</button><button data-view="map">地图</button><button data-view="characters">人物</button><button data-view="events">事件</button><button data-view="relations">关系</button><button data-view="timeline">时间轴</button><button data-view="dynasty">帝王</button><button data-view="chronicle">年谱</button><button data-view="insight">洞察</button>
   </nav>
 </div></header>
 <main class="shell" id="mainContent" tabindex="-1">
@@ -35,7 +33,7 @@
   <section id="insight" class="view"></section>
 </main>
 <dialog id="detailDialog"><div class="dialog-body"><div class="dialog-head"><h2 id="dialogTitle"></h2><button class="dialog-close" id="dialogClose">关闭</button></div><div id="dialogContent"></div></div></dialog>
-<footer class="muted app-footer">数据来自章节抽取与人工整理；地点、年份及关系均保留核验状态。</footer>
+<footer class="muted app-footer" style="text-align:center;padding:0 24px 28px;font-size:12px">数据来自章节抽取与人工整理；地点、年份及关系均保留核验状态。</footer>
 <script>
 /* 启动守卫（P3-03）：主脚本内联了整份数据，一旦数据被裁剪或脚本执行抛错，
    页面会停在空白骨架且毫无提示。这里独立于主脚本先埋一个检查点：
@@ -62,28 +60,6 @@ setTimeout(function(){
 <script src="assets/data-loader.js"></script>
 <script src="assets/app.js"></script>
 <script src="assets/lazy-data.js"></script>
-<script>
-/* V2 首页探索路径：只增强已有总览 DOM，业务跳转继续复用 app.js 的 data-open-view 委托。 */
-(function(){
-  var overview=document.getElementById('overview');
-  if(!overview)return;
-  function enhanceOverview(){
-    if(overview.querySelector('.v2-journeys')||!overview.querySelector('.summary-hero'))return;
-    var section=document.createElement('section');
-    section.className='v2-journeys';
-    section.setAttribute('aria-labelledby','v2JourneyTitle');
-    section.innerHTML='<div class="v2-journey-head"><div><h3 id="v2JourneyTitle">三条探索路径</h3><p>不必逐个理解所有视图，先从你关心的问题进入。</p></div><span class="muted">全局 → 实体 → 证据</span></div>'+
-      '<div class="v2-journey-grid">'+
-        '<article class="v2-journey-card"><span class="v2-journey-kicker">人物脉络</span><h4>谁推动了历史？</h4><p>先看人物卡，再沿关系网络查看君臣、党争、亲属与冲突。</p><div class="v2-journey-links"><button data-open-view="characters">人物</button><button data-open-view="relations">关系</button><button data-open-view="visuals">关系图谱</button></div></article>'+
-        '<article class="v2-journey-card"><span class="v2-journey-kicker">时间脉络</span><h4>事情何时发生？</h4><p>把事件放回年代，再对照帝王在位区间与人物生平年谱。</p><div class="v2-journey-links"><button data-open-view="timeline">时间轴</button><button data-open-view="dynasty">帝王</button><button data-open-view="chronicle">年谱</button></div></article>'+
-        '<article class="v2-journey-card"><span class="v2-journey-kicker">空间与结构</span><h4>历史在哪里交汇？</h4><p>从地点与地图进入，再用分布、图谱和洞察寻找跨章节结构。</p><div class="v2-journey-links"><button data-open-view="map">地图</button><button data-open-view="distribution">分布</button><button data-open-view="insight">洞察</button></div></article>'+
-      '</div>';
-    overview.querySelector('.summary-hero').insertAdjacentElement('afterend',section);
-  }
-  new MutationObserver(function(){requestAnimationFrame(enhanceOverview);}).observe(overview,{childList:true});
-  enhanceOverview();
-})();
-</script>
 <link rel="stylesheet" href="assets/experience.css">
 <script src="assets/experience.js"></script>
 </body></html>
