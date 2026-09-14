@@ -46,11 +46,13 @@ def test_v11_lifespans_asset_is_small_and_reduces_chronicle_route():
         assert char_size + life_size < char_size + before
 
 
-def test_v11_loader_routes_chronicle_to_lifespans_only():
+def test_v11_time_contract_survives_v12_loader():
     loader = (ROOT / "web" / "js" / "data-loader.js").read_text(encoding="utf-8")
-    assert "V11 在线数据加载器" in loader
+    assert "在线数据加载器" in loader
     assert "'time','lifespans','graphs'" in loader
-    assert "timeline:['time','events']" in loader
-    assert "dynasty:['time','events']" in loader
+    assert "timeline:['time']" in loader
+    assert "dynasty:['time']" in loader
     assert "chronicle:['lifespans','characters']" in loader
     assert "chronicle:['time','characters']" not in loader
+    assert "timeline:['time','events']" not in loader
+    assert "dynasty:['time','events']" not in loader
