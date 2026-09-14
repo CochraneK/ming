@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V5/V6 按需基线 + V7~V12 领域、实体摘要与详情分片回归。"""
+"""V5/V6 按需基线 + V7~V13 领域、实体摘要与详情分片回归。"""
 from __future__ import annotations
 
 import json
@@ -121,7 +121,7 @@ def test_domain_fields_are_mutually_exclusive_and_exhaustive():
         assert virtual not in payload
 
 
-def test_lazy_loader_and_gate_have_v12_contract():
+def test_lazy_loader_and_gate_have_v13_contract():
     loader = (ROOT / "web" / "js" / "data-loader.js").read_text(encoding="utf-8")
     gate = (ROOT / "web" / "js" / "lazy-data.js").read_text(encoding="utf-8")
     for token in (
@@ -163,13 +163,12 @@ def test_lazy_loader_and_gate_have_v12_contract():
     assert "__MING_AFTER_DATA_CHUNKS" in gate
 
 
-def test_command_palette_passes_entity_id_for_detail_shard_and_is_idempotent():
+def test_classic_ui_makes_historical_command_sync_a_noop():
     source = sync_lazy_data.TARGET.read_text(encoding="utf-8")
-    rendered = sync_lazy_data.render_source(source)
-    assert sync_lazy_data.MARKER in rendered
-    assert "commandHasSearchIndex" in rendered
-    assert "__MING_ENSURE_SEARCH_INDEX('command')" in rendered
-    assert "__MING_ENSURE_ENTITY_DATA(r.kind,'command-result:'+r.kind,r.id)" in rendered
-    assert "__MING_ENSURE_FULL_DATA('command-result:'" in rendered
-    assert rendered.index("__MING_ENSURE_ENTITY_DATA") < rendered.index("__MING_ENSURE_FULL_DATA('command-result:'")
-    assert sync_lazy_data.render_source(rendered) == rendered
+    assert sync_lazy_data.CLASSIC_MARKER in source
+    assert sync_lazy_data.render_source(source) == source
+    loader = (ROOT / "web" / "js" / "data-loader.js").read_text(encoding="utf-8")
+    assert "__MING_ENSURE_ENTITY_DATA" in loader
+    assert "characterDetailChunkFor" in loader
+    assert "locationDetailChunkFor" in loader
+    assert "eventDetailChunkFor" in loader

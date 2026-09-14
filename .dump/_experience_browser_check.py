@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V3 产品体验层的真实浏览器冒烟：首页叙事、快捷搜索、图谱阅读器。"""
+"""Classic UI 真实浏览器冒烟：旧导航/旧首页/图谱仍可用，V2/V3 覆盖层不再出现。"""
 from __future__ import annotations
 
 import os
@@ -47,7 +47,6 @@ def chrome_dump(path: Path, hash_: str = "", budget: int = 7000) -> str:
 
 
 def rendered_only(dom: str) -> str:
-    # 产物把组件 HTML 模板字符串内联在 <script> 中；先剥掉源码，避免字符串断言假通过。
     dom = re.sub(r"<script\b[^>]*>.*?</script>", "", dom, flags=re.I | re.S)
     dom = re.sub(r"<style\b[^>]*>.*?</style>", "", dom, flags=re.I | re.S)
     return dom
@@ -59,60 +58,54 @@ def assert_has(dom: str, *patterns: str):
             raise AssertionError("缺少渲染结果：%s" % p)
 
 
+def assert_not_has(dom: str, *patterns: str):
+    for p in patterns:
+        if re.search(p, dom, re.S):
+            raise AssertionError("经典 UI 不应出现：%s" % p)
+
+
 def check_home():
     dom = rendered_only(chrome_dump(TARGET))
-    assert_has(
-        dom,
-        r'<button type="button" class="command-trigger"[^>]*aria-controls="commandPalette"',
-        r'<section class="v3-story panel"[^>]*aria-labelledby="v3StoryTitle"',
-        r'id="v3StoryTitle">先读懂这份知识图谱，再进入细节',
-        r'地点已定位', r'事件可纪年',
-    )
-    print("ok   V3 首页叙事 + 全局搜索入口")
+    for label in ("总览", "分布", "图谱", "地点", "地图", "人物", "事件", "关系", "时间轴", "帝王", "年谱", "洞察"):
+        assert_has(dom, r'<button data-view="[^"]+"[^>]*>' + label + r'</button>')
+    assert_has(dom, r'class="summary-hero"', r'class="metric-grid"')
+    assert_not_has(dom, r'class="nav-cluster"', r'class="v3-story', r'class="command-trigger"')
+    print("ok   Classic UI 首页 + 原 12 视图导航")
 
 
-def check_command_palette():
+def check_no_command_overlay():
     doc = TARGET.read_text(encoding="utf-8")
     probe = """<script>
 setTimeout(function(){
   document.dispatchEvent(new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true}));
-  var i=document.getElementById('commandInput');
-  if(i){i.value='于谦';i.dispatchEvent(new Event('input',{bubbles:true}));}
 },80);
 </script>\n"""
-    if "</body>" not in doc:
-        raise AssertionError("产物缺少 </body>")
     with tempfile.TemporaryDirectory() as td:
         p = Path(td) / "probe.html"
         p.write_text(doc.replace("</body>", probe + "</body>", 1), encoding="utf-8")
         dom = rendered_only(chrome_dump(p, budget=7500))
-    assert_has(
-        dom,
-        r'<div id="commandPalette" class="command-shell">',
-        r'<button type="button" role="option"[^>]*class="command-item active"',
-        r'<strong>于谦</strong>',
-        r'<span class="command-kind">人物</span>',
-    )
-    print("ok   Ctrl+K 全局搜索 → 于谦")
+    assert_not_has(dom, r'id="commandPalette"', r'class="command-shell"')
+    print("ok   Classic UI 不注入命令面板")
 
 
-def check_graph_reader():
+def check_graph_view_without_reader_overlay():
     dom = rendered_only(chrome_dump(TARGET, "#view=visuals&net=full", 9000))
+    # 复用主浏览器套件已经稳定验证的图谱 DOM 契约，不依赖不存在的装饰类名。
     assert_has(
         dom,
-        r'<div class="v3-graph-reader" data-mode="full"[^>]*>',
-        r'人物总图怎么读',
-        r'data-v3-node-search',
-        r'高连接入口',
-        r'data-v3-focus=',
-        r'只突出一跳邻域',
+        r'id="visuals" class="view active"',
+        r'<option value="full" selected="">',
+        r'id="fullNet" style="display:block"',
+        r'<canvas id="fullGraph"[^>]*role="img"',
+        r'aria-label="全书人物关系图：\d+ 人、\d+ 条人物关系',
     )
-    print("ok   人物总图阅读器 + 邻域聚焦入口")
+    assert_not_has(dom, r'class="v3-graph-reader"', r'data-v3-node-search')
+    print("ok   原图谱视图可用且无 V3 reader 覆盖层")
 
 
 if __name__ == "__main__":
     if not TARGET.exists():
         raise SystemExit("目标文件不存在：%s" % TARGET)
     check_home()
-    check_command_palette()
-    check_graph_reader()
+    check_no_command_overlay()
+    check_graph_view_without_reader_overlay()
