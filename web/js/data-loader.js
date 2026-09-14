@@ -1,5 +1,5 @@
-/* ===== V12 在线数据加载器：人物/地点/事件详情分片 + 时间域分层 =====
-   standalone.html 不加载本文件。事件索引只取轻量 core；单事件详情再取对应 shard。 */
+/* ===== V13 在线数据加载器：实体详情分片 + 时间域 + 关系 metadata 分层 =====
+   standalone.html 不加载本文件。关系索引只取可见 core；完整关系元数据仅 full DATA 再补。 */
 (function(){
 'use strict';
 if(typeof DATA==='undefined')return;
@@ -11,7 +11,7 @@ const EVENT_DETAIL_SHARD_COUNT=8;
 const CHARACTER_DETAIL_CHUNKS=Array.from({length:CHARACTER_DETAIL_SHARD_COUNT},(_,i)=>'character-detail-'+String(i).padStart(2,'0'));
 const LOCATION_DETAIL_CHUNKS=Array.from({length:LOCATION_DETAIL_SHARD_COUNT},(_,i)=>'location-detail-'+String(i).padStart(2,'0'));
 const EVENT_DETAIL_CHUNKS=Array.from({length:EVENT_DETAIL_SHARD_COUNT},(_,i)=>'event-detail-'+String(i).padStart(2,'0'));
-const ALL_CHUNKS=['characters',...CHARACTER_DETAIL_CHUNKS,'locations',...LOCATION_DETAIL_CHUNKS,'place-chapters','voyages','events',...EVENT_DETAIL_CHUNKS,'relations','time','lifespans','graphs','insight','meta'];
+const ALL_CHUNKS=['characters',...CHARACTER_DETAIL_CHUNKS,'locations',...LOCATION_DETAIL_CHUNKS,'place-chapters','voyages','events',...EVENT_DETAIL_CHUNKS,'relations','relation-meta','time','lifespans','graphs','insight','meta'];
 const VIEW_CHUNKS={
   overview:[],distribution:[],
   visuals:['graphs'],
@@ -31,6 +31,7 @@ window.__MING_DATA_CHUNKS__=window.__MING_DATA_CHUNKS__||{};
 window.__MING_CHARACTER_DETAILS__=window.__MING_CHARACTER_DETAILS__||{};
 window.__MING_LOCATION_DETAILS__=window.__MING_LOCATION_DETAILS__||{};
 window.__MING_EVENT_DETAILS__=window.__MING_EVENT_DETAILS__||{};
+window.__MING_RELATION_META__=window.__MING_RELATION_META__||[];
 
 function stableShardIndex(value,count){
   let h=5381>>>0;
@@ -89,16 +90,23 @@ window.__MING_APPLY_EVENT_DETAILS__=function(){
   (DATA.events||[]).forEach(x=>{const extra=details[x&&x.id];if(extra){Object.assign(x,extra);patched++;}});
   root.dataset.mingEventDetails=String(patched);return patched;
 };
+window.__MING_APPLY_RELATION_META__=function(){
+  const meta=window.__MING_RELATION_META__||[],rows=DATA.relations||[];
+  if(!meta.length||meta.length!==rows.length)return 0;
+  rows.forEach((x,i)=>Object.assign(x,meta[i]||{}));
+  root.dataset.mingRelationMeta=String(rows.length);return rows.length;
+};
 
 window.__MING_SEARCH_INDEX_READY=window.__MING_SEARCH_INDEX_READY===true;
 syncDataState();markSearch(window.__MING_SEARCH_INDEX_READY?'ready':'idle');
-window.__MING_APPLY_CHARACTER_DETAILS__();window.__MING_APPLY_LOCATION_DETAILS__();window.__MING_APPLY_EVENT_DETAILS__();
+window.__MING_APPLY_CHARACTER_DETAILS__();window.__MING_APPLY_LOCATION_DETAILS__();window.__MING_APPLY_EVENT_DETAILS__();window.__MING_APPLY_RELATION_META__();
 
 document.addEventListener('ming:data-chunk',event=>{
   const name=event&&event.detail&&event.detail.name;
   if(name==='characters'||String(name||'').startsWith('character-detail-'))window.__MING_APPLY_CHARACTER_DETAILS__();
   if(name==='locations'||String(name||'').startsWith('location-detail-'))window.__MING_APPLY_LOCATION_DETAILS__();
   if(name==='events'||String(name||'').startsWith('event-detail-'))window.__MING_APPLY_EVENT_DETAILS__();
+  if(name==='relations'||name==='relation-meta')window.__MING_APPLY_RELATION_META__();
   syncDataState(name?'chunk:'+name:'chunk');
 });
 
@@ -113,6 +121,7 @@ function loadChunk(name,reason){
       if(name==='characters'||name.startsWith('character-detail-'))window.__MING_APPLY_CHARACTER_DETAILS__();
       if(name==='locations'||name.startsWith('location-detail-'))window.__MING_APPLY_LOCATION_DETAILS__();
       if(name==='events'||name.startsWith('event-detail-'))window.__MING_APPLY_EVENT_DETAILS__();
+      if(name==='relations'||name==='relation-meta')window.__MING_APPLY_RELATION_META__();
       syncDataState(reason||('chunk:'+name));resolve(name);
     };
     script.onerror=()=>reject(new Error('领域数据加载失败：'+name));
@@ -126,7 +135,7 @@ window.__MING_ENSURE_DATA_CHUNKS=function(names,reason){
   if(!wanted.length){syncDataState(reason);return Promise.resolve(DATA);}
   root.dataset.mingData='loading';root.dataset.mingDataReason=reason||'interaction';
   return Promise.all(wanted.map(name=>loadChunk(name,reason))).then(()=>{
-    window.__MING_APPLY_CHARACTER_DETAILS__();window.__MING_APPLY_LOCATION_DETAILS__();window.__MING_APPLY_EVENT_DETAILS__();
+    window.__MING_APPLY_CHARACTER_DETAILS__();window.__MING_APPLY_LOCATION_DETAILS__();window.__MING_APPLY_EVENT_DETAILS__();window.__MING_APPLY_RELATION_META__();
     syncDataState(reason);
     try{if(typeof window.__MING_AFTER_DATA_CHUNKS==='function')window.__MING_AFTER_DATA_CHUNKS(wanted);}catch(_){}
     return DATA;
@@ -164,7 +173,7 @@ window.__MING_ENSURE_FULL_DATA=function(reason){
   if(window.__MING_FULL_DATA_READY)return Promise.resolve(DATA);
   if(fullPromise)return fullPromise;
   fullPromise=window.__MING_ENSURE_DATA_CHUNKS(ALL_CHUNKS,reason||'full').then(data=>{
-    window.__MING_APPLY_CHARACTER_DETAILS__();window.__MING_APPLY_LOCATION_DETAILS__();window.__MING_APPLY_EVENT_DETAILS__();
+    window.__MING_APPLY_CHARACTER_DETAILS__();window.__MING_APPLY_LOCATION_DETAILS__();window.__MING_APPLY_EVENT_DETAILS__();window.__MING_APPLY_RELATION_META__();
     try{if(typeof window.__MING_AFTER_FULL_DATA==='function')window.__MING_AFTER_FULL_DATA();}catch(_){}return data;
   }).catch(err=>{fullPromise=null;throw err;});
   return fullPromise;
