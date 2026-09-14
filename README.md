@@ -1,10 +1,10 @@
 # 明朝那些事儿知识库
 
-基于《明朝那些事儿》七部 156 章全文抽取整理的静态知识库。在线版采用 V9 人物详情分片按需交付：首页只加载 `boot-data.js`，全局搜索加载轻量 `search-index.js`，事件 / 空间 / 关系 / 时间 / 图谱 / 洞察等按领域块加载；人物域保留轻量 `data-characters.js` 卡片索引，并把完整人物详情按姓名稳定散列为 16 个确定性详情 shard（`data-character-detail-00.js` … `data-character-detail-15.js`）。人物列表和年谱不会为尚未打开的详情提前下载关系与上下文；打开单个人物时也只取其所属的一个详情 shard，而不是 1231 人全部详情。同时保留 `standalone.html` 单文件离线版。
+基于《明朝那些事儿》七部 156 章全文抽取整理的静态知识库。在线版采用 V10 实体与空间分层按需交付：首页只加载 `boot-data.js`，全局搜索加载轻量 `search-index.js`；人物保留 `data-characters.js` + 16 个人物详情 shard；地点域进一步拆成轻量 `data-locations.js`、8 个 `data-location-detail-00.js` … `07.js`、独立 `data-place-chapters.js` 与 `data-voyages.js`。地点索引和默认地图只取地点摘要，打开单个地点才取其详情 shard + 事件/洞察，切到“按章节”或郑和航线时才补对应数据。同时保留 `standalone.html` 单文件离线版。
 
 ## 在线查看
 
-GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V9 人物详情分片按需版；`standalone.html` 为可下载 / 双击打开的完整离线版）
+GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V10 实体与空间分层按需版；`standalone.html` 为可下载 / 双击打开的完整离线版）
 
 ## 当前规模
 
@@ -19,7 +19,7 @@ GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V9 人
 | 年谱 | 165 人 | 主要人物生卒横向展开，与年号对位 |
 
 <!-- README_STATS_SYNC -->
-> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme.py` 从最终模型自动刷新；发布同步工作流会同时维护在线 V9 `index.html + assets/` 与离线 `standalone.html`。
+> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme.py` 从最终模型自动刷新；发布同步工作流会同时维护在线 V10 `index.html + assets/` 与离线 `standalone.html`。
 
 ## 报告视图（12 个）
 
@@ -75,12 +75,12 @@ python tests/run_tests.py           # 单元测试（无第三方依赖，可直
 | 参数 | 说明 |
 |---|---|
 | `--scope full\|p1..p7` | 构建全书或某一部（分部产物为 `report_pN.html`） |
-| `--target standalone\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联到 `standalone.html`；`web`＝输出到 `dist/<scope>/`，首屏为 `assets/boot-data.js`，搜索为 `assets/search-index.js`；人物卡片为 `data-characters.js`，人物详情按 16 个 `data-character-detail-00.js` … `data-character-detail-15.js` shard 按需加载，其余为 `data-events.js`、`data-space.js`、`data-relations.js`、`data-time.js`、`data-graphs.js`、`data-insight.js`、`data-meta.js` |
+| `--target standalone\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联到 `standalone.html`；`web`＝输出到 `dist/<scope>/`。人物：`data-characters.js` + 16 个 `data-character-detail-*`；地点：`data-locations.js` + 8 个 `data-location-detail-*`，按章节为 `data-place-chapters.js`，航线为 `data-voyages.js`；事件 / 关系 / 时间 / 图谱 / 洞察 / 元数据继续独立按需加载 |
 | `--out 路径` | 覆盖输出位置 |
 | `--check` | 跑完聚合与全部校验后不写文件，ERROR 时以退出码 2 中止 |
 | `--json 路径` | 把校验结论导出为 JSON |
 
-`standalone` 构建继续把模板、样式、业务脚本、体验层与完整 DATA 内联成一个文件；`web` 构建对同一最终 payload 做可逆传输分区：boot + 领域块，并把人物对象进一步变换为卡片摘要 + 详情补丁，再将详情补丁确定性散列到 16 个物理 shard。加载全部 shard 后可逐值恢复原始最终模型；完整模式只是聚合这些块，不维护单独的 `data-full.js`，也不生成单体 `data-character-details.js`。
+`standalone` 构建继续内联完整最终 DATA；`web` 构建对同一 payload 做可逆传输分区。人物与地点都采用‘轻量摘要 + 详情补丁 + 确定性 shard’，空间的章节索引和航线再独立拆块；加载全部物理块后可逐值恢复原始最终模型。不维护 `data-full.js`、`data-character-details.js`、`data-location-details.js` 或旧 `data-space.js` 单体包。
 
 - `data/data.json` 是聚合后的单一数据源。
 - `data/geo_annotations.json`（地点坐标/类型标注）、`data/manual_relations.json`（人工关系）、`data/manual_corrections.json`（勘误）、`data/manual_lifespans.json`（年谱）、`data/manual_persons.json`（补录人物）、`data/derived_chapter_persons.json`（文本反查出场）**重跑聚合不会丢失**，是可持续维护的增量层。
