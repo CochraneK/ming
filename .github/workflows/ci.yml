@@ -42,6 +42,11 @@ jobs:
           python src/normalize_frontend.py
           python src/normalize_frontend.py --check
 
+      - name: V12 事件摘要前端钩子同步
+        run: |
+          python src/sync_event_cards_v12.py
+          python src/sync_event_cards_v12.py --check
+
       - name: 实体详情分片搜索钩子同步
         run: |
           python src/sync_lazy_data.py
