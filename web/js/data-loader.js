@@ -1,11 +1,13 @@
-/* ===== V8 在线数据加载器：boot / search / view-domain / character-details =====
-   standalone.html 不加载本文件；在线版的人物卡片与完整人物详情分两级按需组合。 */
+/* ===== V9 在线数据加载器：boot / search / view-domain / character-detail shards =====
+   standalone.html 不加载本文件；人物卡片与详情二级按需，详情再按姓名散列为 16 个 shard。 */
 (function(){
 'use strict';
 if(typeof DATA==='undefined')return;
 
 const root=document.documentElement;
-const ALL_CHUNKS=['characters','character-details','events','space','relations','time','graphs','insight','meta'];
+const DETAIL_SHARD_COUNT=16;
+const DETAIL_CHUNKS=Array.from({length:DETAIL_SHARD_COUNT},(_,i)=>'character-detail-'+String(i).padStart(2,'0'));
+const ALL_CHUNKS=['characters',...DETAIL_CHUNKS,'events','space','relations','time','graphs','insight','meta'];
 const VIEW_CHUNKS={
   overview:[],distribution:[],
   visuals:['graphs'],
@@ -20,7 +22,6 @@ const VIEW_CHUNKS={
   insight:['insight']
 };
 const ENTITY_CHUNKS={
-  person:['characters','character-details','events','insight'],
   place:['space','events','insight'],
   event:['events','space','insight']
 };
@@ -29,6 +30,15 @@ let searchPromise=null,fullPromise=null,_fullEventSent=false;
 window.__MING_DATA_CHUNKS__=window.__MING_DATA_CHUNKS__||{};
 window.__MING_CHARACTER_DETAILS__=window.__MING_CHARACTER_DETAILS__||{};
 
+function detailChunkFor(name){
+  let h=5381>>>0;
+  for(const ch of String(name||''))h=(Math.imul(h,33)^ch.codePointAt(0))>>>0;
+  return 'character-detail-'+String(h%DETAIL_SHARD_COUNT).padStart(2,'0');
+}
+function entityPlan(kind,id){
+  if(kind==='person')return ['characters',detailChunkFor(id),'events','insight'];
+  return ENTITY_CHUNKS[kind]||ALL_CHUNKS;
+}
 function uniq(items){return [...new Set((items||[]).filter(x=>ALL_CHUNKS.includes(x)))];}
 function ready(name){return !!window.__MING_DATA_CHUNKS__[name];}
 function readyNames(){return ALL_CHUNKS.filter(ready);}
@@ -48,8 +58,6 @@ function syncDataState(reason){
   }
 }
 
-/* V8 人物详情是对轻量 DATA.characters 的补丁。动态 Promise.all 可能让 details
-   先于 characters 执行，因此两种 chunk 每次到达都重试应用；最终结果与原 payload 一致。 */
 window.__MING_APPLY_CHARACTER_DETAILS__=function(){
   const details=window.__MING_CHARACTER_DETAILS__||{};
   let patched=0;
@@ -57,7 +65,7 @@ window.__MING_APPLY_CHARACTER_DETAILS__=function(){
     const extra=details[character&&character.name];
     if(extra){Object.assign(character,extra);patched++;}
   });
-  root.dataset.mingCharacterDetails=patched?String(patched):(ready('character-details')?'ready':'idle');
+  root.dataset.mingCharacterDetails=String(patched);
   return patched;
 };
 
@@ -66,11 +74,9 @@ syncDataState();
 markSearch(window.__MING_SEARCH_INDEX_READY?'ready':'idle');
 window.__MING_APPLY_CHARACTER_DETAILS__();
 
-/* 领域脚本自身只负责写数据 + 标记 ready。无论它来自动态 append 还是 deep-link
-   document.write，都统一靠这个事件收敛状态；人物两级块同时在这里收敛补丁。 */
 document.addEventListener('ming:data-chunk',event=>{
   const name=event&&event.detail&&event.detail.name;
-  if(name==='characters'||name==='character-details')window.__MING_APPLY_CHARACTER_DETAILS__();
+  if(name==='characters'||String(name||'').startsWith('character-detail-'))window.__MING_APPLY_CHARACTER_DETAILS__();
   syncDataState(name?'chunk:'+name:'chunk');
 });
 
@@ -83,7 +89,7 @@ function loadChunk(name,reason){
     script.dataset.mingDataChunk=name;
     script.onload=()=>{
       if(!ready(name)){reject(new Error('data-'+name+'.js 已加载但未标记 ready'));return;}
-      if(name==='characters'||name==='character-details')window.__MING_APPLY_CHARACTER_DETAILS__();
+      if(name==='characters'||name.startsWith('character-detail-'))window.__MING_APPLY_CHARACTER_DETAILS__();
       syncDataState(reason||('chunk:'+name));
       resolve(name);
     };
@@ -107,8 +113,10 @@ window.__MING_ENSURE_DATA_CHUNKS=function(names,reason){
 };
 window.__MING_VIEW_CHUNKS=VIEW_CHUNKS;
 window.__MING_ENTITY_CHUNKS=ENTITY_CHUNKS;
+window.__MING_CHARACTER_DETAIL_CHUNK=detailChunkFor;
+window.__MING_ENTITY_PLAN=entityPlan;
 window.__MING_ENSURE_VIEW_DATA=function(view,reason){return window.__MING_ENSURE_DATA_CHUNKS(VIEW_CHUNKS[view]||ALL_CHUNKS,reason||('view:'+view));};
-window.__MING_ENSURE_ENTITY_DATA=function(kind,reason){return window.__MING_ENSURE_DATA_CHUNKS(ENTITY_CHUNKS[kind]||ALL_CHUNKS,reason||('entity:'+kind));};
+window.__MING_ENSURE_ENTITY_DATA=function(kind,reason,id){return window.__MING_ENSURE_DATA_CHUNKS(entityPlan(kind,id),reason||('entity:'+kind));};
 
 window.__MING_ENSURE_SEARCH_INDEX=function(reason){
   if(window.__MING_SEARCH_INDEX_READY)return Promise.resolve(window.__MING_SEARCH_INDEX__||null);
@@ -146,15 +154,15 @@ function readHash(){
 }
 function deepPlan(){
   const p=readHash();
-  if(p.person)return ENTITY_CHUNKS.person;
-  if(p.event)return ENTITY_CHUNKS.event;
-  if(p.place)return ENTITY_CHUNKS.place;
+  if(p.person)return entityPlan('person',p.person);
+  if(p.event)return entityPlan('event',p.event);
+  if(p.place)return entityPlan('place',p.place);
   if(p.view&&p.view!=='overview')return VIEW_CHUNKS[p.view]||ALL_CHUNKS;
   return [];
 }
 
-/* deep link 必须在 app.js 之前拥有其视图/实体所需数据。人物 deep link 会按顺序写入
-   characters → character-details → events → insight；事件监听仍保证动态并发加载也可收敛。 */
+/* deep link 在 app.js 前只预载目标实体所需 shard。以于谦为例：characters +
+   character-detail-13 + events + insight，而不是 1231 人的全部详情。 */
 if(document.readyState==='loading'){
   const plan=uniq(deepPlan()).filter(name=>!ready(name));
   if(plan.length){
