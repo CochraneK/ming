@@ -71,8 +71,9 @@ def test_web_target_copies_service_worker_and_reports_all_assets():
 
 def test_service_worker_cache_bumped_for_frontend_change():
     sw = B.SW_PATH.read_text(encoding="utf-8")
-    assert "CACHE_PREFIX + 'v21'" in sw
-    assert "V12" in sw
+    assert "CACHE_PREFIX + 'v22'" in sw
+    assert "V13" in sw
+    assert "relation-meta" in sw
     assert "event-detail" in sw
     assert "lifespans" in sw
     assert "location-detail" in sw
