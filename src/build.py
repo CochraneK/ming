@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""统一构建入口（Phase 4 / V8 双交付 + 人物详情二级按需数据）。
+"""统一构建入口（Phase 4 / V9 双交付 + 人物详情确定性分片）。
 
      python src/build.py                          # 全书 → standalone.html（单文件）
      python src/build.py --scope p3               # 叁部 → report_p3.html
@@ -14,8 +14,8 @@
 两个 target 的差别：
 - ``standalone``（默认）：CSS/JS/DATA 全部内联，产物是可直接双击打开的单文件；
 - ``web``：项目 CSS/JS 分离，DATA 由同一最终 payload 拆成 boot + search + 领域 chunk。
-  V8 再把人物域拆成轻量 ``characters`` 卡片索引与 ``character-details`` 详情补丁；
-  人物列表 / 年谱不再为单个详情提前下载完整人物关系与上下文。
+  V8 把人物域拆成轻量 ``characters`` 卡片索引与详情补丁；V9 再把详情补丁按姓名
+  确定性散列为 16 个 shard，打开一个人物只下载其所属的小块，不再下载全体详情。
 """
 
 from __future__ import annotations
@@ -42,16 +42,13 @@ EXPERIENCE_JS_PATH = BASE / "web" / "js" / "experience.js"
 DATA_LOADER_JS_PATH = BASE / "web" / "js" / "data-loader.js"
 LAZY_DATA_JS_PATH = BASE / "web" / "js" / "lazy-data.js"
 
-# 首页 + 分布视图直接消费的轻量字段。分类枚举 / 年号也很小，放进 boot 后可让
-# 「分布」完全零额外请求，并让图谱/时间视图少依赖一个小块。
 WEB_BOOT_KEYS = (
     "scope", "scopeLabel", "metrics", "cleaning", "distribution",
     "reigns", "eraByPart", "eventCategories", "relationCategories",
 )
 
-# characters 顶层字段在 V8 是唯一的传输级例外：列表/卡片所需字段先进入
-# data-characters.js，完整详情以 name -> patch 的形式进入 data-character-details.js。
-# 其它最终模型顶层字段仍只属于一个领域块，避免按页面复制数据。
+# 最终模型的逻辑领域。character-details 是传输层虚拟逻辑块：不会直接生成
+# data-character-details.js，而是在 render_web() 时进一步物理分成 16 个 shard。
 WEB_CHUNK_FIELDS = {
     "characters": ("aliasIndex", "chapters", "quotes"),
     "events": ("events",),
@@ -67,9 +64,15 @@ WEB_CHUNKS = (
     "time", "graphs", "insight", "meta",
 )
 
-# 人物列表和打印卡真正读取的字段。events/contextEvents 只需前三项作卡片摘要；
-# profile 只保留 cleanCardFields() 在卡面使用的 label/origin/note。打开详情时再
-# 用 character-details 中的完整字段覆盖，最终对象与 generate_report 输出逐值一致。
+CHARACTER_DETAIL_SHARD_COUNT = 16
+CHARACTER_DETAIL_SHARD_NAMES = tuple(
+    "character-detail-%02d" % i for i in range(CHARACTER_DETAIL_SHARD_COUNT)
+)
+WEB_DELIVERY_CHUNKS = (
+    "characters", *CHARACTER_DETAIL_SHARD_NAMES,
+    "events", "space", "relations", "time", "graphs", "insight", "meta",
+)
+
 CHARACTER_CARD_KEYS = (
     "name", "faction", "role", "life", "aliases", "chapters", "summary", "status",
 )
@@ -82,8 +85,27 @@ _INSIGHT_CONST = "const INSIGHT_DATA=__INSIGHT_DATA__;\n"
 
 
 def _json_for_script(obj) -> str:
-    """把 Python 对象序列化成紧凑、可安全嵌进 <script> 的 JSON。"""
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+
+
+def character_detail_shard_index(name: str) -> int:
+    """与 data-loader.js 完全一致的 32-bit DJB2-xor；按 Unicode code point 计算。"""
+    h = 5381
+    for ch in str(name or ""):
+        h = ((h * 33) ^ ord(ch)) & 0xFFFFFFFF
+    return h % CHARACTER_DETAIL_SHARD_COUNT
+
+
+def character_detail_shard_name(name: str) -> str:
+    return "character-detail-%02d" % character_detail_shard_index(name)
+
+
+def split_character_detail_shards(details: dict[str, dict]) -> dict[str, dict]:
+    """把 name -> patch 详情表稳定分到固定数量 shard；每个人只能出现一次。"""
+    shards = {name: {"details": {}} for name in CHARACTER_DETAIL_SHARD_NAMES}
+    for person, patch in details.items():
+        shards[character_detail_shard_name(person)]["details"][person] = copy.deepcopy(patch)
+    return shards
 
 
 def split_character_transport(characters: list[dict]) -> tuple[list[dict], dict[str, dict]]:
@@ -113,17 +135,15 @@ def split_character_transport(characters: list[dict]) -> tuple[list[dict], dict[
         }
         name = str(character.get("name") or "")
         if not name:
-            raise SystemExit("V8 人物详情拆分遇到空姓名")
+            raise SystemExit("V9 人物详情拆分遇到空姓名")
         summaries.append(summary)
         details[name] = detail
     return summaries, details
 
 
 def split_web_chunks(payload: dict) -> tuple[dict, dict[str, dict]]:
-    """把最终 DATA 无损变换成 boot + 领域块；人物详情采用可逆补丁。"""
+    """最终 DATA → boot + 逻辑领域块；人物详情逻辑块保持聚合以便验证可逆性。"""
     boot = {key: payload[key] for key in WEB_BOOT_KEYS if key in payload}
-
-    # app.js 启动阶段会立即访问这几项；用空壳保证首页可启动，后续领域块覆盖它们。
     boot.update({
         "characters": [],
         "locations": [],
@@ -132,7 +152,6 @@ def split_web_chunks(payload: dict) -> tuple[dict, dict[str, dict]]:
         "chapters": {},
     })
 
-    # 首页数据故事只需一个最高连接入口，不值得首访加载完整 200+ KiB 人物图。
     nodes = list((payload.get("relationGraphFull") or {}).get("nodes") or [])
     hub = max(nodes, key=lambda x: (x.get("degree", 0), x.get("name", "")), default=None)
     boot["relationGraphFull"] = {
@@ -163,26 +182,58 @@ def split_web_chunks(payload: dict) -> tuple[dict, dict[str, dict]]:
 
     unknown = sorted(set(payload) - claimed)
     if unknown:
-        raise SystemExit("V8 未分配的最终 payload 字段：%s" % ", ".join(unknown))
+        raise SystemExit("V9 未分配的最终 payload 字段：%s" % ", ".join(unknown))
     return boot, chunks
 
 
+def split_delivery_chunks(chunks: dict[str, dict]) -> dict[str, dict]:
+    """逻辑 chunks → web 物理 chunks；character-details 替换为 16 个 shard。"""
+    physical = {
+        name: copy.deepcopy(data)
+        for name, data in chunks.items()
+        if name != "character-details"
+    }
+    details = (chunks.get("character-details") or {}).get("details") or {}
+    physical.update(split_character_detail_shards(details))
+    if set(physical) != set(WEB_DELIVERY_CHUNKS):
+        missing = sorted(set(WEB_DELIVERY_CHUNKS) - set(physical))
+        extra = sorted(set(physical) - set(WEB_DELIVERY_CHUNKS))
+        raise SystemExit("V9 物理分片集合异常：missing=%s extra=%s" % (missing, extra))
+    return physical
+
+
 def reconstruct_web_payload(boot: dict, chunks: dict[str, dict]) -> dict:
-    """Python 侧模拟浏览器加载全部 V8 chunk，验证传输变换严格可逆。"""
+    """Python 侧从逻辑块还原最终模型，作为传输变换的强不变量。"""
     merged = copy.deepcopy(boot)
     for name in WEB_CHUNKS:
         if name == "character-details":
             continue
         merged.update(copy.deepcopy(chunks[name]))
-
     details = (chunks.get("character-details") or {}).get("details") or {}
     for character in merged.get("characters") or []:
         character.update(copy.deepcopy(details.get(character.get("name"), {})))
     return merged
 
 
+def reconstruct_web_payload_from_delivery(boot: dict, delivery: dict[str, dict]) -> dict:
+    """直接从 V9 物理分片还原最终模型，防止 shard 路由丢人或重复。"""
+    logical = {
+        name: copy.deepcopy(delivery[name])
+        for name in WEB_CHUNKS
+        if name not in ("character-details",)
+    }
+    details = {}
+    for shard in CHARACTER_DETAIL_SHARD_NAMES:
+        for person, patch in (delivery[shard].get("details") or {}).items():
+            if person in details:
+                raise AssertionError("人物详情重复出现在多个 shard：%s" % person)
+            details[person] = copy.deepcopy(patch)
+    logical["character-details"] = {"details": details}
+    return reconstruct_web_payload(boot, logical)
+
+
 def build_search_index(payload: dict) -> dict:
-    """从最终模型派生轻量命令搜索目录；只保留检索/展示字段，不复制详情对象。"""
+    """从最终模型派生轻量命令搜索目录；详情 shard 可由 id 本身计算，无需映射表。"""
     rows = []
     for x in payload.get("characters") or []:
         p = x.get("profile") or {}
@@ -221,8 +272,8 @@ def build_search_index(payload: dict) -> dict:
 
 
 def _chunk_script(name: str, data: dict) -> str:
-    """生成领域块脚本；人物详情块写入补丁仓，insight 块同时携带 INSIGHT_DATA。"""
-    if name == "character-details":
+    """生成 web 物理块；character-detail-* shard 写入共享补丁仓。"""
+    if name.startswith("character-detail-"):
         body = (
             "window.__MING_CHARACTER_DETAILS__=Object.assign(window.__MING_CHARACTER_DETAILS__||{},%s);\n"
             "if(window.__MING_APPLY_CHARACTER_DETAILS__)window.__MING_APPLY_CHARACTER_DETAILS__();\n"
@@ -257,7 +308,7 @@ def render_standalone(payload: dict) -> str:
 
 
 def render_web(payload: dict, out_dir: Path) -> dict:
-    """在线形态：HTML/CSS/JS 分离，DATA 按 boot/search/领域块/人物详情按需交付。"""
+    """在线形态：boot/search/领域块 + 16 个按人物姓名路由的详情 shard。"""
     skeleton = G.TEMPLATE_PATH.read_text(encoding="utf-8")
     css = G.CSS_PATH.read_text(encoding="utf-8")
     js = G.JS_PATH.read_text(encoding="utf-8")
@@ -287,7 +338,8 @@ def render_web(payload: dict, out_dir: Path) -> dict:
     body = js.replace(_DATA_CONST, "", 1).replace(_INSIGHT_CONST, "", 1)
     (assets / "app.js").write_text(body, encoding="utf-8")
 
-    boot_payload, chunks = split_web_chunks(payload)
+    boot_payload, logical_chunks = split_web_chunks(payload)
+    delivery_chunks = split_delivery_chunks(logical_chunks)
     search_index = build_search_index(payload)
     boot_js = (
         "const DATA=%s;\n"
@@ -307,8 +359,8 @@ def render_web(payload: dict, out_dir: Path) -> dict:
     (assets / "search-index.js").write_text(search_js, encoding="utf-8")
 
     chunk_scripts = {}
-    for name in WEB_CHUNKS:
-        content = _chunk_script(name, chunks[name])
+    for name in WEB_DELIVERY_CHUNKS:
+        content = _chunk_script(name, delivery_chunks[name])
         chunk_scripts[name] = content
         (assets / ("data-%s.js" % name)).write_text(content, encoding="utf-8")
 
@@ -427,9 +479,9 @@ def main(argv=None) -> int:
     else:
         out.mkdir(parents=True, exist_ok=True)
         written = render_web(payload, out)
-        print("[3/3] V8 人物详情二级按需资源已生成 %s" % out)
+        print("[3/3] V9 人物详情分片资源已生成 %s" % out)
         for name, size in written.items():
-            print("      %-28s %d 字节/字符" % (name, size))
+            print("      %-32s %d 字节/字符" % (name, size))
     return 0
 
 
