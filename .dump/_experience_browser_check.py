@@ -90,7 +90,15 @@ setTimeout(function(){
 
 def check_graph_view_without_reader_overlay():
     dom = rendered_only(chrome_dump(TARGET, "#view=visuals&net=full", 9000))
-    assert_has(dom, r'id="visuals"[^>]*class="view active"', r'class="full-graph-canvas"')
+    # 复用主浏览器套件已经稳定验证的图谱 DOM 契约，不依赖不存在的装饰类名。
+    assert_has(
+        dom,
+        r'id="visuals" class="view active"',
+        r'<option value="full" selected="">',
+        r'id="fullNet" style="display:block"',
+        r'<canvas id="fullGraph"[^>]*role="img"',
+        r'aria-label="全书人物关系图：\d+ 人、\d+ 条人物关系',
+    )
     assert_not_has(dom, r'class="v3-graph-reader"', r'data-v3-node-search')
     print("ok   原图谱视图可用且无 V3 reader 覆盖层")
 
