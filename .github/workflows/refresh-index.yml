@@ -36,6 +36,9 @@ jobs:
       - name: 规范化前端动态统计口径
         run: python src/normalize_frontend.py
 
+      - name: 同步 V12 事件摘要前端钩子
+        run: python src/sync_event_cards_v12.py
+
       - name: 同步实体详情分片搜索钩子
         run: python src/sync_lazy_data.py
 
