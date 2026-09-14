@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"""V11 时间域物理分层交付门禁。"""
+"""V11 时间域物理分层交付门禁。
+
+本门禁只约束 V11 引入的稳定不变量：lifespans 必须从 time 物理拆出，年谱只依赖
+characters + lifespans。后续版本可继续收窄 timeline / dynasty 的依赖，不能被 V11
+历史实现细节反向锁死。
+"""
 from __future__ import annotations
 
 import sys
@@ -37,12 +42,10 @@ def main(argv=None) -> int:
     errors = []
     for token in (
         "'time','lifespans','graphs'",
-        "timeline:['time','events']",
-        "dynasty:['time','events']",
         "chronicle:['lifespans','characters']",
     ):
         if token not in loader:
-            errors.append("loader 缺少 V11 路由：%s" % token)
+            errors.append("loader 缺少 V11 稳定路由：%s" % token)
     if "chronicle:['time','characters']" in loader:
         errors.append("年谱仍绑定整块 time")
 
