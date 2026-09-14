@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   check:
-    name: 语法 · 不变量 · 构建 · V13 浏览器
+    name: 语法 · 不变量 · 构建 · Classic UI / V13 浏览器
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -35,7 +35,7 @@ jobs:
           echo "未发现原书全文文件 ✓"
 
       - name: Python 语法检查
-        run: python -m compileall -q src tests .dump/_web_browser_check.py .dump/_relation_browser_check_v13.py
+        run: python -m compileall -q src tests .dump/_web_browser_check.py .dump/_web_browser_check_classic.py .dump/_experience_browser_check.py .dump/_relation_browser_check_v13.py
 
       - name: 前端动态统计口径规范化
         run: |
@@ -69,7 +69,7 @@ jobs:
           python src/sync_theme.py
           git diff --check -- web/template/index.html
 
-      - name: V3 / V13 产品体验镜像同步冒烟
+      - name: Classic UI / V13 体验镜像同步冒烟
         run: |
           python src/sync_experience.py
           python src/sync_experience.py --check
@@ -127,11 +127,11 @@ jobs:
       - name: 单文件无头浏览器自检
         run: python .dump/_browser_check.py .ci/standalone.html
 
-      - name: V3 单文件产品体验浏览器自检
+      - name: Classic UI 单文件浏览器自检
         run: python .dump/_experience_browser_check.py .ci/standalone.html
 
-      - name: V12 在线分层浏览器自检
-        run: python .dump/_web_browser_check.py .ci/site/index.html
+      - name: Classic UI 在线分层浏览器自检
+        run: python .dump/_web_browser_check_classic.py .ci/site/index.html
 
       - name: V13 关系索引在线浏览器自检
         run: python .dump/_relation_browser_check_v13.py .ci/site/index.html
