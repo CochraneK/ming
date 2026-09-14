@@ -71,19 +71,21 @@ def test_web_target_copies_service_worker_and_reports_all_assets():
             "index.html", "assets/app.css", "assets/theme.css", "assets/experience.css",
             "assets/app.js", "assets/boot-data.js", "assets/search-index.js",
             "assets/data-loader.js", "assets/lazy-data.js", "assets/experience.js", "sw.js",
-        } | {"assets/data-%s.js" % name for name in B.WEB_CHUNKS}
+        } | {"assets/data-%s.js" % name for name in B.WEB_DELIVERY_CHUNKS}
         for name in expected:
             assert (out / name).exists(), "web target 缺少 %s" % name
             assert name in written, "构建统计漏报 %s" % name
             assert written[name] > 0
         assert not (out / "assets" / "data.js").exists()
         assert not (out / "assets" / "data-full.js").exists()
+        assert not (out / "assets" / "data-character-details.js").exists()
         assert (out / "sw.js").read_bytes() == B.SW_PATH.read_bytes()
         assert written["sw.js"] == len(B.SW_PATH.read_bytes())
 
 
 def test_service_worker_cache_bumped_for_frontend_change():
     sw = B.SW_PATH.read_text(encoding="utf-8")
-    assert "CACHE_PREFIX + 'v17'" in sw
-    assert "V8" in sw
-    assert "character-details" in sw
+    assert "CACHE_PREFIX + 'v18'" in sw
+    assert "V9" in sw
+    assert "character-detail" in sw
+    assert "16" in sw
