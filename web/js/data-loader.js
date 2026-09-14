@@ -1,18 +1,20 @@
-/* ===== V9 在线数据加载器：boot / search / view-domain / character-detail shards =====
-   standalone.html 不加载本文件；人物卡片与详情二级按需，详情再按姓名散列为 16 个 shard。 */
+/* ===== V10 在线数据加载器：人物/地点详情确定性分片 =====
+   standalone.html 不加载本文件。人物 16 shard；地点 8 shard；按章节地点与航线独立按需。 */
 (function(){
 'use strict';
 if(typeof DATA==='undefined')return;
 
 const root=document.documentElement;
-const DETAIL_SHARD_COUNT=16;
-const DETAIL_CHUNKS=Array.from({length:DETAIL_SHARD_COUNT},(_,i)=>'character-detail-'+String(i).padStart(2,'0'));
-const ALL_CHUNKS=['characters',...DETAIL_CHUNKS,'events','space','relations','time','graphs','insight','meta'];
+const CHARACTER_DETAIL_SHARD_COUNT=16;
+const LOCATION_DETAIL_SHARD_COUNT=8;
+const CHARACTER_DETAIL_CHUNKS=Array.from({length:CHARACTER_DETAIL_SHARD_COUNT},(_,i)=>'character-detail-'+String(i).padStart(2,'0'));
+const LOCATION_DETAIL_CHUNKS=Array.from({length:LOCATION_DETAIL_SHARD_COUNT},(_,i)=>'location-detail-'+String(i).padStart(2,'0'));
+const ALL_CHUNKS=['characters',...CHARACTER_DETAIL_CHUNKS,'locations',...LOCATION_DETAIL_CHUNKS,'place-chapters','voyages','events','relations','time','graphs','insight','meta'];
 const VIEW_CHUNKS={
   overview:[],distribution:[],
   visuals:['graphs'],
-  locations:['space','events','insight'],
-  map:['space','events'],
+  locations:['locations'],
+  map:['locations'],
   characters:['characters'],
   events:['events'],
   relations:['relations'],
@@ -22,21 +24,24 @@ const VIEW_CHUNKS={
   insight:['insight']
 };
 const ENTITY_CHUNKS={
-  place:['space','events','insight'],
-  event:['events','space','insight']
+  event:['events','locations','insight']
 };
 const chunkPromises=Object.create(null);
 let searchPromise=null,fullPromise=null,_fullEventSent=false;
 window.__MING_DATA_CHUNKS__=window.__MING_DATA_CHUNKS__||{};
 window.__MING_CHARACTER_DETAILS__=window.__MING_CHARACTER_DETAILS__||{};
+window.__MING_LOCATION_DETAILS__=window.__MING_LOCATION_DETAILS__||{};
 
-function detailChunkFor(name){
+function stableShardIndex(value,count){
   let h=5381>>>0;
-  for(const ch of String(name||''))h=(Math.imul(h,33)^ch.codePointAt(0))>>>0;
-  return 'character-detail-'+String(h%DETAIL_SHARD_COUNT).padStart(2,'0');
+  for(const ch of String(value||''))h=(Math.imul(h,33)^ch.codePointAt(0))>>>0;
+  return h%count;
 }
+function characterDetailChunkFor(name){return 'character-detail-'+String(stableShardIndex(name,CHARACTER_DETAIL_SHARD_COUNT)).padStart(2,'0');}
+function locationDetailChunkFor(name){return 'location-detail-'+String(stableShardIndex(name,LOCATION_DETAIL_SHARD_COUNT)).padStart(2,'0');}
 function entityPlan(kind,id){
-  if(kind==='person')return ['characters',detailChunkFor(id),'events','insight'];
+  if(kind==='person')return ['characters',characterDetailChunkFor(id),'events','insight'];
+  if(kind==='place')return ['locations',locationDetailChunkFor(id),'events','insight'];
   return ENTITY_CHUNKS[kind]||ALL_CHUNKS;
 }
 function uniq(items){return [...new Set((items||[]).filter(x=>ALL_CHUNKS.includes(x)))];}
@@ -68,15 +73,27 @@ window.__MING_APPLY_CHARACTER_DETAILS__=function(){
   root.dataset.mingCharacterDetails=String(patched);
   return patched;
 };
+window.__MING_APPLY_LOCATION_DETAILS__=function(){
+  const details=window.__MING_LOCATION_DETAILS__||{};
+  let patched=0;
+  (DATA.locations||[]).forEach(location=>{
+    const extra=details[location&&location.ancient];
+    if(extra){Object.assign(location,extra);patched++;}
+  });
+  root.dataset.mingLocationDetails=String(patched);
+  return patched;
+};
 
 window.__MING_SEARCH_INDEX_READY=window.__MING_SEARCH_INDEX_READY===true;
 syncDataState();
 markSearch(window.__MING_SEARCH_INDEX_READY?'ready':'idle');
 window.__MING_APPLY_CHARACTER_DETAILS__();
+window.__MING_APPLY_LOCATION_DETAILS__();
 
 document.addEventListener('ming:data-chunk',event=>{
   const name=event&&event.detail&&event.detail.name;
   if(name==='characters'||String(name||'').startsWith('character-detail-'))window.__MING_APPLY_CHARACTER_DETAILS__();
+  if(name==='locations'||String(name||'').startsWith('location-detail-'))window.__MING_APPLY_LOCATION_DETAILS__();
   syncDataState(name?'chunk:'+name:'chunk');
 });
 
@@ -90,6 +107,7 @@ function loadChunk(name,reason){
     script.onload=()=>{
       if(!ready(name)){reject(new Error('data-'+name+'.js 已加载但未标记 ready'));return;}
       if(name==='characters'||name.startsWith('character-detail-'))window.__MING_APPLY_CHARACTER_DETAILS__();
+      if(name==='locations'||name.startsWith('location-detail-'))window.__MING_APPLY_LOCATION_DETAILS__();
       syncDataState(reason||('chunk:'+name));
       resolve(name);
     };
@@ -106,6 +124,7 @@ window.__MING_ENSURE_DATA_CHUNKS=function(names,reason){
   root.dataset.mingDataReason=reason||'interaction';
   return Promise.all(wanted.map(name=>loadChunk(name,reason))).then(()=>{
     window.__MING_APPLY_CHARACTER_DETAILS__();
+    window.__MING_APPLY_LOCATION_DETAILS__();
     syncDataState(reason);
     try{if(typeof window.__MING_AFTER_DATA_CHUNKS==='function')window.__MING_AFTER_DATA_CHUNKS(wanted);}catch(_){}
     return DATA;
@@ -113,7 +132,8 @@ window.__MING_ENSURE_DATA_CHUNKS=function(names,reason){
 };
 window.__MING_VIEW_CHUNKS=VIEW_CHUNKS;
 window.__MING_ENTITY_CHUNKS=ENTITY_CHUNKS;
-window.__MING_CHARACTER_DETAIL_CHUNK=detailChunkFor;
+window.__MING_CHARACTER_DETAIL_CHUNK=characterDetailChunkFor;
+window.__MING_LOCATION_DETAIL_CHUNK=locationDetailChunkFor;
 window.__MING_ENTITY_PLAN=entityPlan;
 window.__MING_ENSURE_VIEW_DATA=function(view,reason){return window.__MING_ENSURE_DATA_CHUNKS(VIEW_CHUNKS[view]||ALL_CHUNKS,reason||('view:'+view));};
 window.__MING_ENSURE_ENTITY_DATA=function(kind,reason,id){return window.__MING_ENSURE_DATA_CHUNKS(entityPlan(kind,id),reason||('entity:'+kind));};
@@ -141,6 +161,7 @@ window.__MING_ENSURE_FULL_DATA=function(reason){
   if(fullPromise)return fullPromise;
   fullPromise=window.__MING_ENSURE_DATA_CHUNKS(ALL_CHUNKS,reason||'full').then(data=>{
     window.__MING_APPLY_CHARACTER_DETAILS__();
+    window.__MING_APPLY_LOCATION_DETAILS__();
     try{if(typeof window.__MING_AFTER_FULL_DATA==='function')window.__MING_AFTER_FULL_DATA();}catch(_){}
     return data;
   }).catch(err=>{fullPromise=null;throw err;});
@@ -161,8 +182,8 @@ function deepPlan(){
   return [];
 }
 
-/* deep link 在 app.js 前只预载目标实体所需 shard。以于谦为例：characters +
-   character-detail-13 + events + insight，而不是 1231 人的全部详情。 */
+/* deep link 在 app.js 前只预载实体真正需要的数据。人物只取一个人物 shard；
+   地点只取一个地点 shard。普通 locations / map deep link 都只取轻量地点索引。 */
 if(document.readyState==='loading'){
   const plan=uniq(deepPlan()).filter(name=>!ready(name));
   if(plan.length){
