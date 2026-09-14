@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V7 在线 boot / search / domain chunks 的真实 Chrome 冒烟。"""
+"""V8 在线 boot / search / domain chunks / 人物详情二级按需的真实 Chrome 冒烟。"""
 from __future__ import annotations
 
 import os
@@ -72,7 +72,7 @@ def check_home_stays_boot_only():
     )
     if 'data-ming-data-chunk=' in dom or 'data-ming-search-chunk="index"' in dom:
         raise AssertionError("普通首页意外加载了按需数据 chunk")
-    print("ok   V7 首页仅 boot，search/domain chunks 均未加载")
+    print("ok   V8 首页仅 boot，search/domain/details 均未加载")
 
 
 def _command_probe(click_result: bool) -> Path:
@@ -92,7 +92,7 @@ setTimeout(function(){
 %s
 },120);
 </script>\n""" % click_js
-    probe_path = TARGET.parent / (".v7-command-click-probe.html" if click_result else ".v7-command-probe.html")
+    probe_path = TARGET.parent / (".v8-command-click-probe.html" if click_result else ".v8-command-probe.html")
     probe_path.write_text(doc.replace("</body>", probe + "</body>", 1), encoding="utf-8")
     return probe_path
 
@@ -114,28 +114,63 @@ def check_command_palette_loads_search_only():
     )
     if 'data-ming-data-chunk=' in dom:
         raise AssertionError("仅搜索于谦时不应加载任何领域数据块")
-    print("ok   V7 Ctrl+K → search-index → 于谦，DATA 仍保持 boot")
+    print("ok   V8 Ctrl+K → search-index → 于谦，DATA 仍保持 boot")
 
 
-def check_command_entity_selection_loads_person_domains_only():
+def check_character_view_loads_cards_without_details():
+    dom = chrome_dump(TARGET, "#view=characters", 9500)
+    assert_has(
+        dom,
+        r'<html[^>]*data-ming-data="partial"',
+        r'data-ming-chunks="characters"',
+        r'data-ming-data-chunk="characters"',
+        r'id="characters" class="view active"',
+        r'<article class="character-card',
+        r'data-char-detail=',
+    )
+    assert_no_chunk(dom, "character-details", "events", "space", "relations", "time", "graphs", "insight", "meta")
+    print("ok   V8 人物索引 → 仅轻量 characters 卡片层，不拉详情")
+
+
+def check_command_entity_selection_loads_person_detail_domains_only():
     probe_path = _command_probe(True)
     try:
-        dom = chrome_dump(probe_path, budget=10500)
+        dom = chrome_dump(probe_path, budget=11000)
     finally:
         probe_path.unlink(missing_ok=True)
     assert_has(
         dom,
         r'<html[^>]*data-ming-data="partial"',
-        r'data-ming-chunks="characters,events,insight"',
+        r'data-ming-chunks="characters,character-details,events,insight"',
         r'data-ming-search="ready"',
         r'data-ming-data-chunk="characters"',
+        r'data-ming-data-chunk="character-details"',
         r'data-ming-data-chunk="events"',
         r'data-ming-data-chunk="insight"',
+        r'data-ming-character-details="\d+"',
         r'id="characters" class="view active"',
         r'于谦',
+        r'涉及事件',
+        r'关系',
     )
     assert_no_chunk(dom, "space", "relations", "time", "graphs", "meta")
-    print("ok   V7 选择人物结果 → characters+events+insight，不拉全库")
+    print("ok   V8 选择人物结果 → 卡片+详情补丁+events+insight，不拉全库")
+
+
+def check_chronicle_loads_time_and_cards_without_details():
+    dom = chrome_dump(TARGET, "#view=chronicle", 9500)
+    assert_has(
+        dom,
+        r'<html[^>]*data-ming-data="partial"',
+        r'data-ming-chunks="characters,time"',
+        r'data-ming-data-chunk="characters"',
+        r'data-ming-data-chunk="time"',
+        r'id="chronicle" class="view active"',
+        r'年谱 · 人物生平对照',
+        r'data-person=',
+    )
+    assert_no_chunk(dom, "character-details", "events", "space", "relations", "graphs", "insight", "meta")
+    print("ok   V8 年谱 deep link → time+轻量 characters，不拉人物详情")
 
 
 def check_visual_deep_link_loads_graph_only_before_app():
@@ -150,8 +185,8 @@ def check_visual_deep_link_loads_graph_only_before_app():
         r'人物总图怎么读',
         r'data-v3-node-search',
     )
-    assert_no_chunk(dom, "characters", "events", "space", "relations", "time", "insight", "meta")
-    print("ok   V7 图谱 deep link → 仅 graphs")
+    assert_no_chunk(dom, "characters", "character-details", "events", "space", "relations", "time", "insight", "meta")
+    print("ok   V8 图谱 deep link → 仅 graphs")
 
 
 def check_timeline_deep_link_loads_time_and_events_only():
@@ -166,8 +201,8 @@ def check_timeline_deep_link_loads_time_and_events_only():
         r'1449',
         r'1457',
     )
-    assert_no_chunk(dom, "characters", "space", "relations", "graphs", "insight", "meta")
-    print("ok   V7 时间轴 deep link → 仅 events+time")
+    assert_no_chunk(dom, "characters", "character-details", "space", "relations", "graphs", "insight", "meta")
+    print("ok   V8 时间轴 deep link → 仅 events+time")
 
 
 if __name__ == "__main__":
@@ -175,6 +210,8 @@ if __name__ == "__main__":
         raise SystemExit("目标文件不存在：%s" % TARGET)
     check_home_stays_boot_only()
     check_command_palette_loads_search_only()
-    check_command_entity_selection_loads_person_domains_only()
+    check_character_view_loads_cards_without_details()
+    check_command_entity_selection_loads_person_detail_domains_only()
+    check_chronicle_loads_time_and_cards_without_details()
     check_visual_deep_link_loads_graph_only_before_app()
     check_timeline_deep_link_loads_time_and_events_only()
