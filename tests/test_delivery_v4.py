@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V4 双交付基线 + V8 boot/search/domain/character-details 在线分层。"""
+"""V4 双交付基线 + V9 boot/search/domain/人物详情确定性分片。"""
 from __future__ import annotations
 
 import tempfile
@@ -28,7 +28,7 @@ def test_web_target_externalizes_every_project_frontend_layer():
             "assets/app.css", "assets/theme.css", "assets/experience.css",
             "assets/boot-data.js", "assets/search-index.js", "assets/data-loader.js",
             "assets/app.js", "assets/lazy-data.js", "assets/experience.js", "sw.js",
-        } | {"assets/data-%s.js" % name for name in build.WEB_CHUNKS}
+        } | {"assets/data-%s.js" % name for name in build.WEB_DELIVERY_CHUNKS}
         assert required.issubset(stats)
         assert all((out / name).exists() for name in required)
         for eager in (
@@ -38,18 +38,19 @@ def test_web_target_externalizes_every_project_frontend_layer():
         ):
             assert eager in html
         assert "assets/search-index.js" not in html
-        for name in build.WEB_CHUNKS:
+        for name in build.WEB_DELIVERY_CHUNKS:
             assert "assets/data-%s.js" % name not in html
         assert "THEME_SYNC_START" not in html
         assert "EXPERIENCE_CSS_SYNC_START" not in html
         assert "EXPERIENCE_SYNC_START" not in html
         assert "const DATA=" not in html
         assert not (out / "assets" / "data-full.js").exists()
+        assert not (out / "assets" / "data-character-details.js").exists()
     finally:
         td.cleanup()
 
 
-def test_web_shell_is_small_and_character_cards_are_separate_from_details():
+def test_web_shell_is_small_and_character_detail_is_sharded():
     td, out, _stats = _web_output()
     try:
         html_size = (out / "index.html").stat().st_size
@@ -58,11 +59,14 @@ def test_web_shell_is_small_and_character_cards_are_separate_from_details():
         assert html_size < 80 * 1024
         assert boot_size < 112 * 1024
         assert search_size < 768 * 1024
-        sizes = {name: (out / "assets" / ("data-%s.js" % name)).stat().st_size for name in build.WEB_CHUNKS}
-        assert sizes["characters"] < sizes["character-details"]
+        sizes = {name: (out / "assets" / ("data-%s.js" % name)).stat().st_size for name in build.WEB_DELIVERY_CHUNKS}
+        detail_sizes = [sizes[name] for name in build.CHARACTER_DETAIL_SHARD_NAMES]
+        assert len(detail_sizes) == 16
         assert sizes["characters"] < 1024 * 1024
-        assert max(sizes.values()) < 2.25 * 1024 * 1024
-        assert sum(sizes.values()) > search_size * 5
+        assert max(detail_sizes) < 192 * 1024
+        assert max(detail_sizes) < sizes["characters"]
+        assert sum(detail_sizes) > max(detail_sizes) * 4
+        assert not (out / "assets" / "data-character-details.js").exists()
     finally:
         td.cleanup()
 
@@ -83,16 +87,18 @@ def test_refresh_workflow_publishes_web_root_and_keeps_standalone():
 def test_readme_sync_documents_dual_delivery_idempotently():
     source = sync_readme.README.read_text(encoding="utf-8")
     rendered = sync_readme.render_readme(source)
-    assert "在线版采用 V8 两级按需交付" in rendered
+    assert "在线版采用 V9 人物详情分片按需交付" in rendered
     assert "首页只加载 `boot-data.js`" in rendered
     assert "搜索加载轻量 `search-index.js`" in rendered
     assert "`data-characters.js` 卡片索引" in rendered
-    assert "`data-character-details.js` 详情补丁" in rendered
+    assert "16 个确定性详情 shard" in rendered
+    assert "data-character-detail-00.js" in rendered
     assert "人物列表和年谱不会" in rendered
     assert "`standalone.html` 单文件离线版" in rendered
     assert "构建全书单文件 standalone.html" in rendered
     assert "data-time.js" in rendered
     assert "可逆传输分区" in rendered
     assert "不维护单独的 `data-full.js`" in rendered
-    assert "在线 V8 `index.html + assets/` 与离线 `standalone.html`" in rendered
+    assert "不生成单体 `data-character-details.js`" in rendered
+    assert "在线 V9 `index.html + assets/` 与离线 `standalone.html`" in rendered
     assert sync_readme.render_readme(rendered) == rendered
