@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V9 在线交付结构、详情 shard 与视图/实体首次传输预算门禁。"""
+"""V10 在线交付结构、人物/地点详情 shard 与首次传输预算门禁。"""
 from __future__ import annotations
 
 import sys
@@ -13,13 +13,17 @@ INDEX_WARN, INDEX_HARD = 48 * KIB, 80 * KIB
 SHELL_WARN, SHELL_HARD = 384 * KIB, 512 * KIB
 BOOT_WARN, BOOT_HARD = 72 * KIB, 112 * KIB
 SEARCH_WARN, SEARCH_HARD = 512 * KIB, 768 * KIB
-DETAIL_SHARD_WARN, DETAIL_SHARD_HARD = 128 * KIB, 192 * KIB
+CHAR_DETAIL_WARN, CHAR_DETAIL_HARD = 128 * KIB, 192 * KIB
+LOC_DETAIL_WARN, LOC_DETAIL_HARD = 96 * KIB, 128 * KIB
 
 CHUNK_BUDGETS = {
     "characters": (700 * KIB, 1024 * KIB),
-    **{name: (DETAIL_SHARD_WARN, DETAIL_SHARD_HARD) for name in B.CHARACTER_DETAIL_SHARD_NAMES},
+    **{name: (CHAR_DETAIL_WARN, CHAR_DETAIL_HARD) for name in B.CHARACTER_DETAIL_SHARD_NAMES},
+    "locations": (400 * KIB, 512 * KIB),
+    **{name: (LOC_DETAIL_WARN, LOC_DETAIL_HARD) for name in B.LOCATION_DETAIL_SHARD_NAMES},
+    "place-chapters": (240 * KIB, 320 * KIB),
+    "voyages": (32 * KIB, 64 * KIB),
     "events": (450 * KIB, 512 * KIB),
-    "space": (1024 * KIB, int(1.15 * MIB)),
     "relations": (800 * KIB, 900 * KIB),
     "time": (500 * KIB, 600 * KIB),
     "graphs": (800 * KIB, 900 * KIB),
@@ -29,8 +33,8 @@ CHUNK_BUDGETS = {
 VIEW_CHUNKS = {
     "overview": (), "distribution": (),
     "visuals": ("graphs",),
-    "locations": ("space", "events", "insight"),
-    "map": ("space", "events"),
+    "locations": ("locations",),
+    "map": ("locations",),
     "characters": ("characters",),
     "events": ("events",),
     "relations": ("relations",),
@@ -39,9 +43,10 @@ VIEW_CHUNKS = {
     "chronicle": ("time", "characters"),
     "insight": ("insight",),
 }
-VIEW_WARN, VIEW_HARD = int(1.5 * MIB), 2 * MIB
+VIEW_WARN, VIEW_HARD = int(1.1 * MIB), int(1.5 * MIB)
 PERSON_WARN, PERSON_HARD = int(1.1 * MIB), int(1.35 * MIB)
-ENTITY_WARN, ENTITY_HARD = int(1.5 * MIB), 2 * MIB
+PLACE_WARN, PLACE_HARD = 1024 * KIB, int(1.25 * MIB)
+EVENT_WARN, EVENT_HARD = 1024 * KIB, int(1.25 * MIB)
 
 REQUIRED_BASE = (
     "index.html", "assets/app.css", "assets/theme.css", "assets/experience.css",
@@ -82,7 +87,8 @@ def main(argv=None) -> int:
     shell_names = [name for name in REQUIRED_BASE if name not in ("index.html", "assets/search-index.js", "sw.js")]
     shell_size = index_size + sum((root / name).stat().st_size for name in shell_names)
     chunk_sizes = {name: (root / "assets" / ("data-%s.js" % name)).stat().st_size for name in B.WEB_DELIVERY_CHUNKS}
-    detail_sizes = {name: chunk_sizes[name] for name in B.CHARACTER_DETAIL_SHARD_NAMES}
+    char_detail = {name: chunk_sizes[name] for name in B.CHARACTER_DETAIL_SHARD_NAMES}
+    loc_detail = {name: chunk_sizes[name] for name in B.LOCATION_DETAIL_SHARD_NAMES}
 
     html = index.read_text(encoding="utf-8")
     structural_errors = []
@@ -101,7 +107,7 @@ def main(argv=None) -> int:
     for lazy_asset in ("assets/search-index.js",) + REQUIRED_CHUNKS:
         if lazy_asset in html:
             structural_errors.append("index.html 直接引用 %s，按需边界失效" % lazy_asset)
-    for obsolete in ("assets/data.js", "assets/data-full.js", "assets/data-character-details.js"):
+    for obsolete in ("assets/data.js", "assets/data-full.js", "assets/data-character-details.js", "assets/data-space.js", "assets/data-location-details.js"):
         if (root / obsolete).exists():
             structural_errors.append("仍生成旧 %s" % obsolete)
 
@@ -113,44 +119,50 @@ def main(argv=None) -> int:
         ("lazy search-index.js", search.stat().st_size, SEARCH_WARN, SEARCH_HARD),
     ):
         passed = _report_budget(label, value, warn, hard) and passed
-
     for name, (warn, hard) in CHUNK_BUDGETS.items():
         passed = _report_budget("domain %s" % name, chunk_sizes[name], warn, hard) and passed
 
-    total_detail = sum(detail_sizes.values())
-    max_detail_name = max(detail_sizes, key=detail_sizes.get)
-    max_detail = detail_sizes[max_detail_name]
-    print("人物详情分片：%d shards · total %s · max %s=%s" % (
-        len(detail_sizes), human(total_detail), max_detail_name, human(max_detail)
-    ))
+    max_char_name = max(char_detail, key=char_detail.get);max_char = char_detail[max_char_name]
+    max_loc_name = max(loc_detail, key=loc_detail.get);max_loc = loc_detail[max_loc_name]
+    total_char = sum(char_detail.values());total_loc = sum(loc_detail.values())
+    print("人物详情分片：%d shards · total %s · max %s=%s" % (len(char_detail), human(total_char), max_char_name, human(max_char)))
+    print("地点详情分片：%d shards · total %s · max %s=%s" % (len(loc_detail), human(total_loc), max_loc_name, human(max_loc)))
 
     print("视图首次数据传输（不计已缓存块）：")
     for view, chunks in VIEW_CHUNKS.items():
         size = sum(chunk_sizes[name] for name in chunks)
         passed = _report_budget("  view %s [%s]" % (view, "+".join(chunks) or "boot"), size, VIEW_WARN, VIEW_HARD) and passed
+    chapter_mode = chunk_sizes["locations"] + chunk_sizes["place-chapters"]
+    voyage_mode = chunk_sizes["locations"] + chunk_sizes["voyages"] + chunk_sizes["events"]
+    passed = _report_budget("  location chapter mode [locations+place-chapters]", chapter_mode, 700*KIB, 900*KIB) and passed
+    passed = _report_budget("  map voyage mode [locations+voyages+events]", voyage_mode, 900*KIB, int(1.15*MIB)) and passed
 
-    person_size = chunk_sizes["characters"] + max_detail + chunk_sizes["events"] + chunk_sizes["insight"]
-    place_size = chunk_sizes["space"] + chunk_sizes["events"] + chunk_sizes["insight"]
-    event_size = place_size
-    print("实体详情首次数据传输（零缓存；人物按最大 shard 计）：")
-    passed = _report_budget("  entity person [characters+max-detail-shard+events+insight]", person_size, PERSON_WARN, PERSON_HARD) and passed
-    passed = _report_budget("  entity place [space+events+insight]", place_size, ENTITY_WARN, ENTITY_HARD) and passed
-    passed = _report_budget("  entity event [events+space+insight]", event_size, ENTITY_WARN, ENTITY_HARD) and passed
+    person_size = chunk_sizes["characters"] + max_char + chunk_sizes["events"] + chunk_sizes["insight"]
+    place_size = chunk_sizes["locations"] + max_loc + chunk_sizes["events"] + chunk_sizes["insight"]
+    event_size = chunk_sizes["events"] + chunk_sizes["locations"] + chunk_sizes["insight"]
+    print("实体详情首次数据传输（零缓存；详情按最大 shard 计）：")
+    passed = _report_budget("  entity person", person_size, PERSON_WARN, PERSON_HARD) and passed
+    passed = _report_budget("  entity place", place_size, PLACE_WARN, PLACE_HARD) and passed
+    passed = _report_budget("  entity event", event_size, EVENT_WARN, EVENT_HARD) and passed
 
     if chunk_sizes["characters"] + chunk_sizes["time"] >= int(1.5 * MIB):
-        structural_errors.append("年谱 characters+time 未降到 1.5 MiB 以下")
-    if max_detail >= 192 * KIB:
-        structural_errors.append("最大人物详情 shard 达到 192 KiB hard limit")
-    if person_size >= int(1.35 * MIB):
-        structural_errors.append("人物零缓存详情入口未降到 1.35 MiB 以下")
-    if total_detail >= 2 * MIB:
-        structural_errors.append("详情 shards 总体积超过 2 MiB，分片引入异常膨胀")
+        structural_errors.append("年谱 characters+time 未保持在 1.5 MiB 以下")
+    if chunk_sizes["locations"] >= 512 * KIB:
+        structural_errors.append("地点摘要未降到 512 KiB 以下")
+    if max_loc >= 128 * KIB:
+        structural_errors.append("最大地点详情 shard 达到 128 KiB hard limit")
+    if place_size >= int(1.25 * MIB):
+        structural_errors.append("地点零缓存详情入口未降到 1.25 MiB 以下")
+    if event_size >= int(1.25 * MIB):
+        structural_errors.append("事件零缓存详情入口未降到 1.25 MiB 以下")
+    if total_loc >= 768 * KIB:
+        structural_errors.append("地点详情 shards 总体积超过 768 KiB")
 
     for msg in structural_errors:
         print("[FAIL] %s" % msg);passed = False
     if not passed:
         return 1
-    print("V9 在线 boot/search/domain/16-detail-shards 交付结构与体积预算通过。")
+    print("V10 在线人物/地点摘要、详情 shards 与模式级按需交付预算通过。")
     return 0
 
 
