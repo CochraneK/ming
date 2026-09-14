@@ -144,7 +144,7 @@ const norm=v=>String(v==null?'':v).trim().toLowerCase();
 const pct=(a,b)=>b?Math.round(a*100/b):0;
 
 /* ------------------------------ 全局快捷搜索 ------------------------------ */
-/* V6_SEARCH_INDEX_COMMAND_DATA */
+/* V7_VIEW_CHUNK_COMMAND_DATA */
 let commandRows=null,commandRowsMode='',commandResults=[],commandActive=0,commandLastFocus=null;
 function commandHasFullData(){return typeof window.__MING_ENSURE_FULL_DATA!=='function'||window.__MING_FULL_DATA_READY===true;}
 function commandHasSearchIndex(){return window.__MING_SEARCH_INDEX_READY===true&&window.__MING_SEARCH_INDEX__&&Array.isArray(window.__MING_SEARCH_INDEX__.rows);}
@@ -234,6 +234,12 @@ function runCommand(r){
     setView(r.id);if(typeof writeHash==='function')writeHash({view:r.id,person:null,event:null,place:null,detail:null});return;
   }
   const execute=()=>{commandRows=null;commandRowsMode='';executeEntityCommand(r);};
+  if(typeof window.__MING_ENSURE_ENTITY_DATA==='function'){
+    window.__MING_ENSURE_ENTITY_DATA(r.kind,'command-result:'+r.kind).then(execute).catch(err=>{
+      if(typeof failBar==='function')failBar('entity-data','实体数据加载失败：'+String((err&&err.message)||err),{level:'error',retry:()=>location.reload(),retryLabel:'重新加载'});
+    });
+    return;
+  }
   if(commandHasFullData()){execute();return;}
   if(typeof window.__MING_ENSURE_FULL_DATA==='function'){
     window.__MING_ENSURE_FULL_DATA('command-result:'+r.kind).then(execute).catch(err=>{

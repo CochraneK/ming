@@ -1,10 +1,10 @@
 # 明朝那些事儿知识库
 
-基于《明朝那些事儿》七部 156 章全文抽取整理的静态知识库。在线版采用 V6 三层按需交付：首页只加载 `boot-data.js`；打开全局搜索时加载轻量 `search-index.js`；进入深度视图、选择实体结果或打开深链时才加载 `data-full.js`。同时保留 `standalone.html` 单文件离线版。
+基于《明朝那些事儿》七部 156 章全文抽取整理的静态知识库。在线版采用 V7 视图级按需交付：首页只加载 `boot-data.js`，全局搜索加载轻量 `search-index.js`，人物 / 事件 / 空间 / 关系 / 时间 / 图谱 / 洞察等最终模型字段拆成互斥领域块；进入某个视图只下载其依赖，不再一律加载整库。同时保留 `standalone.html` 单文件离线版。
 
 ## 在线查看
 
-GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V6 在线按需版；`standalone.html` 为可下载 / 双击打开的完整离线版）
+GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V7 视图级按需版；`standalone.html` 为可下载 / 双击打开的完整离线版）
 
 ## 当前规模
 
@@ -19,7 +19,7 @@ GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V6 在
 | 年谱 | 165 人 | 主要人物生卒横向展开，与年号对位 |
 
 <!-- README_STATS_SYNC -->
-> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme.py` 从最终模型自动刷新；发布同步工作流会同时维护在线 V6 `index.html + assets/` 与离线 `standalone.html`。
+> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme.py` 从最终模型自动刷新；发布同步工作流会同时维护在线 V7 `index.html + assets/` 与离线 `standalone.html`。
 
 ## 报告视图（12 个）
 
@@ -75,12 +75,12 @@ python tests/run_tests.py           # 单元测试（无第三方依赖，可直
 | 参数 | 说明 |
 |---|---|
 | `--scope full\|p1..p7` | 构建全书或某一部（分部产物为 `report_pN.html`） |
-| `--target standalone\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联到 `standalone.html`；`web`＝输出到 `dist/<scope>/`，按 `assets/boot-data.js` → `assets/search-index.js` → `assets/data-full.js` 三层按需加载，并拆分 CSS、业务 JS、体验脚本与 `sw.js` |
+| `--target standalone\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联到 `standalone.html`；`web`＝输出到 `dist/<scope>/`，首屏为 `assets/boot-data.js`，搜索为 `assets/search-index.js`，其余 DATA 按 `assets/data-characters.js`、`data-events.js`、`data-space.js`、`data-relations.js`、`data-time.js`、`data-graphs.js`、`data-insight.js`、`data-meta.js` 领域块按需组合 |
 | `--out 路径` | 覆盖输出位置 |
 | `--check` | 跑完聚合与全部校验后不写文件，ERROR 时以退出码 2 中止 |
 | `--json 路径` | 把校验结论导出为 JSON |
 
-`standalone` 构建继续把模板、样式、业务脚本、体验层与完整 DATA 内联成一个文件；`web` 构建使用同一最终 payload 派生 boot / search / full 三层资源。搜索索引只保留检索与结果展示字段，实体详情仍以 full DATA 为唯一真源。
+`standalone` 构建继续把模板、样式、业务脚本、体验层与完整 DATA 内联成一个文件；`web` 构建使用同一最终 payload 无损分区为 boot + 8 个互斥领域块，搜索索引仅保留检索与结果展示字段。完整数据模式只是聚合加载全部领域块，不再维护单独的 `data-full.js`。
 
 - `data/data.json` 是聚合后的单一数据源。
 - `data/geo_annotations.json`（地点坐标/类型标注）、`data/manual_relations.json`（人工关系）、`data/manual_corrections.json`（勘误）、`data/manual_lifespans.json`（年谱）、`data/manual_persons.json`（补录人物）、`data/derived_chapter_persons.json`（文本反查出场）**重跑聚合不会丢失**，是可持续维护的增量层。
