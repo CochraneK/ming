@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""最终前端 payload 的字段级体积剖析与 V7 分区预算。
+"""最终前端 payload 的字段级体积剖析与 V8 分区预算。
 
-V7 在线版不再维护单体 full chunk：最终 DATA 无损拆为 boot + 8 个互斥领域块，
-搜索目录单独派生。本脚本负责输出字段/分区体积，并阻止 boot 或搜索索引意外膨胀；
-更细的领域块与视图组合 hard budget 由 ``check_delivery.py`` 在真实构建产物上把关。
+V8 在 V7 领域块之上把人物域再拆成卡片索引 + 详情补丁。搜索目录仍单独派生。
+本脚本输出字段/传输分区体积，并阻止 boot、搜索或人物卡片层重新膨胀；
+真实脚本与视图/实体组合 hard budget 继续由 ``check_delivery.py`` 把关。
 """
 from __future__ import annotations
 
@@ -19,8 +19,11 @@ import build as B  # noqa: E402
 import generate_report as G  # noqa: E402
 
 KIB = 1024
+MIB = 1024 * 1024
 BOOT_HARD = 112 * KIB
 SEARCH_HARD = 768 * KIB
+CHARACTERS_HARD = 1024 * KIB
+CHARACTER_DETAILS_HARD = 2 * MIB
 
 
 def encoded_size(value) -> int:
@@ -53,25 +56,27 @@ def profile_payload(payload: dict) -> dict:
 
 
 def human(n: int) -> str:
-    mib = 1024 * 1024
-    return "%.2f MiB" % (n / mib) if n >= mib else "%.1f KiB" % (n / KIB)
+    return "%.2f MiB" % (n / MIB) if n >= MIB else "%.1f KiB" % (n / KIB)
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description="打印最终前端 payload 字段体积并检查 V7 分区预算")
+    parser = argparse.ArgumentParser(description="打印最终前端 payload 字段体积并检查 V8 分区预算")
     parser.add_argument("--json", type=Path, default=None, help="可选：写入机器可读 JSON")
     args = parser.parse_args(argv)
 
     profile = profile_payload(G.build_scope("full"))
     total = max(profile["payload_bytes"], 1)
+    domains = {row["name"]: row["bytes"] for row in profile["domains"]}
     print("最终 DATA payload：%s" % human(profile["payload_bytes"]))
     print("INSIGHT payload：%s" % human(profile["insight_bytes"]))
-    print("V7 boot payload：%s（hard %s）" % (human(profile["boot_bytes"]), human(BOOT_HARD)))
-    print("V7 search index：%s（hard %s）" % (human(profile["search_bytes"]), human(SEARCH_HARD)))
-    print("V7 领域块 JSON 合计（insight 含 INSIGHT_DATA）：%s" % human(profile["domain_bytes"]))
+    print("V8 boot payload：%s（hard %s）" % (human(profile["boot_bytes"]), human(BOOT_HARD)))
+    print("V8 search index：%s（hard %s）" % (human(profile["search_bytes"]), human(SEARCH_HARD)))
+    print("V8 人物卡片层：%s（hard %s）" % (human(domains["characters"]), human(CHARACTERS_HARD)))
+    print("V8 人物详情补丁：%s（hard %s）" % (human(domains["character-details"]), human(CHARACTER_DETAILS_HARD)))
+    print("V8 领域块 JSON 合计（insight 含 INSIGHT_DATA）：%s" % human(profile["domain_bytes"]))
     print("领域块 JSON 体积：")
     for row in profile["domains"]:
-        print("  %-12s %10s" % (row["name"], human(row["bytes"])))
+        print("  %-18s %10s" % (row["name"], human(row["bytes"])))
     print("字段级 JSON 体积：")
     for row in profile["fields"]:
         pct = row["bytes"] * 100.0 / total
@@ -82,15 +87,21 @@ def main(argv=None) -> int:
         args.json.write_text(json.dumps(profile, ensure_ascii=False, indent=2), encoding="utf-8")
 
     failed = False
-    if profile["boot_bytes"] > BOOT_HARD:
-        print("[FAIL] V7 boot payload 超过 hard budget")
-        failed = True
-    if profile["search_bytes"] > SEARCH_HARD:
-        print("[FAIL] V7 search index 超过 hard budget")
+    for label, value, hard in (
+        ("boot payload", profile["boot_bytes"], BOOT_HARD),
+        ("search index", profile["search_bytes"], SEARCH_HARD),
+        ("characters cards", domains["characters"], CHARACTERS_HARD),
+        ("character details", domains["character-details"], CHARACTER_DETAILS_HARD),
+    ):
+        if value > hard:
+            print("[FAIL] V8 %s 超过 hard budget" % label)
+            failed = True
+    if domains["characters"] >= domains["character-details"]:
+        print("[FAIL] 人物卡片层未显著轻于详情层")
         failed = True
     if failed:
         return 1
-    print("V7 payload 分区剖析通过；领域块/视图组合预算继续由 check_delivery.py 验证。")
+    print("V8 payload 分区剖析通过；真实脚本/视图/实体组合预算继续由 check_delivery.py 验证。")
     return 0
 
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V4 双交付基线 + V7 boot/search/domain-chunks 在线分层。"""
+"""V4 双交付基线 + V8 boot/search/domain/character-details 在线分层。"""
 from __future__ import annotations
 
 import tempfile
@@ -49,7 +49,7 @@ def test_web_target_externalizes_every_project_frontend_layer():
         td.cleanup()
 
 
-def test_web_shell_is_small_and_each_domain_is_separate():
+def test_web_shell_is_small_and_character_cards_are_separate_from_details():
     td, out, _stats = _web_output()
     try:
         html_size = (out / "index.html").stat().st_size
@@ -59,7 +59,8 @@ def test_web_shell_is_small_and_each_domain_is_separate():
         assert boot_size < 112 * 1024
         assert search_size < 768 * 1024
         sizes = {name: (out / "assets" / ("data-%s.js" % name)).stat().st_size for name in build.WEB_CHUNKS}
-        assert sizes["characters"] > sizes["insight"]
+        assert sizes["characters"] < sizes["character-details"]
+        assert sizes["characters"] < 1024 * 1024
         assert max(sizes.values()) < 2.25 * 1024 * 1024
         assert sum(sizes.values()) > search_size * 5
     finally:
@@ -82,15 +83,16 @@ def test_refresh_workflow_publishes_web_root_and_keeps_standalone():
 def test_readme_sync_documents_dual_delivery_idempotently():
     source = sync_readme.README.read_text(encoding="utf-8")
     rendered = sync_readme.render_readme(source)
-    assert "在线版采用 V7 视图级按需交付" in rendered
+    assert "在线版采用 V8 两级按需交付" in rendered
     assert "首页只加载 `boot-data.js`" in rendered
     assert "搜索加载轻量 `search-index.js`" in rendered
-    assert "互斥领域块" in rendered
-    assert "不再一律加载整库" in rendered
+    assert "`data-characters.js` 卡片索引" in rendered
+    assert "`data-character-details.js` 详情补丁" in rendered
+    assert "人物列表和年谱不会" in rendered
     assert "`standalone.html` 单文件离线版" in rendered
     assert "构建全书单文件 standalone.html" in rendered
-    assert "assets/data-characters.js" in rendered
     assert "data-time.js" in rendered
-    assert "不再维护单独的 `data-full.js`" in rendered
-    assert "在线 V7 `index.html + assets/` 与离线 `standalone.html`" in rendered
+    assert "可逆传输分区" in rendered
+    assert "不维护单独的 `data-full.js`" in rendered
+    assert "在线 V8 `index.html + assets/` 与离线 `standalone.html`" in rendered
     assert sync_readme.render_readme(rendered) == rendered

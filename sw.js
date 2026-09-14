@@ -16,8 +16,9 @@
 // v14：V5 boot/full 按需数据。
 // v15：V6 搜索分层：打开搜索只取 search-index，选择实体后再取 full。
 // v16：V7 视图领域分块：取消单一 data-full.js，人物/事件/空间/关系/时间/图谱/洞察/元数据独立缓存并按视图组合。
+// v17：V8 人物二级按需：人物列表只缓存轻量 cards，打开详情后才缓存 character-details 补丁。
 const CACHE_PREFIX = 'ming-report-';
-const CACHE = CACHE_PREFIX + 'v16';
+const CACHE = CACHE_PREFIX + 'v17';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 self.addEventListener('activate', (event) => {
@@ -34,8 +35,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // V7 的领域块仍沿用同源 SWR：用户访问过「时间轴」后只缓存 time/events，
-  // 之后打开「图谱」再独立缓存 graphs，不会因为某个深度视图把整库一次性灌入缓存。
+  // V8 领域块仍沿用同源 SWR：人物索引先缓存 characters，只有用户真正打开
+  // 人物详情才缓存 character-details；其它时间/图谱/空间块继续互不牵连。
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const cached = await cache.match(req);

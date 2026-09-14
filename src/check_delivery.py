@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V7 在线交付结构、领域块与视图传输预算门禁。"""
+"""V8 在线交付结构、领域块、人物详情补丁与视图传输预算门禁。"""
 from __future__ import annotations
 
 import sys
@@ -13,7 +13,8 @@ BOOT_WARN, BOOT_HARD = 72 * KIB, 112 * KIB
 SEARCH_WARN, SEARCH_HARD = 512 * KIB, 768 * KIB
 
 CHUNK_BUDGETS = {
-    "characters": (2 * MIB, int(2.25 * MIB)),
+    "characters": (700 * KIB, 1024 * KIB),
+    "character-details": (int(1.5 * MIB), 2 * MIB),
     "events": (450 * KIB, 512 * KIB),
     "space": (1024 * KIB, int(1.15 * MIB)),
     "relations": (800 * KIB, 900 * KIB),
@@ -35,7 +36,13 @@ VIEW_CHUNKS = {
     "chronicle": ("time", "characters"),
     "insight": ("insight",),
 }
-VIEW_WARN, VIEW_HARD = int(2.5 * MIB), 3 * MIB
+ENTITY_CHUNKS = {
+    "person": ("characters", "character-details", "events", "insight"),
+    "place": ("space", "events", "insight"),
+    "event": ("events", "space", "insight"),
+}
+VIEW_WARN, VIEW_HARD = int(1.5 * MIB), 2 * MIB
+ENTITY_WARN, ENTITY_HARD = int(2.75 * MIB), int(3.25 * MIB)
 
 REQUIRED_BASE = (
     "index.html", "assets/app.css", "assets/theme.css", "assets/experience.css",
@@ -119,11 +126,22 @@ def main(argv=None) -> int:
         size = sum(chunk_sizes[name] for name in chunks)
         passed = _report_budget("  view %s [%s]" % (view, "+".join(chunks) or "boot"), size, VIEW_WARN, VIEW_HARD) and passed
 
+    print("实体详情首次数据传输（最坏按零缓存计）：")
+    for kind, chunks in ENTITY_CHUNKS.items():
+        size = sum(chunk_sizes[name] for name in chunks)
+        passed = _report_budget("  entity %s [%s]" % (kind, "+".join(chunks)), size, ENTITY_WARN, ENTITY_HARD) and passed
+
+    # V8 的核心收益必须由门禁固定住：人物索引必须显著小于详情补丁，年谱不得再逼近 V7 的 2.20 MiB。
+    if chunk_sizes["characters"] >= chunk_sizes["character-details"]:
+        structural_errors.append("人物卡片 chunk 未小于详情补丁，V8 分层失去意义")
+    if chunk_sizes["characters"] + chunk_sizes["time"] >= int(1.5 * MIB):
+        structural_errors.append("年谱 characters+time 未降到 1.5 MiB 以下")
+
     for msg in structural_errors:
         print("[FAIL] %s" % msg);passed = False
     if not passed:
         return 1
-    print("V7 在线 boot/search/domain-chunks 交付结构与体积预算通过。")
+    print("V8 在线 boot/search/domain/character-details 交付结构与体积预算通过。")
     return 0
 
 
