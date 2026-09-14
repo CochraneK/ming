@@ -1,5 +1,6 @@
-/* ===== V7 视图 / 实体领域数据门控 =====
-   app.js 用 boot 启动；这里把 setView / show* 包装成按依赖加载，而不是一律拉完整知识库。 */
+/* ===== V8 视图 / 实体领域数据门控 =====
+   app.js 用 boot 启动；这里把 setView / show* 包装成按依赖加载。人物视图只取卡片层，
+   showPerson 再通过 ENTITY_CHUNKS 补 character-details / events / insight。 */
 (function(){
 'use strict';
 if(typeof setView!=='function'||typeof state==='undefined'||typeof DATA==='undefined')return;
