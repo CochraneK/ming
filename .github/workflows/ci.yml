@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   check:
-    name: 语法 · 不变量 · 构建 · V8 浏览器
+    name: 语法 · 不变量 · 构建 · V9 浏览器
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -42,7 +42,7 @@ jobs:
           python src/normalize_frontend.py
           python src/normalize_frontend.py --check
 
-      - name: 实体按需搜索钩子同步
+      - name: V9 人物详情分片搜索钩子同步
         run: |
           python src/sync_lazy_data.py
           python src/sync_lazy_data.py --check
@@ -64,7 +64,7 @@ jobs:
           python src/sync_theme.py
           git diff --check -- web/template/index.html
 
-      - name: V3 / V8 产品体验镜像同步冒烟
+      - name: V3 / V9 产品体验镜像同步冒烟
         run: |
           python src/sync_experience.py
           python src/sync_experience.py --check
@@ -84,7 +84,7 @@ jobs:
       - name: 数据审计
         run: python src/audit_final.py --quick
 
-      - name: 最终 payload 与人物两级传输体积剖析
+      - name: 最终 payload 与 V9 人物详情分片体积剖析
         run: python src/check_payload_budget.py --json .ci/payload-sizes.json
 
       - name: 构建离线单文件产物
@@ -93,10 +93,10 @@ jobs:
       - name: 离线版体积预算
         run: python src/check_budget.py .ci/standalone.html
 
-      - name: 构建在线 V8 两级按需数据产物
+      - name: 构建在线 V9 人物详情分片产物
         run: python src/build.py --scope full --target web --out .ci/site --quiet
 
-      - name: 在线 boot/search/domain/character-details 结构与体积预算
+      - name: 在线 boot/search/domain/16-detail-shards 结构与体积预算
         run: python src/check_delivery.py .ci/site
 
       - name: 单文件无头浏览器自检
@@ -105,5 +105,5 @@ jobs:
       - name: V3 单文件产品体验浏览器自检
         run: python .dump/_experience_browser_check.py .ci/standalone.html
 
-      - name: V8 在线人物详情二级按需浏览器自检
+      - name: V9 在线人物详情分片浏览器自检
         run: python .dump/_web_browser_check.py .ci/site/index.html

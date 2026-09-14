@@ -1,6 +1,5 @@
-/* ===== V8 视图 / 实体领域数据门控 =====
-   app.js 用 boot 启动；这里把 setView / show* 包装成按依赖加载。人物视图只取卡片层，
-   showPerson 再通过 ENTITY_CHUNKS 补 character-details / events / insight。 */
+/* ===== V9 视图 / 实体数据门控 =====
+   app.js 用 boot 启动；人物索引只取 cards，showPerson 再按姓名只取对应 detail shard。 */
 (function(){
 'use strict';
 if(typeof setView!=='function'||typeof state==='undefined'||typeof DATA==='undefined')return;
@@ -14,7 +13,11 @@ let wantedView=null,loadToken=0;
 
 function chunksReady(names){return (names||[]).every(n=>window.__MING_DATA_CHUNKS__&&window.__MING_DATA_CHUNKS__[n]);}
 function viewReady(view){return chunksReady((window.__MING_VIEW_CHUNKS||{})[view]||[]);}
-function entityReady(kind){return chunksReady((window.__MING_ENTITY_CHUNKS||{})[kind]||[]);}
+function entityPlan(kind,id){
+  if(typeof window.__MING_ENTITY_PLAN==='function')return window.__MING_ENTITY_PLAN(kind,id);
+  return (window.__MING_ENTITY_CHUNKS||{})[kind]||[];
+}
+function entityReady(kind,id){return chunksReady(entityPlan(kind,id));}
 
 function rebuildLocationIndex(){
   if(typeof LOC_INDEX==='undefined')return;
@@ -48,9 +51,9 @@ setView=function(view){
   }).catch(failLoad);
 };
 
-function ensureEntity(kind,after){
-  if(entityReady(kind)){after();return true;}
-  window.__MING_ENSURE_ENTITY_DATA(kind,'entity:'+kind).then(()=>{
+function ensureEntity(kind,id,after){
+  if(entityReady(kind,id)){after();return true;}
+  window.__MING_ENSURE_ENTITY_DATA(kind,'entity:'+kind,id).then(()=>{
     if(window.__MING_DATA_CHUNKS__&&window.__MING_DATA_CHUNKS__.space)rebuildLocationIndex();
     after();
   }).catch(failLoad);
@@ -58,20 +61,21 @@ function ensureEntity(kind,after){
 }
 if(baseShowPerson){
   showPerson=function(name){
-    return ensureEntity('person',()=>{const ok=baseShowPerson(name);if(ok===false&&typeof failBar==='function')failBar('person-missing','未找到人物：'+name,{level:'warn'});});
+    return ensureEntity('person',name,()=>{const ok=baseShowPerson(name);if(ok===false&&typeof failBar==='function')failBar('person-missing','未找到人物：'+name,{level:'warn'});});
   };
 }
-if(baseShowEvent){showEvent=function(event){return ensureEntity('event',()=>baseShowEvent(event));};}
-if(baseShowLocation){showLocation=function(x){return ensureEntity('place',()=>baseShowLocation(x));};}
+if(baseShowEvent){showEvent=function(event){return ensureEntity('event',event&&event.id,()=>baseShowEvent(event));};}
+if(baseShowLocation){showLocation=function(x){return ensureEntity('place',x&&x.ancient||x,()=>baseShowLocation(x));};}
 
-/* 洞察正文的原处理器会先 DATA.find 再调用 show*。若实体块尚未加载，必须在 capture
-   阶段先补数据再重新触发点击，否则原处理器会误报“未找到”。 */
+/* 洞察正文在 capture 阶段先取对应实体计划；人物会只拉自己的 detail shard。 */
 document.addEventListener('click',e=>{
   const lnk=e.target&&e.target.closest?e.target.closest('.ins-link'):null;if(!lnk)return;
   const kind=lnk.hasAttribute('data-ins-p')?'person':(lnk.hasAttribute('data-ins-l')?'place':(lnk.hasAttribute('data-ins-e')?'event':''));
-  if(!kind||entityReady(kind))return;
+  if(!kind)return;
+  const id=kind==='person'?lnk.getAttribute('data-ins-p'):(kind==='place'?lnk.getAttribute('data-ins-l'):lnk.getAttribute('data-ins-e'));
+  if(entityReady(kind,id))return;
   e.preventDefault();e.stopImmediatePropagation();
-  window.__MING_ENSURE_ENTITY_DATA(kind,'insight-link:'+kind).then(()=>{
+  window.__MING_ENSURE_ENTITY_DATA(kind,'insight-link:'+kind,id).then(()=>{
     if(window.__MING_DATA_CHUNKS__&&window.__MING_DATA_CHUNKS__.space)rebuildLocationIndex();
     lnk.click();
   }).catch(failLoad);

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V5/V6 按需基线 + V7/V8 领域与人物详情二级分区回归。"""
+"""V5/V6 按需基线 + V7/V8/V9 领域、人物卡片与详情分片回归。"""
 from __future__ import annotations
 
 import json
@@ -33,6 +33,8 @@ def test_boot_plus_domain_chunks_reconstruct_final_payload_losslessly():
     payload = G.build_scope("full")
     boot, chunks = build.split_web_chunks(payload)
     assert build.reconstruct_web_payload(boot, chunks) == payload
+    delivery = build.split_delivery_chunks(chunks)
+    assert build.reconstruct_web_payload_from_delivery(boot, delivery) == payload
 
 
 def test_character_cards_are_light_and_details_are_deferred():
@@ -50,6 +52,26 @@ def test_character_cards_are_light_and_details_are_deferred():
     assert any("profile" in extra for extra in details.values())
 
 
+def test_character_detail_shards_are_deterministic_exhaustive_and_bounded():
+    payload = G.build_scope("full")
+    _boot, logical = build.split_web_chunks(payload)
+    physical = build.split_delivery_chunks(logical)
+    assert set(physical) == set(build.WEB_DELIVERY_CHUNKS)
+    detail_names = []
+    shard_sizes = []
+    for shard in build.CHARACTER_DETAIL_SHARD_NAMES:
+        rows = physical[shard]["details"]
+        detail_names.extend(rows)
+        shard_sizes.append(_compact_bytes(physical[shard]))
+        for person in rows:
+            assert build.character_detail_shard_name(person) == shard
+    assert sorted(detail_names) == sorted(logical["character-details"]["details"])
+    assert len(detail_names) == len(set(detail_names)) == len(payload["characters"])
+    assert max(shard_sizes) < 192 * 1024
+    assert build.character_detail_shard_name("于谦") == "character-detail-13"
+    assert build.character_detail_shard_name("王守仁") == "character-detail-07"
+
+
 def test_domain_fields_are_mutually_exclusive_and_exhaustive():
     payload = G.build_scope("full")
     claimed = list(build.WEB_BOOT_KEYS) + ["characters"]
@@ -58,23 +80,26 @@ def test_domain_fields_are_mutually_exclusive_and_exhaustive():
     assert len(claimed) == len(set(claimed))
     assert set(claimed) == set(payload)
     assert "character-details" in build.WEB_CHUNKS
+    assert "character-details" not in build.WEB_DELIVERY_CHUNKS
     assert "character-details" not in payload
 
 
-def test_lazy_loader_and_gate_have_v8_contract():
+def test_lazy_loader_and_gate_have_v9_contract():
     loader = (ROOT / "web" / "js" / "data-loader.js").read_text(encoding="utf-8")
     gate = (ROOT / "web" / "js" / "lazy-data.js").read_text(encoding="utf-8")
     for token in (
         "__MING_ENSURE_DATA_CHUNKS", "__MING_ENSURE_VIEW_DATA", "__MING_ENSURE_ENTITY_DATA",
         "__MING_ENSURE_FULL_DATA", "__MING_ENSURE_SEARCH_INDEX", "VIEW_CHUNKS", "ENTITY_CHUNKS",
-        "character-details", "__MING_CHARACTER_DETAILS__", "__MING_APPLY_CHARACTER_DETAILS__",
-        "assets/data-'", "document.write",
+        "DETAIL_SHARD_COUNT=16", "detailChunkFor", "__MING_ENTITY_PLAN", "__MING_CHARACTER_DETAILS__",
+        "__MING_APPLY_CHARACTER_DETAILS__", "character-detail-", "assets/data-'", "document.write",
     ):
         assert token in loader, token
     assert "assets/data-full.js" not in loader
     assert "__MING_FULL_DATA_READY" in loader
     assert "characters:['characters']" in loader
-    assert "person:['characters','character-details','events','insight']" in loader
+    assert "if(kind==='person')return ['characters',detailChunkFor(id),'events','insight']" in loader
+    assert "function entityReady(kind,id)" in gate
+    assert "__MING_ENSURE_ENTITY_DATA(kind,'entity:'+kind,id)" in gate
     assert "const baseSetView=setView" in gate
     assert "正在加载此视图所需数据" in gate
     assert "const baseShowPerson" in gate
@@ -84,13 +109,13 @@ def test_lazy_loader_and_gate_have_v8_contract():
     assert "__MING_AFTER_DATA_CHUNKS" in gate
 
 
-def test_command_palette_uses_entity_chunks_not_full_and_is_idempotent():
+def test_command_palette_passes_entity_id_for_detail_shard_and_is_idempotent():
     source = sync_lazy_data.TARGET.read_text(encoding="utf-8")
     rendered = sync_lazy_data.render_source(source)
     assert sync_lazy_data.MARKER in rendered
     assert "commandHasSearchIndex" in rendered
     assert "__MING_ENSURE_SEARCH_INDEX('command')" in rendered
-    assert "__MING_ENSURE_ENTITY_DATA(r.kind,'command-result:'" in rendered
-    assert "__MING_ENSURE_FULL_DATA('command-result:'" in rendered  # 仅旧浏览器/无 loader fallback
+    assert "__MING_ENSURE_ENTITY_DATA(r.kind,'command-result:'+r.kind,r.id)" in rendered
+    assert "__MING_ENSURE_FULL_DATA('command-result:'" in rendered
     assert rendered.index("__MING_ENSURE_ENTITY_DATA") < rendered.index("__MING_ENSURE_FULL_DATA('command-result:'")
     assert sync_lazy_data.render_source(rendered) == rendered
