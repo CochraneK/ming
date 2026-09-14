@@ -63,7 +63,7 @@ def test_web_target_copies_service_worker_and_reports_all_assets():
         for name in expected:
             assert (out / name).exists(), "web target 缺少 %s" % name
             assert name in written and written[name] > 0
-        for obsolete in ("data.js", "data-full.js", "data-character-details.js", "data-location-details.js", "data-space.js"):
+        for obsolete in ("data.js", "data-full.js", "data-character-details.js", "data-location-details.js", "data-event-details.js", "data-space.js"):
             assert not (out / "assets" / obsolete).exists()
         assert (out / "sw.js").read_bytes() == B.SW_PATH.read_bytes()
         assert written["sw.js"] == len(B.SW_PATH.read_bytes())
@@ -71,7 +71,8 @@ def test_web_target_copies_service_worker_and_reports_all_assets():
 
 def test_service_worker_cache_bumped_for_frontend_change():
     sw = B.SW_PATH.read_text(encoding="utf-8")
-    assert "CACHE_PREFIX + 'v20'" in sw
-    assert "V11" in sw
+    assert "CACHE_PREFIX + 'v21'" in sw
+    assert "V12" in sw
+    assert "event-detail" in sw
     assert "lifespans" in sw
     assert "location-detail" in sw
