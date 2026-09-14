@@ -1,5 +1,5 @@
-/* ===== V11 在线数据加载器：实体详情分片 + 时间域分层 =====
-   standalone.html 不加载本文件。人物 16 shard；地点 8 shard；年谱只取 lifespans+characters。 */
+/* ===== V12 在线数据加载器：人物/地点/事件详情分片 + 时间域分层 =====
+   standalone.html 不加载本文件。事件索引只取轻量 core；单事件详情再取对应 shard。 */
 (function(){
 'use strict';
 if(typeof DATA==='undefined')return;
@@ -7,9 +7,11 @@ if(typeof DATA==='undefined')return;
 const root=document.documentElement;
 const CHARACTER_DETAIL_SHARD_COUNT=16;
 const LOCATION_DETAIL_SHARD_COUNT=8;
+const EVENT_DETAIL_SHARD_COUNT=8;
 const CHARACTER_DETAIL_CHUNKS=Array.from({length:CHARACTER_DETAIL_SHARD_COUNT},(_,i)=>'character-detail-'+String(i).padStart(2,'0'));
 const LOCATION_DETAIL_CHUNKS=Array.from({length:LOCATION_DETAIL_SHARD_COUNT},(_,i)=>'location-detail-'+String(i).padStart(2,'0'));
-const ALL_CHUNKS=['characters',...CHARACTER_DETAIL_CHUNKS,'locations',...LOCATION_DETAIL_CHUNKS,'place-chapters','voyages','events','relations','time','lifespans','graphs','insight','meta'];
+const EVENT_DETAIL_CHUNKS=Array.from({length:EVENT_DETAIL_SHARD_COUNT},(_,i)=>'event-detail-'+String(i).padStart(2,'0'));
+const ALL_CHUNKS=['characters',...CHARACTER_DETAIL_CHUNKS,'locations',...LOCATION_DETAIL_CHUNKS,'place-chapters','voyages','events',...EVENT_DETAIL_CHUNKS,'relations','time','lifespans','graphs','insight','meta'];
 const VIEW_CHUNKS={
   overview:[],distribution:[],
   visuals:['graphs'],
@@ -18,19 +20,17 @@ const VIEW_CHUNKS={
   characters:['characters'],
   events:['events'],
   relations:['relations'],
-  timeline:['time','events'],
-  dynasty:['time','events'],
+  timeline:['time'],
+  dynasty:['time'],
   chronicle:['lifespans','characters'],
   insight:['insight']
-};
-const ENTITY_CHUNKS={
-  event:['events','locations','insight']
 };
 const chunkPromises=Object.create(null);
 let searchPromise=null,fullPromise=null,_fullEventSent=false;
 window.__MING_DATA_CHUNKS__=window.__MING_DATA_CHUNKS__||{};
 window.__MING_CHARACTER_DETAILS__=window.__MING_CHARACTER_DETAILS__||{};
 window.__MING_LOCATION_DETAILS__=window.__MING_LOCATION_DETAILS__||{};
+window.__MING_EVENT_DETAILS__=window.__MING_EVENT_DETAILS__||{};
 
 function stableShardIndex(value,count){
   let h=5381>>>0;
@@ -39,10 +39,21 @@ function stableShardIndex(value,count){
 }
 function characterDetailChunkFor(name){return 'character-detail-'+String(stableShardIndex(name,CHARACTER_DETAIL_SHARD_COUNT)).padStart(2,'0');}
 function locationDetailChunkFor(name){return 'location-detail-'+String(stableShardIndex(name,LOCATION_DETAIL_SHARD_COUNT)).padStart(2,'0');}
+function eventDetailChunkFor(id){return 'event-detail-'+String(stableShardIndex(id,EVENT_DETAIL_SHARD_COUNT)).padStart(2,'0');}
+function resolveEventId(value){
+  const raw=String(value||'');
+  if(/^event-\d+$/.test(raw))return raw;
+  const event=(DATA.events||[]).find(x=>x.id===raw||x.name===raw);
+  return event&&event.id||'';
+}
 function entityPlan(kind,id){
-  if(kind==='person')return ['characters',characterDetailChunkFor(id),'events','insight'];
+  if(kind==='person')return ['characters',characterDetailChunkFor(id),'insight'];
   if(kind==='place')return ['locations',locationDetailChunkFor(id),'events','insight'];
-  return ENTITY_CHUNKS[kind]||ALL_CHUNKS;
+  if(kind==='event'){
+    const eventId=resolveEventId(id);
+    return eventId?['events',eventDetailChunkFor(eventId),'locations','insight']:['events'];
+  }
+  return ALL_CHUNKS;
 }
 function uniq(items){return [...new Set((items||[]).filter(x=>ALL_CHUNKS.includes(x)))];}
 function ready(name){return !!window.__MING_DATA_CHUNKS__[name];}
@@ -64,36 +75,30 @@ function syncDataState(reason){
 }
 
 window.__MING_APPLY_CHARACTER_DETAILS__=function(){
-  const details=window.__MING_CHARACTER_DETAILS__||{};
-  let patched=0;
-  (DATA.characters||[]).forEach(character=>{
-    const extra=details[character&&character.name];
-    if(extra){Object.assign(character,extra);patched++;}
-  });
-  root.dataset.mingCharacterDetails=String(patched);
-  return patched;
+  const details=window.__MING_CHARACTER_DETAILS__||{};let patched=0;
+  (DATA.characters||[]).forEach(x=>{const extra=details[x&&x.name];if(extra){Object.assign(x,extra);patched++;}});
+  root.dataset.mingCharacterDetails=String(patched);return patched;
 };
 window.__MING_APPLY_LOCATION_DETAILS__=function(){
-  const details=window.__MING_LOCATION_DETAILS__||{};
-  let patched=0;
-  (DATA.locations||[]).forEach(location=>{
-    const extra=details[location&&location.ancient];
-    if(extra){Object.assign(location,extra);patched++;}
-  });
-  root.dataset.mingLocationDetails=String(patched);
-  return patched;
+  const details=window.__MING_LOCATION_DETAILS__||{};let patched=0;
+  (DATA.locations||[]).forEach(x=>{const extra=details[x&&x.ancient];if(extra){Object.assign(x,extra);patched++;}});
+  root.dataset.mingLocationDetails=String(patched);return patched;
+};
+window.__MING_APPLY_EVENT_DETAILS__=function(){
+  const details=window.__MING_EVENT_DETAILS__||{};let patched=0;
+  (DATA.events||[]).forEach(x=>{const extra=details[x&&x.id];if(extra){Object.assign(x,extra);patched++;}});
+  root.dataset.mingEventDetails=String(patched);return patched;
 };
 
 window.__MING_SEARCH_INDEX_READY=window.__MING_SEARCH_INDEX_READY===true;
-syncDataState();
-markSearch(window.__MING_SEARCH_INDEX_READY?'ready':'idle');
-window.__MING_APPLY_CHARACTER_DETAILS__();
-window.__MING_APPLY_LOCATION_DETAILS__();
+syncDataState();markSearch(window.__MING_SEARCH_INDEX_READY?'ready':'idle');
+window.__MING_APPLY_CHARACTER_DETAILS__();window.__MING_APPLY_LOCATION_DETAILS__();window.__MING_APPLY_EVENT_DETAILS__();
 
 document.addEventListener('ming:data-chunk',event=>{
   const name=event&&event.detail&&event.detail.name;
   if(name==='characters'||String(name||'').startsWith('character-detail-'))window.__MING_APPLY_CHARACTER_DETAILS__();
   if(name==='locations'||String(name||'').startsWith('location-detail-'))window.__MING_APPLY_LOCATION_DETAILS__();
+  if(name==='events'||String(name||'').startsWith('event-detail-'))window.__MING_APPLY_EVENT_DETAILS__();
   syncDataState(name?'chunk:'+name:'chunk');
 });
 
@@ -102,14 +107,13 @@ function loadChunk(name,reason){
   if(chunkPromises[name])return chunkPromises[name];
   chunkPromises[name]=new Promise((resolve,reject)=>{
     const script=document.createElement('script');
-    script.src='assets/data-'+name+'.js';
-    script.dataset.mingDataChunk=name;
+    script.src='assets/data-'+name+'.js';script.dataset.mingDataChunk=name;
     script.onload=()=>{
       if(!ready(name)){reject(new Error('data-'+name+'.js 已加载但未标记 ready'));return;}
       if(name==='characters'||name.startsWith('character-detail-'))window.__MING_APPLY_CHARACTER_DETAILS__();
       if(name==='locations'||name.startsWith('location-detail-'))window.__MING_APPLY_LOCATION_DETAILS__();
-      syncDataState(reason||('chunk:'+name));
-      resolve(name);
+      if(name==='events'||name.startsWith('event-detail-'))window.__MING_APPLY_EVENT_DETAILS__();
+      syncDataState(reason||('chunk:'+name));resolve(name);
     };
     script.onerror=()=>reject(new Error('领域数据加载失败：'+name));
     document.head.appendChild(script);
@@ -120,38 +124,38 @@ function loadChunk(name,reason){
 window.__MING_ENSURE_DATA_CHUNKS=function(names,reason){
   const wanted=uniq(names);
   if(!wanted.length){syncDataState(reason);return Promise.resolve(DATA);}
-  root.dataset.mingData='loading';
-  root.dataset.mingDataReason=reason||'interaction';
+  root.dataset.mingData='loading';root.dataset.mingDataReason=reason||'interaction';
   return Promise.all(wanted.map(name=>loadChunk(name,reason))).then(()=>{
-    window.__MING_APPLY_CHARACTER_DETAILS__();
-    window.__MING_APPLY_LOCATION_DETAILS__();
+    window.__MING_APPLY_CHARACTER_DETAILS__();window.__MING_APPLY_LOCATION_DETAILS__();window.__MING_APPLY_EVENT_DETAILS__();
     syncDataState(reason);
     try{if(typeof window.__MING_AFTER_DATA_CHUNKS==='function')window.__MING_AFTER_DATA_CHUNKS(wanted);}catch(_){}
     return DATA;
   });
 };
 window.__MING_VIEW_CHUNKS=VIEW_CHUNKS;
-window.__MING_ENTITY_CHUNKS=ENTITY_CHUNKS;
 window.__MING_CHARACTER_DETAIL_CHUNK=characterDetailChunkFor;
 window.__MING_LOCATION_DETAIL_CHUNK=locationDetailChunkFor;
+window.__MING_EVENT_DETAIL_CHUNK=eventDetailChunkFor;
 window.__MING_ENTITY_PLAN=entityPlan;
 window.__MING_ENSURE_VIEW_DATA=function(view,reason){return window.__MING_ENSURE_DATA_CHUNKS(VIEW_CHUNKS[view]||ALL_CHUNKS,reason||('view:'+view));};
-window.__MING_ENSURE_ENTITY_DATA=function(kind,reason,id){return window.__MING_ENSURE_DATA_CHUNKS(entityPlan(kind,id),reason||('entity:'+kind));};
+window.__MING_ENSURE_ENTITY_DATA=function(kind,reason,id){
+  const why=reason||('entity:'+kind);
+  if(kind!=='event')return window.__MING_ENSURE_DATA_CHUNKS(entityPlan(kind,id),why);
+  return window.__MING_ENSURE_DATA_CHUNKS(['events'],why).then(()=>{
+    const eventId=resolveEventId(id);
+    if(!eventId)throw new Error('未找到事件：'+String(id||''));
+    return window.__MING_ENSURE_DATA_CHUNKS([eventDetailChunkFor(eventId),'locations','insight'],why);
+  });
+};
 
 window.__MING_ENSURE_SEARCH_INDEX=function(reason){
   if(window.__MING_SEARCH_INDEX_READY)return Promise.resolve(window.__MING_SEARCH_INDEX__||null);
   if(searchPromise)return searchPromise;
   markSearch('loading',reason||'command');
   searchPromise=new Promise((resolve,reject)=>{
-    const script=document.createElement('script');
-    script.src='assets/search-index.js';
-    script.dataset.mingSearchChunk='index';
-    script.onload=()=>{
-      if(!window.__MING_SEARCH_INDEX_READY){reject(new Error('search-index.js 已加载但未标记 ready'));return;}
-      markSearch('ready',reason||'command');resolve(window.__MING_SEARCH_INDEX__||null);
-    };
-    script.onerror=()=>reject(new Error('搜索索引加载失败'));
-    document.head.appendChild(script);
+    const script=document.createElement('script');script.src='assets/search-index.js';script.dataset.mingSearchChunk='index';
+    script.onload=()=>{if(!window.__MING_SEARCH_INDEX_READY){reject(new Error('search-index.js 已加载但未标记 ready'));return;}markSearch('ready',reason||'command');resolve(window.__MING_SEARCH_INDEX__||null);};
+    script.onerror=()=>reject(new Error('搜索索引加载失败'));document.head.appendChild(script);
   }).catch(err=>{searchPromise=null;markSearch('error',reason||'command');throw err;});
   return searchPromise;
 };
@@ -160,18 +164,15 @@ window.__MING_ENSURE_FULL_DATA=function(reason){
   if(window.__MING_FULL_DATA_READY)return Promise.resolve(DATA);
   if(fullPromise)return fullPromise;
   fullPromise=window.__MING_ENSURE_DATA_CHUNKS(ALL_CHUNKS,reason||'full').then(data=>{
-    window.__MING_APPLY_CHARACTER_DETAILS__();
-    window.__MING_APPLY_LOCATION_DETAILS__();
-    try{if(typeof window.__MING_AFTER_FULL_DATA==='function')window.__MING_AFTER_FULL_DATA();}catch(_){}
-    return data;
+    window.__MING_APPLY_CHARACTER_DETAILS__();window.__MING_APPLY_LOCATION_DETAILS__();window.__MING_APPLY_EVENT_DETAILS__();
+    try{if(typeof window.__MING_AFTER_FULL_DATA==='function')window.__MING_AFTER_FULL_DATA();}catch(_){}return data;
   }).catch(err=>{fullPromise=null;throw err;});
   return fullPromise;
 };
 
 function readHash(){
   const raw=String(location.hash||'').replace(/^#/,'');const out={};if(!raw)return out;
-  raw.split('&').forEach(part=>{if(!part)return;const i=part.indexOf('=');const k=i<0?part:part.slice(0,i);out[k]=i<0?'':decodeURIComponent(part.slice(i+1));});
-  return out;
+  raw.split('&').forEach(part=>{if(!part)return;const i=part.indexOf('=');const k=i<0?part:part.slice(0,i);out[k]=i<0?'':decodeURIComponent(part.slice(i+1));});return out;
 }
 function deepPlan(){
   const p=readHash();
@@ -182,7 +183,7 @@ function deepPlan(){
   return [];
 }
 
-/* deep link 在 app.js 前只预载实体/视图真正需要的数据。V11 年谱不再加载 timeline。 */
+/* deep link 在 app.js 前只预载视图/实体真正需要的数据；标准事件 deep link 使用稳定 event-* id。 */
 if(document.readyState==='loading'){
   const plan=uniq(deepPlan()).filter(name=>!ready(name));
   if(plan.length){

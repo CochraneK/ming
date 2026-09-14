@@ -1,10 +1,10 @@
 # 明朝那些事儿知识库
 
-基于《明朝那些事儿》七部 156 章全文抽取整理的静态知识库。在线版采用 V11 分层按需交付：首页只加载 `boot-data.js`，全局搜索加载轻量 `search-index.js`；人物为 `data-characters.js` + 16 个人物详情 shard，地点为 `data-locations.js` + 8 个地点详情 shard + 独立章节/航线块；时间域进一步把年谱专用 `lifespans` 从 `data-time.js` 拆成 `data-lifespans.js`，因此年谱只加载人物卡片 + 生卒数据，时间轴/帝王才加载 timeline。`standalone.html` 仍是完整单文件离线版。
+基于《明朝那些事儿》七部 156 章全文抽取整理的静态知识库。在线版采用 V12 分层按需交付：首页只加载 `boot-data.js`，全局搜索加载轻量 `search-index.js`；人物为 `data-characters.js` + 16 个人物详情 shard，地点为 `data-locations.js` + 8 个地点详情 shard + 独立章节/航线块，年谱使用独立 `data-lifespans.js`；事件进一步拆为轻量 `data-events.js` 摘要核心 + 8 个 `data-event-detail-*` 详情 shard。时间轴/帝王首次只加载 `data-time.js`，人物详情和郑和航线也不再为‘可能点击事件’提前下载 events；真正打开单条事件时才补事件核心、目标详情 shard、地点摘要与洞察。`standalone.html` 仍是完整单文件离线版。
 
 ## 在线查看
 
-GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V11 分层按需版；`standalone.html` 为可下载 / 双击打开的完整离线版）
+GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V12 分层按需版；`standalone.html` 为可下载 / 双击打开的完整离线版）
 
 ## 当前规模
 
@@ -19,7 +19,7 @@ GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V11 �
 | 年谱 | 165 人 | 主要人物生卒横向展开，与年号对位 |
 
 <!-- README_STATS_SYNC -->
-> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme.py` 从最终模型自动刷新；发布同步工作流会同时维护在线 V11 `index.html + assets/` 与离线 `standalone.html`。
+> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme.py` 从最终模型自动刷新；发布同步工作流会同时维护在线 V12 `index.html + assets/` 与离线 `standalone.html`。
 
 ## 报告视图（12 个）
 
@@ -75,12 +75,12 @@ python tests/run_tests.py           # 单元测试（无第三方依赖，可直
 | 参数 | 说明 |
 |---|---|
 | `--scope full\|p1..p7` | 构建全书或某一部（分部产物为 `report_pN.html`） |
-| `--target standalone\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联到 `standalone.html`；`web`＝输出到 `dist/<scope>/`。人物：`data-characters.js` + 16 个 `data-character-detail-*`；地点：`data-locations.js` + 8 个 `data-location-detail-*`，另有 `data-place-chapters.js` / `data-voyages.js`；生产发布随后由 `src/split_time_asset_v11.py` 把 `data-time.js` 中的年谱 `lifespans` 无损拆成 `data-lifespans.js`，其余事件 / 关系 / 图谱 / 洞察 / 元数据继续独立按需加载 |
+| `--target standalone\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联到 `standalone.html`；`web`＝输出到 `dist/<scope>/`。生产发布在基础 web 构建后依次执行 V11 时间分层与 V12 事件分层：人物为 `data-characters.js` + 16 个 `data-character-detail-*`，地点为 `data-locations.js` + 8 个 `data-location-detail-*` + `data-place-chapters.js` / `data-voyages.js`，时间另有 `data-lifespans.js`，事件为轻量 `data-events.js` + 8 个 `data-event-detail-*`；关系 / 图谱 / 洞察 / 元数据继续独立按需加载 |
 | `--out 路径` | 覆盖输出位置 |
 | `--check` | 跑完聚合与全部校验后不写文件，ERROR 时以退出码 2 中止 |
 | `--json 路径` | 把校验结论导出为 JSON |
 
-`standalone` 构建继续内联完整最终 DATA；在线生产链路对同一 payload 做可逆传输分区，再由 `src/split_time_asset_v11.py` 仅在物理交付层把 `lifespans` 从 `data-time.js` 拆为 `data-lifespans.js`。人物与地点仍采用‘轻量摘要 + 详情补丁 + 确定性 shard’；加载全部物理块后可逐值恢复原始最终模型。不维护 `data-full.js`、`data-character-details.js`、`data-location-details.js` 或旧 `data-space.js` 单体包。
+`standalone` 构建继续内联完整最终 DATA；在线生产链路对同一 payload 做可逆传输分区，再依次由 `src/split_time_asset_v11.py` 拆出 `lifespans`、由 `src/split_event_asset_v12.py` 把 events 变换成摘要核心 + 8 个确定性详情 shard。人物与地点继续采用‘轻量摘要 + 详情补丁 + 确定性 shard’。加载全部物理块后可逐值恢复原始最终模型；不维护 `data-full.js`、`data-character-details.js`、`data-location-details.js`、`data-event-details.js` 或旧 `data-space.js` 单体包。
 
 - `data/data.json` 是聚合后的单一数据源。
 - `data/geo_annotations.json`（地点坐标/类型标注）、`data/manual_relations.json`（人工关系）、`data/manual_corrections.json`（勘误）、`data/manual_lifespans.json`（年谱）、`data/manual_persons.json`（补录人物）、`data/derived_chapter_persons.json`（文本反查出场）**重跑聚合不会丢失**，是可持续维护的增量层。
