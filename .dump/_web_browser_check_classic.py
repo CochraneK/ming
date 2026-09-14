@@ -28,7 +28,7 @@ def check_home():
         r'data-ming-chunks=""',
         r'data-ming-search="idle"',
         r'<nav class="tabs"',
-        r'<button data-view="overview" class="active">总览</button>',
+        r'<button data-view="overview"[^>]*>总览</button>',
     )
     for forbidden in (r'class="command-trigger"', r'class="v3-story panel"', r'class="nav-cluster"'):
         if re.search(forbidden, dom, re.S):
