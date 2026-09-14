@@ -1,5 +1,5 @@
-/* ===== V10 在线数据加载器：人物/地点详情确定性分片 =====
-   standalone.html 不加载本文件。人物 16 shard；地点 8 shard；按章节地点与航线独立按需。 */
+/* ===== V11 在线数据加载器：实体详情分片 + 时间域分层 =====
+   standalone.html 不加载本文件。人物 16 shard；地点 8 shard；年谱只取 lifespans+characters。 */
 (function(){
 'use strict';
 if(typeof DATA==='undefined')return;
@@ -9,7 +9,7 @@ const CHARACTER_DETAIL_SHARD_COUNT=16;
 const LOCATION_DETAIL_SHARD_COUNT=8;
 const CHARACTER_DETAIL_CHUNKS=Array.from({length:CHARACTER_DETAIL_SHARD_COUNT},(_,i)=>'character-detail-'+String(i).padStart(2,'0'));
 const LOCATION_DETAIL_CHUNKS=Array.from({length:LOCATION_DETAIL_SHARD_COUNT},(_,i)=>'location-detail-'+String(i).padStart(2,'0'));
-const ALL_CHUNKS=['characters',...CHARACTER_DETAIL_CHUNKS,'locations',...LOCATION_DETAIL_CHUNKS,'place-chapters','voyages','events','relations','time','graphs','insight','meta'];
+const ALL_CHUNKS=['characters',...CHARACTER_DETAIL_CHUNKS,'locations',...LOCATION_DETAIL_CHUNKS,'place-chapters','voyages','events','relations','time','lifespans','graphs','insight','meta'];
 const VIEW_CHUNKS={
   overview:[],distribution:[],
   visuals:['graphs'],
@@ -20,7 +20,7 @@ const VIEW_CHUNKS={
   relations:['relations'],
   timeline:['time','events'],
   dynasty:['time','events'],
-  chronicle:['time','characters'],
+  chronicle:['lifespans','characters'],
   insight:['insight']
 };
 const ENTITY_CHUNKS={
@@ -182,8 +182,7 @@ function deepPlan(){
   return [];
 }
 
-/* deep link 在 app.js 前只预载实体真正需要的数据。人物只取一个人物 shard；
-   地点只取一个地点 shard。普通 locations / map deep link 都只取轻量地点索引。 */
+/* deep link 在 app.js 前只预载实体/视图真正需要的数据。V11 年谱不再加载 timeline。 */
 if(document.readyState==='loading'){
   const plan=uniq(deepPlan()).filter(name=>!ready(name));
   if(plan.length){

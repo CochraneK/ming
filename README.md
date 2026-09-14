@@ -1,10 +1,10 @@
 # 明朝那些事儿知识库
 
-基于《明朝那些事儿》七部 156 章全文抽取整理的静态知识库。在线版采用 V10 实体与空间分层按需交付：首页只加载 `boot-data.js`，全局搜索加载轻量 `search-index.js`；人物保留 `data-characters.js` + 16 个人物详情 shard；地点域进一步拆成轻量 `data-locations.js`、8 个 `data-location-detail-00.js` … `07.js`、独立 `data-place-chapters.js` 与 `data-voyages.js`。地点索引和默认地图只取地点摘要，打开单个地点才取其详情 shard + 事件/洞察，切到“按章节”或郑和航线时才补对应数据。同时保留 `standalone.html` 单文件离线版。
+基于《明朝那些事儿》七部 156 章全文抽取整理的静态知识库。在线版采用 V11 分层按需交付：首页只加载 `boot-data.js`，全局搜索加载轻量 `search-index.js`；人物为 `data-characters.js` + 16 个人物详情 shard，地点为 `data-locations.js` + 8 个地点详情 shard + 独立章节/航线块；时间域进一步把年谱专用 `lifespans` 从 `data-time.js` 拆成 `data-lifespans.js`，因此年谱只加载人物卡片 + 生卒数据，时间轴/帝王才加载 timeline。`standalone.html` 仍是完整单文件离线版。
 
 ## 在线查看
 
-GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V10 实体与空间分层按需版；`standalone.html` 为可下载 / 双击打开的完整离线版）
+GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V11 分层按需版；`standalone.html` 为可下载 / 双击打开的完整离线版）
 
 ## 当前规模
 
@@ -19,7 +19,7 @@ GitHub Pages：`https://cochranek.github.io/ming/`（根 `index.html` 为 V10 �
 | 年谱 | 165 人 | 主要人物生卒横向展开，与年号对位 |
 
 <!-- README_STATS_SYNC -->
-> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme.py` 从最终模型自动刷新；发布同步工作流会同时维护在线 V10 `index.html + assets/` 与离线 `standalone.html`。
+> 上表的章节 / 地点 / 人物 / 事件 / 关系统计由 `src/sync_readme.py` 从最终模型自动刷新；发布同步工作流会同时维护在线 V11 `index.html + assets/` 与离线 `standalone.html`。
 
 ## 报告视图（12 个）
 
@@ -75,12 +75,12 @@ python tests/run_tests.py           # 单元测试（无第三方依赖，可直
 | 参数 | 说明 |
 |---|---|
 | `--scope full\|p1..p7` | 构建全书或某一部（分部产物为 `report_pN.html`） |
-| `--target standalone\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联到 `standalone.html`；`web`＝输出到 `dist/<scope>/`。人物：`data-characters.js` + 16 个 `data-character-detail-*`；地点：`data-locations.js` + 8 个 `data-location-detail-*`，按章节为 `data-place-chapters.js`，航线为 `data-voyages.js`；事件 / 关系 / 时间 / 图谱 / 洞察 / 元数据继续独立按需加载 |
+| `--target standalone\|web` | 默认 `standalone`＝CSS/JS/DATA 全内联到 `standalone.html`；`web`＝输出到 `dist/<scope>/`。人物：`data-characters.js` + 16 个 `data-character-detail-*`；地点：`data-locations.js` + 8 个 `data-location-detail-*`，另有 `data-place-chapters.js` / `data-voyages.js`；生产发布随后由 `src/split_time_asset_v11.py` 把 `data-time.js` 中的年谱 `lifespans` 无损拆成 `data-lifespans.js`，其余事件 / 关系 / 图谱 / 洞察 / 元数据继续独立按需加载 |
 | `--out 路径` | 覆盖输出位置 |
 | `--check` | 跑完聚合与全部校验后不写文件，ERROR 时以退出码 2 中止 |
 | `--json 路径` | 把校验结论导出为 JSON |
 
-`standalone` 构建继续内联完整最终 DATA；`web` 构建对同一 payload 做可逆传输分区。人物与地点都采用‘轻量摘要 + 详情补丁 + 确定性 shard’，空间的章节索引和航线再独立拆块；加载全部物理块后可逐值恢复原始最终模型。不维护 `data-full.js`、`data-character-details.js`、`data-location-details.js` 或旧 `data-space.js` 单体包。
+`standalone` 构建继续内联完整最终 DATA；在线生产链路对同一 payload 做可逆传输分区，再由 `src/split_time_asset_v11.py` 仅在物理交付层把 `lifespans` 从 `data-time.js` 拆为 `data-lifespans.js`。人物与地点仍采用‘轻量摘要 + 详情补丁 + 确定性 shard’；加载全部物理块后可逐值恢复原始最终模型。不维护 `data-full.js`、`data-character-details.js`、`data-location-details.js` 或旧 `data-space.js` 单体包。
 
 - `data/data.json` 是聚合后的单一数据源。
 - `data/geo_annotations.json`（地点坐标/类型标注）、`data/manual_relations.json`（人工关系）、`data/manual_corrections.json`（勘误）、`data/manual_lifespans.json`（年谱）、`data/manual_persons.json`（补录人物）、`data/derived_chapter_persons.json`（文本反查出场）**重跑聚合不会丢失**，是可持续维护的增量层。
