@@ -21,7 +21,7 @@ concurrency:
 jobs:
   refresh:
     if: github.actor != 'github-actions[bot]'
-    name: 重建在线 V11 分层版、离线版与 README 统计
+    name: 重建在线 V12 分层版、离线版与 README 统计
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -36,6 +36,9 @@ jobs:
       - name: 规范化前端动态统计口径
         run: python src/normalize_frontend.py
 
+      - name: 同步 V12 事件摘要前端钩子
+        run: python src/sync_event_cards_v12.py
+
       - name: 同步实体详情分片搜索钩子
         run: python src/sync_lazy_data.py
 
@@ -45,22 +48,25 @@ jobs:
       - name: 同步视觉主题镜像
         run: python src/sync_theme.py
 
-      - name: 同步 V3 / V11 产品体验镜像
+      - name: 同步 V3 / V12 产品体验镜像
         run: python src/sync_experience.py
 
-      - name: 同步 README 最终模型与 V11 交付说明
+      - name: 同步 README 最终模型与 V12 交付说明
         run: |
           python src/sync_readme.py
           python src/sync_readme_v11.py
-          python src/sync_readme_v11.py --check
+          python src/sync_readme_v12.py
+          python src/sync_readme_v12.py --check
 
-      - name: 构建 V11 双交付产物
+      - name: 构建 V12 双交付产物
         shell: bash
         run: |
           rm -rf .ci/publish
           python src/build.py --scope full --target web --out .ci/publish --quiet
           python src/split_time_asset_v11.py .ci/publish
           python src/split_time_asset_v11.py .ci/publish --check
+          python src/split_event_asset_v12.py .ci/publish
+          python src/split_event_asset_v12.py .ci/publish --check
           python src/build.py --scope full --target standalone --out standalone.html --quiet
           rm -rf assets
           cp .ci/publish/index.html index.html
@@ -68,6 +74,7 @@ jobs:
           cmp -s .ci/publish/sw.js sw.js
           python src/check_delivery.py .ci/publish
           python src/check_time_layers_v11.py .ci/publish
+          python src/check_event_layers_v12.py .ci/publish
           python src/check_budget.py standalone.html
 
       - name: 仅在公开产物变化时回写 main
@@ -79,11 +86,11 @@ jobs:
             exit 0
           fi
           if git diff --quiet -- web/js/app.js web/js/experience.js web/css/app.css web/template/index.html README.md index.html standalone.html assets; then
-            echo "源码镜像、README、在线 V11 分层版与离线版均已一致，无需提交。"
+            echo "源码镜像、README、在线 V12 分层版与离线版均已一致，无需提交。"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add web/js/app.js web/js/experience.js web/css/app.css web/template/index.html README.md index.html standalone.html assets
-          git commit -m "chore: publish layered time and space web data"
+          git commit -m "chore: publish layered event, time and space web data"
           git push origin HEAD:main

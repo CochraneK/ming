@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V5/V6 按需基线 + V7~V10 领域、人物/地点摘要与详情分片回归。"""
+"""V5/V6 按需基线 + V7~V12 领域、实体摘要与详情分片回归。"""
 from __future__ import annotations
 
 import json
@@ -121,31 +121,37 @@ def test_domain_fields_are_mutually_exclusive_and_exhaustive():
         assert virtual not in payload
 
 
-def test_lazy_loader_and_gate_have_v10_contract():
+def test_lazy_loader_and_gate_have_v12_contract():
     loader = (ROOT / "web" / "js" / "data-loader.js").read_text(encoding="utf-8")
     gate = (ROOT / "web" / "js" / "lazy-data.js").read_text(encoding="utf-8")
     for token in (
         "__MING_ENSURE_DATA_CHUNKS", "__MING_ENSURE_VIEW_DATA", "__MING_ENSURE_ENTITY_DATA",
-        "__MING_ENSURE_FULL_DATA", "__MING_ENSURE_SEARCH_INDEX", "VIEW_CHUNKS", "ENTITY_CHUNKS",
-        "CHARACTER_DETAIL_SHARD_COUNT=16", "LOCATION_DETAIL_SHARD_COUNT=8",
-        "characterDetailChunkFor", "locationDetailChunkFor", "__MING_ENTITY_PLAN",
-        "__MING_CHARACTER_DETAILS__", "__MING_LOCATION_DETAILS__",
-        "__MING_APPLY_CHARACTER_DETAILS__", "__MING_APPLY_LOCATION_DETAILS__",
-        "character-detail-", "location-detail-", "assets/data-'", "document.write",
+        "__MING_ENSURE_FULL_DATA", "__MING_ENSURE_SEARCH_INDEX", "VIEW_CHUNKS",
+        "CHARACTER_DETAIL_SHARD_COUNT=16", "LOCATION_DETAIL_SHARD_COUNT=8", "EVENT_DETAIL_SHARD_COUNT=8",
+        "characterDetailChunkFor", "locationDetailChunkFor", "eventDetailChunkFor", "__MING_ENTITY_PLAN",
+        "__MING_CHARACTER_DETAILS__", "__MING_LOCATION_DETAILS__", "__MING_EVENT_DETAILS__",
+        "__MING_APPLY_CHARACTER_DETAILS__", "__MING_APPLY_LOCATION_DETAILS__", "__MING_APPLY_EVENT_DETAILS__",
+        "character-detail-", "location-detail-", "event-detail-", "assets/data-'", "document.write",
     ):
         assert token in loader, token
     assert "assets/data-full.js" not in loader
     assert "__MING_FULL_DATA_READY" in loader
     assert "locations:['locations']" in loader
     assert "map:['locations']" in loader
-    assert "if(kind==='person')return ['characters',characterDetailChunkFor(id),'events','insight']" in loader
+    assert "events:['events']" in loader
+    assert "timeline:['time']" in loader
+    assert "dynasty:['time']" in loader
+    assert "if(kind==='person')return ['characters',characterDetailChunkFor(id),'insight']" in loader
     assert "if(kind==='place')return ['locations',locationDetailChunkFor(id),'events','insight']" in loader
+    assert "return eventId?['events',eventDetailChunkFor(eventId),'locations','insight']:['events'];" in loader
     assert "function entityReady(kind,id)" in gate
     assert "__MING_ENSURE_ENTITY_DATA(kind,'entity:'+kind,id)" in gate
     assert "[data-loc-mode=\"chapter\"]" in gate
     assert "['place-chapters']" in gate
     assert "[data-map-mode=\"voyage\"]" in gate
-    assert "['voyages','events']" in gate
+    assert "['voyages'],'map-voyage'" in gate
+    assert "[data-event-id],[data-event-name],[data-loc-event]" in gate
+    assert "event-click:" in gate
     assert "[data-location-id]" in gate
     assert "location-card:" in gate
     assert "const baseSetView=setView" in gate
