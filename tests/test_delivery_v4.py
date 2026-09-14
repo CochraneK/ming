@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V4 双交付基线 + V9 boot/search/domain/人物详情确定性分片。"""
+"""V4 双交付基线 + V10 人物/地点详情分片与空间模式按需。"""
 from __future__ import annotations
 
 import tempfile
@@ -44,29 +44,27 @@ def test_web_target_externalizes_every_project_frontend_layer():
         assert "EXPERIENCE_CSS_SYNC_START" not in html
         assert "EXPERIENCE_SYNC_START" not in html
         assert "const DATA=" not in html
-        assert not (out / "assets" / "data-full.js").exists()
-        assert not (out / "assets" / "data-character-details.js").exists()
+        for obsolete in ("data-full.js", "data-character-details.js", "data-location-details.js", "data-space.js"):
+            assert not (out / "assets" / obsolete).exists()
     finally:
         td.cleanup()
 
 
-def test_web_shell_is_small_and_character_detail_is_sharded():
+def test_web_shell_and_entity_layers_are_small():
     td, out, _stats = _web_output()
     try:
-        html_size = (out / "index.html").stat().st_size
-        boot_size = (out / "assets" / "boot-data.js").stat().st_size
-        search_size = (out / "assets" / "search-index.js").stat().st_size
-        assert html_size < 80 * 1024
-        assert boot_size < 112 * 1024
-        assert search_size < 768 * 1024
+        assert (out / "index.html").stat().st_size < 80 * 1024
+        assert (out / "assets" / "boot-data.js").stat().st_size < 112 * 1024
+        assert (out / "assets" / "search-index.js").stat().st_size < 768 * 1024
         sizes = {name: (out / "assets" / ("data-%s.js" % name)).stat().st_size for name in build.WEB_DELIVERY_CHUNKS}
-        detail_sizes = [sizes[name] for name in build.CHARACTER_DETAIL_SHARD_NAMES]
-        assert len(detail_sizes) == 16
+        char_detail = [sizes[name] for name in build.CHARACTER_DETAIL_SHARD_NAMES]
+        loc_detail = [sizes[name] for name in build.LOCATION_DETAIL_SHARD_NAMES]
+        assert len(char_detail) == 16 and max(char_detail) < 192 * 1024
+        assert len(loc_detail) == 8 and max(loc_detail) < 128 * 1024
         assert sizes["characters"] < 1024 * 1024
-        assert max(detail_sizes) < 192 * 1024
-        assert max(detail_sizes) < sizes["characters"]
-        assert sum(detail_sizes) > max(detail_sizes) * 4
-        assert not (out / "assets" / "data-character-details.js").exists()
+        assert sizes["locations"] < 512 * 1024
+        assert sizes["place-chapters"] < 320 * 1024
+        assert sizes["voyages"] < 64 * 1024
     finally:
         td.cleanup()
 
@@ -84,21 +82,18 @@ def test_refresh_workflow_publishes_web_root_and_keeps_standalone():
     assert "git add" in text and "assets" in text and "standalone.html" in text
 
 
-def test_readme_sync_documents_dual_delivery_idempotently():
+def test_readme_sync_documents_v10_delivery_idempotently():
     source = sync_readme.README.read_text(encoding="utf-8")
     rendered = sync_readme.render_readme(source)
-    assert "在线版采用 V9 人物详情分片按需交付" in rendered
-    assert "首页只加载 `boot-data.js`" in rendered
-    assert "搜索加载轻量 `search-index.js`" in rendered
-    assert "`data-characters.js` 卡片索引" in rendered
-    assert "16 个确定性详情 shard" in rendered
-    assert "data-character-detail-00.js" in rendered
-    assert "人物列表和年谱不会" in rendered
+    assert "在线版采用 V10 实体与空间分层按需交付" in rendered
+    assert "`data-characters.js` + 16 个" in rendered
+    assert "轻量 `data-locations.js`" in rendered
+    assert "8 个 `data-location-detail-00.js`" in rendered
+    assert "`data-place-chapters.js`" in rendered
+    assert "`data-voyages.js`" in rendered
+    assert "地点索引和默认地图只取地点摘要" in rendered
     assert "`standalone.html` 单文件离线版" in rendered
-    assert "构建全书单文件 standalone.html" in rendered
-    assert "data-time.js" in rendered
-    assert "可逆传输分区" in rendered
-    assert "不维护单独的 `data-full.js`" in rendered
-    assert "不生成单体 `data-character-details.js`" in rendered
-    assert "在线 V9 `index.html + assets/` 与离线 `standalone.html`" in rendered
+    assert "不维护 `data-full.js`" in rendered
+    assert "旧 `data-space.js`" in rendered
+    assert "在线 V10 `index.html + assets/` 与离线 `standalone.html`" in rendered
     assert sync_readme.render_readme(rendered) == rendered
