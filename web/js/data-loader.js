@@ -51,6 +51,13 @@ window.__MING_SEARCH_INDEX_READY=window.__MING_SEARCH_INDEX_READY===true;
 syncDataState();
 markSearch(window.__MING_SEARCH_INDEX_READY?'ready':'idle');
 
+/* 领域脚本自身只负责 Object.assign + 标记 ready。无论它来自动态 append 还是 deep-link
+   document.write，都统一靠这个事件收敛 HTML 状态，避免 deep link 永久停在 loading。 */
+document.addEventListener('ming:data-chunk',event=>{
+  const name=event&&event.detail&&event.detail.name;
+  syncDataState(name?'chunk:'+name:'chunk');
+});
+
 function loadChunk(name,reason){
   if(ready(name))return Promise.resolve(name);
   if(chunkPromises[name])return chunkPromises[name];
@@ -128,13 +135,12 @@ function deepPlan(){
 }
 
 /* deep link 必须在 app.js 之前拥有其视图所需的数据。classic parser-blocking script 中
-   document.write 的同源脚本会按顺序执行；因此只预载 deep link 的领域依赖，而非全库。 */
+   document.write 的同源脚本会按顺序执行；每个领域脚本触发 ming:data-chunk 后会同步状态。 */
 if(document.readyState==='loading'){
   const plan=uniq(deepPlan()).filter(name=>!ready(name));
   if(plan.length){
     root.dataset.mingData='loading';root.dataset.mingDataReason='deep-link';
     plan.forEach(name=>document.write('<script src="assets/data-'+name+'.js" data-ming-data-chunk="'+name+'"><\/script>'));
-    syncDataState('deep-link');
   }
 }
 })();
