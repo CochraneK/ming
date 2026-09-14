@@ -30,7 +30,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   // V11 仍只缓存用户实际访问过的块：年谱只缓存 characters + lifespans；时间轴/帝王
-  // 才缓存 time + events。人物、地点详情与空间模式继续沿用各自确定性/独立分片。
+  // 才缓存 time + events。人物详情继续按 character-detail-*，地点详情继续按 location-detail-* 分片。
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const cached = await cache.match(req);
