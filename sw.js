@@ -10,8 +10,9 @@
 // v17：V8 人物 cards / details 二级按需。
 // v18：V9 人物详情 16 个确定性 shard。
 // v19：V10 空间分层：地点摘要 + 8 个地点详情 shard + 按章节地点 + 航线独立按需。
+// v20：V11 时间分层：lifespans 从 timeline 独立；年谱只缓存 characters + lifespans。
 const CACHE_PREFIX = 'ming-report-';
-const CACHE = CACHE_PREFIX + 'v19';
+const CACHE = CACHE_PREFIX + 'v20';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 self.addEventListener('activate', (event) => {
@@ -28,8 +29,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // V10 仍只缓存用户实际访问过的块：地点页/默认地图先缓存 locations；打开单地再缓存
-  // 一个 location-detail-*；“按章节”与 voyages 也各自独立，不会因进入地图就灌入整套空间数据。
+  // V11 仍只缓存用户实际访问过的块：年谱只缓存 characters + lifespans；时间轴/帝王
+  // 才缓存 time + events。人物详情继续按 character-detail-*，地点详情继续按 location-detail-* 分片。
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const cached = await cache.match(req);
