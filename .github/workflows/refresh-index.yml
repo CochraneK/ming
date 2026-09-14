@@ -21,7 +21,7 @@ concurrency:
 jobs:
   refresh:
     if: github.actor != 'github-actions[bot]'
-    name: 重建在线三层按需版、离线版与 README 统计
+    name: 重建在线领域分块版、离线版与 README 统计
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -36,7 +36,7 @@ jobs:
       - name: 规范化前端动态统计口径
         run: python src/normalize_frontend.py
 
-      - name: 同步 V6 search-index 钩子
+      - name: 同步 V7 领域分块搜索钩子
         run: python src/sync_lazy_data.py
 
       - name: 规范化基础 CSS
@@ -45,13 +45,13 @@ jobs:
       - name: 同步视觉主题镜像
         run: python src/sync_theme.py
 
-      - name: 同步 V3 / V6 产品体验镜像
+      - name: 同步 V3 / V7 产品体验镜像
         run: python src/sync_experience.py
 
       - name: 同步 README 最终模型口径
         run: python src/sync_readme.py
 
-      - name: 构建 V6 双交付产物
+      - name: 构建 V7 双交付产物
         shell: bash
         run: |
           rm -rf .ci/publish
@@ -60,7 +60,6 @@ jobs:
           rm -rf assets
           cp .ci/publish/index.html index.html
           cp -R .ci/publish/assets assets
-          # sw.js 的发布副本与源码应逐字一致；根目录直接保留源码即可。
           cmp -s .ci/publish/sw.js sw.js
           python src/check_delivery.py .ci/publish
           python src/check_budget.py standalone.html
@@ -74,11 +73,11 @@ jobs:
             exit 0
           fi
           if git diff --quiet -- web/js/app.js web/js/experience.js web/css/app.css web/template/index.html README.md index.html standalone.html assets; then
-            echo "源码镜像、README、在线三层按需版与离线版均已一致，无需提交。"
+            echo "源码镜像、README、在线领域分块版与离线版均已一致，无需提交。"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add web/js/app.js web/js/experience.js web/css/app.css web/template/index.html README.md index.html standalone.html assets
-          git commit -m "chore: publish boot search full web data"
+          git commit -m "chore: publish domain-chunk web data"
           git push origin HEAD:main
