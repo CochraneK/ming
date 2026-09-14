@@ -7,21 +7,19 @@
 // v5：Phase 3~6 落地（统一实体 ID、模板拆分、deep link、搜索高亮、tab 语义）。
 // v6：P2-03 势力结构化 / Phase 6 双模式图 / P2-10 时间轴区间 / P3-03 统一错误 UI / P3-01 体积压缩。
 // v7：第六轮内容勘误（同名异地两级拆分：延安府 陕西/朝鲜、龙山 浙江/朝鲜；事件补年 7→2；地点定位 41→30）。
-//     虽只改数据、前端未动，但 bump 可让老用户免于「SWR 首次返旧缓存」的一拍延迟，立即拿到新版数据。
-// v8：洞察实体联动 + 书内语录扩面（app.js / app.css 有变更，属前端改动，必须 bump）。
-// v9：自查轮修前端 2 处（详情弹窗里跳洞察要先关弹窗，否则被 top-layer 挡住；洞察链接找不到目标改为可见提示）
-//     + 地点卡把「别称」与「书中提及」拆成两块渲染（app.js 有变更，必须 bump）。
-// v10：统一视觉层级与键盘焦点/跳转链接；web target 补齐 sw.js 并完整报告 data.js / sw.js 产物。
-// v11：V2 信息架构：12 个视图按全局/实体/探索分组；首页加入三条探索路径并统一地图/图谱/时间类视图语言。
-// v12：V3 产品体验：全局快捷搜索、首页数据叙事、图谱阅读器与邻域聚焦入口。
-// v13：V4 双交付：Pages 根入口切为分离资源版，standalone.html 保留离线单文件；CSS/JS/DATA 可独立缓存。
-// v14：V5 在线按需数据：首屏只加载 boot-data.js，深度视图 / 搜索 / 深链再取 data-full.js。
-// v15：V6 搜索分层：打开全局搜索只取轻量 search-index.js，选择实体后才加载 data-full.js。
+// v8：洞察实体联动 + 书内语录扩面。
+// v9：详情/洞察联动与地点别称分级修复。
+// v10：统一视觉层级与键盘焦点；web target 补齐资源。
+// v11：V2 信息架构与跨视图视觉语言。
+// v12：V3 全局快捷搜索、首页数据叙事、图谱阅读器。
+// v13：V4 双交付：Pages 分离资源版 + standalone 单文件。
+// v14：V5 boot/full 按需数据。
+// v15：V6 搜索分层：打开搜索只取 search-index，选择实体后再取 full。
+// v16：V7 视图领域分块：取消单一 data-full.js，人物/事件/空间/关系/时间/图谱/洞察/元数据独立缓存并按视图组合。
 const CACHE_PREFIX = 'ming-report-';
-const CACHE = CACHE_PREFIX + 'v15';
+const CACHE = CACHE_PREFIX + 'v16';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
-
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
@@ -34,15 +32,10 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-
-  // 跨域请求（地图瓦片、unpkg 等）不拦截：respondWith 转发会让
-  // no-cors 图片请求永久 pending（表现为灰底红点）。跨域资源直接走原生网络。
   if (url.origin !== self.location.origin) return;
 
-  // 同源导航与资源走 stale-while-revalidate。V6 后 boot/search/full 三层独立缓存：
-  // 普通首页不请求 search/full；打开搜索只取轻量索引；深度操作首次加载 full 后可重复命中缓存。
-  // 关键点：后台更新必须用 event.waitUntil() 保活——若只 return cached，
-  // worker 生命周期可能在 fetch 完成前就结束，更新被中断，用户会长期看到旧版。
+  // V7 的领域块仍沿用同源 SWR：用户访问过「时间轴」后只缓存 time/events，
+  // 之后打开「图谱」再独立缓存 graphs，不会因为某个深度视图把整库一次性灌入缓存。
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const cached = await cache.match(req);
@@ -50,15 +43,11 @@ self.addEventListener('fetch', (event) => {
       if (res && res.status === 200 && res.type === 'basic') cache.put(req, res.clone());
       return res;
     }).catch(() => cached);
-
     if (cached) {
       event.waitUntil(network.catch(() => {}));
       return cached;
     }
-    try {
-      return await network;
-    } catch (err) {
-      return fetch(req);
-    }
+    try { return await network; }
+    catch (err) { return fetch(req); }
   })());
 });

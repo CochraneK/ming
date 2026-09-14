@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""V6 在线 boot / search / full 三层按需数据的真实 Chrome 冒烟。"""
+"""V7 在线 boot / search / domain chunks 的真实 Chrome 冒烟。"""
 from __future__ import annotations
 
 import os
@@ -52,20 +52,27 @@ def assert_has(dom: str, *patterns: str):
             raise AssertionError("缺少渲染结果：%s" % pattern)
 
 
+def assert_no_chunk(dom: str, *names: str):
+    for name in names:
+        if 'data-ming-data-chunk="%s"' % name in dom:
+            raise AssertionError("不应加载领域块：%s" % name)
+
+
 def check_home_stays_boot_only():
     dom = chrome_dump(TARGET)
     assert_has(
         dom,
         r'<html[^>]*data-ming-data="boot"',
+        r'data-ming-chunks=""',
         r'data-ming-search="idle"',
         r'<button type="button" class="command-trigger"',
         r'<section class="v3-story panel"',
         r'地点已定位',
         r'事件可纪年',
     )
-    if 'data-ming-data-chunk="full"' in dom or 'data-ming-search-chunk="index"' in dom:
+    if 'data-ming-data-chunk=' in dom or 'data-ming-search-chunk="index"' in dom:
         raise AssertionError("普通首页意外加载了按需数据 chunk")
-    print("ok   V6 首页仅 boot，search/full 均未加载")
+    print("ok   V7 首页仅 boot，search/domain chunks 均未加载")
 
 
 def _command_probe(click_result: bool) -> Path:
@@ -85,7 +92,7 @@ setTimeout(function(){
 %s
 },120);
 </script>\n""" % click_js
-    probe_path = TARGET.parent / (".v6-command-click-probe.html" if click_result else ".v6-command-probe.html")
+    probe_path = TARGET.parent / (".v7-command-click-probe.html" if click_result else ".v7-command-probe.html")
     probe_path.write_text(doc.replace("</body>", probe + "</body>", 1), encoding="utf-8")
     return probe_path
 
@@ -99,17 +106,18 @@ def check_command_palette_loads_search_only():
     assert_has(
         dom,
         r'<html[^>]*data-ming-data="boot"',
+        r'data-ming-chunks=""',
         r'data-ming-search="ready"',
         r'data-ming-search-chunk="index"',
         r'<div id="commandPalette" class="command-shell">',
         r'<strong>于谦</strong>',
     )
-    if 'data-ming-data-chunk="full"' in dom:
-        raise AssertionError("仅搜索于谦时不应加载 full data chunk")
-    print("ok   V6 Ctrl+K → search-index → 于谦，仍保持 boot")
+    if 'data-ming-data-chunk=' in dom:
+        raise AssertionError("仅搜索于谦时不应加载任何领域数据块")
+    print("ok   V7 Ctrl+K → search-index → 于谦，DATA 仍保持 boot")
 
 
-def check_command_entity_selection_then_loads_full():
+def check_command_entity_selection_loads_person_domains_only():
     probe_path = _command_probe(True)
     try:
         dom = chrome_dump(probe_path, budget=10500)
@@ -117,26 +125,49 @@ def check_command_entity_selection_then_loads_full():
         probe_path.unlink(missing_ok=True)
     assert_has(
         dom,
-        r'<html[^>]*data-ming-data="full"',
+        r'<html[^>]*data-ming-data="partial"',
+        r'data-ming-chunks="characters,events,insight"',
         r'data-ming-search="ready"',
-        r'data-ming-data-chunk="full"',
+        r'data-ming-data-chunk="characters"',
+        r'data-ming-data-chunk="events"',
+        r'data-ming-data-chunk="insight"',
         r'id="characters" class="view active"',
         r'于谦',
     )
-    print("ok   V6 选择人物结果 → full → 人物视图")
+    assert_no_chunk(dom, "space", "relations", "time", "graphs", "meta")
+    print("ok   V7 选择人物结果 → characters+events+insight，不拉全库")
 
 
-def check_deep_link_loads_full_before_app():
+def check_visual_deep_link_loads_graph_only_before_app():
     dom = chrome_dump(TARGET, "#view=visuals&net=full", 9500)
     assert_has(
         dom,
-        r'<html[^>]*data-ming-data="full"',
+        r'<html[^>]*data-ming-data="partial"',
+        r'data-ming-chunks="graphs"',
+        r'data-ming-data-chunk="graphs"',
         r'id="visuals" class="view active"',
         r'<div class="v3-graph-reader" data-mode="full"[^>]*>',
         r'人物总图怎么读',
         r'data-v3-node-search',
     )
-    print("ok   V6 deep link → full → 人物总图阅读器")
+    assert_no_chunk(dom, "characters", "events", "space", "relations", "time", "insight", "meta")
+    print("ok   V7 图谱 deep link → 仅 graphs")
+
+
+def check_timeline_deep_link_loads_time_and_events_only():
+    dom = chrome_dump(TARGET, "#view=timeline&from=1449&to=1457", 9500)
+    assert_has(
+        dom,
+        r'<html[^>]*data-ming-data="partial"',
+        r'data-ming-chunks="events,time"',
+        r'data-ming-data-chunk="events"',
+        r'data-ming-data-chunk="time"',
+        r'id="timeline" class="view active"',
+        r'1449',
+        r'1457',
+    )
+    assert_no_chunk(dom, "characters", "space", "relations", "graphs", "insight", "meta")
+    print("ok   V7 时间轴 deep link → 仅 events+time")
 
 
 if __name__ == "__main__":
@@ -144,5 +175,6 @@ if __name__ == "__main__":
         raise SystemExit("目标文件不存在：%s" % TARGET)
     check_home_stays_boot_only()
     check_command_palette_loads_search_only()
-    check_command_entity_selection_then_loads_full()
-    check_deep_link_loads_full_before_app()
+    check_command_entity_selection_loads_person_domains_only()
+    check_visual_deep_link_loads_graph_only_before_app()
+    check_timeline_deep_link_loads_time_and_events_only()

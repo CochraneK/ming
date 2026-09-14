@@ -45,7 +45,6 @@ def test_v2_information_architecture_hooks_exist():
     assert skeleton.count('class="nav-cluster"') == 3
     for label in ("全局叙事", "实体索引", "探索分析"):
         assert 'aria-label="%s"' % label in skeleton
-
     assert "V2 首页探索路径" in skeleton
     assert "MutationObserver" in skeleton
     assert "function setView" not in skeleton
@@ -68,23 +67,22 @@ def test_web_target_copies_service_worker_and_reports_all_assets():
     with tempfile.TemporaryDirectory() as td:
         out = Path(td)
         written = B.render_web(payload, out)
-
-        expected = (
+        expected = {
             "index.html", "assets/app.css", "assets/theme.css", "assets/experience.css",
-            "assets/app.js", "assets/boot-data.js", "assets/search-index.js", "assets/data-full.js",
+            "assets/app.js", "assets/boot-data.js", "assets/search-index.js",
             "assets/data-loader.js", "assets/lazy-data.js", "assets/experience.js", "sw.js",
-        )
+        } | {"assets/data-%s.js" % name for name in B.WEB_CHUNKS}
         for name in expected:
             assert (out / name).exists(), "web target 缺少 %s" % name
             assert name in written, "构建统计漏报 %s" % name
             assert written[name] > 0
         assert not (out / "assets" / "data.js").exists()
-        # 发布工作流用 cmp 做逐字节校验，所以换行符也必须保持原样。
+        assert not (out / "assets" / "data-full.js").exists()
         assert (out / "sw.js").read_bytes() == B.SW_PATH.read_bytes()
         assert written["sw.js"] == len(B.SW_PATH.read_bytes())
 
 
 def test_service_worker_cache_bumped_for_frontend_change():
     sw = B.SW_PATH.read_text(encoding="utf-8")
-    assert "CACHE_PREFIX + 'v15'" in sw
-    assert "V6" in sw
+    assert "CACHE_PREFIX + 'v16'" in sw
+    assert "V7" in sw
