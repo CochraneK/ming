@@ -8,8 +8,9 @@
 // v20：V11 时间分层：lifespans 从 timeline 独立；年谱只缓存 characters + lifespans。
 // v21：V12 事件分层：events 仅摘要，单事件详情进入 8 个 event-detail-*；时间轴/帝王只缓存 time。
 // v22：V13 关系分层：relations 仅可见 core；relation-meta 只在完整 DATA 路径按需缓存。
+// v23：恢复 pre-V1 classic UI；只换视觉/导航层，现代分片交付与懒加载保持不变。
 const CACHE_PREFIX = 'ming-report-';
-const CACHE = CACHE_PREFIX + 'v22';
+const CACHE = CACHE_PREFIX + 'v23';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 self.addEventListener('activate', (event) => {
@@ -26,8 +27,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // V13 仍只缓存用户真实走过的路径：关系索引只取 relations core；full DATA 才取 relation-meta；
-  // 事件、人物、地点详情继续只缓存被真正访问的对应 shard。
+  // classic UI 只改变可见外观；V13 交付策略保持：关系索引只取 relations core；
+  // full DATA 才取 relation-meta；事件、人物、地点详情继续只缓存真正访问的对应 shard。
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const cached = await cache.match(req);
