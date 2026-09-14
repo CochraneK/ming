@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   check:
-    name: 语法 · 不变量 · 构建 · V10 浏览器
+    name: 语法 · 不变量 · 构建 · V11 浏览器
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -64,7 +64,7 @@ jobs:
           python src/sync_theme.py
           git diff --check -- web/template/index.html
 
-      - name: V3 / V10 产品体验镜像同步冒烟
+      - name: V3 / V11 产品体验镜像同步冒烟
         run: |
           python src/sync_experience.py
           python src/sync_experience.py --check
@@ -76,6 +76,8 @@ jobs:
       - name: README 同步脚本冒烟
         run: |
           python src/sync_readme.py
+          python src/sync_readme_v11.py
+          python src/sync_readme_v11.py --check
           git diff --check -- README.md
 
       - name: 构建冒烟（standalone，不落盘）
@@ -84,7 +86,7 @@ jobs:
       - name: 数据审计
         run: python src/audit_final.py --quick
 
-      - name: 最终 payload 与 V10 人物/地点分片体积剖析
+      - name: 最终 payload 与 V10 实体分片体积剖析
         run: python src/check_payload_budget.py --json .ci/payload-sizes.json
 
       - name: 构建离线单文件产物
@@ -93,11 +95,17 @@ jobs:
       - name: 离线版体积预算
         run: python src/check_budget.py .ci/standalone.html
 
-      - name: 构建在线 V10 实体与空间分层产物
-        run: python src/build.py --scope full --target web --out .ci/site --quiet
+      - name: 构建在线 V11 分层产物
+        run: |
+          python src/build.py --scope full --target web --out .ci/site --quiet
+          python src/split_time_asset_v11.py .ci/site
+          python src/split_time_asset_v11.py .ci/site --check
 
-      - name: 在线 boot/search/entity-shards/space-layers 结构与体积预算
+      - name: 在线实体/空间基础结构与体积预算
         run: python src/check_delivery.py .ci/site
+
+      - name: V11 时间域分层与年谱预算
+        run: python src/check_time_layers_v11.py .ci/site
 
       - name: 单文件无头浏览器自检
         run: python .dump/_browser_check.py .ci/standalone.html
@@ -105,5 +113,5 @@ jobs:
       - name: V3 单文件产品体验浏览器自检
         run: python .dump/_experience_browser_check.py .ci/standalone.html
 
-      - name: V10 在线空间分层浏览器自检
+      - name: V11 在线分层浏览器自检
         run: python .dump/_web_browser_check.py .ci/site/index.html
