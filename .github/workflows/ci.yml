@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   check:
-    name: 语法 · 不变量 · 构建 · V11 浏览器
+    name: 语法 · 不变量 · 构建 · V12 浏览器
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -64,7 +64,7 @@ jobs:
           python src/sync_theme.py
           git diff --check -- web/template/index.html
 
-      - name: V3 / V11 产品体验镜像同步冒烟
+      - name: V3 / V12 产品体验镜像同步冒烟
         run: |
           python src/sync_experience.py
           python src/sync_experience.py --check
@@ -77,7 +77,8 @@ jobs:
         run: |
           python src/sync_readme.py
           python src/sync_readme_v11.py
-          python src/sync_readme_v11.py --check
+          python src/sync_readme_v12.py
+          python src/sync_readme_v12.py --check
           git diff --check -- README.md
 
       - name: 构建冒烟（standalone，不落盘）
@@ -86,7 +87,7 @@ jobs:
       - name: 数据审计
         run: python src/audit_final.py --quick
 
-      - name: 最终 payload 与 V10 实体分片体积剖析
+      - name: 最终 payload 与实体分片体积剖析
         run: python src/check_payload_budget.py --json .ci/payload-sizes.json
 
       - name: 构建离线单文件产物
@@ -95,11 +96,13 @@ jobs:
       - name: 离线版体积预算
         run: python src/check_budget.py .ci/standalone.html
 
-      - name: 构建在线 V11 分层产物
+      - name: 构建在线 V12 分层产物
         run: |
           python src/build.py --scope full --target web --out .ci/site --quiet
           python src/split_time_asset_v11.py .ci/site
           python src/split_time_asset_v11.py .ci/site --check
+          python src/split_event_asset_v12.py .ci/site
+          python src/split_event_asset_v12.py .ci/site --check
 
       - name: 在线实体/空间基础结构与体积预算
         run: python src/check_delivery.py .ci/site
@@ -107,11 +110,14 @@ jobs:
       - name: V11 时间域分层与年谱预算
         run: python src/check_time_layers_v11.py .ci/site
 
+      - name: V12 事件摘要/详情分层与组合入口预算
+        run: python src/check_event_layers_v12.py .ci/site
+
       - name: 单文件无头浏览器自检
         run: python .dump/_browser_check.py .ci/standalone.html
 
       - name: V3 单文件产品体验浏览器自检
         run: python .dump/_experience_browser_check.py .ci/standalone.html
 
-      - name: V11 在线分层浏览器自检
+      - name: V12 在线分层浏览器自检
         run: python .dump/_web_browser_check.py .ci/site/index.html
