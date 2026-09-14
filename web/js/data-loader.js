@@ -1,11 +1,11 @@
-/* ===== V7 在线数据加载器：boot / search / view-domain chunks =====
-   standalone.html 不加载本文件；在线版的最终 DATA 被拆成互斥领域块，页面按需组合。 */
+/* ===== V8 在线数据加载器：boot / search / view-domain / character-details =====
+   standalone.html 不加载本文件；在线版的人物卡片与完整人物详情分两级按需组合。 */
 (function(){
 'use strict';
 if(typeof DATA==='undefined')return;
 
 const root=document.documentElement;
-const ALL_CHUNKS=['characters','events','space','relations','time','graphs','insight','meta'];
+const ALL_CHUNKS=['characters','character-details','events','space','relations','time','graphs','insight','meta'];
 const VIEW_CHUNKS={
   overview:[],distribution:[],
   visuals:['graphs'],
@@ -20,13 +20,14 @@ const VIEW_CHUNKS={
   insight:['insight']
 };
 const ENTITY_CHUNKS={
-  person:['characters','events','insight'],
+  person:['characters','character-details','events','insight'],
   place:['space','events','insight'],
   event:['events','space','insight']
 };
 const chunkPromises=Object.create(null);
 let searchPromise=null,fullPromise=null,_fullEventSent=false;
 window.__MING_DATA_CHUNKS__=window.__MING_DATA_CHUNKS__||{};
+window.__MING_CHARACTER_DETAILS__=window.__MING_CHARACTER_DETAILS__||{};
 
 function uniq(items){return [...new Set((items||[]).filter(x=>ALL_CHUNKS.includes(x)))];}
 function ready(name){return !!window.__MING_DATA_CHUNKS__[name];}
@@ -47,14 +48,29 @@ function syncDataState(reason){
   }
 }
 
+/* V8 人物详情是对轻量 DATA.characters 的补丁。动态 Promise.all 可能让 details
+   先于 characters 执行，因此两种 chunk 每次到达都重试应用；最终结果与原 payload 一致。 */
+window.__MING_APPLY_CHARACTER_DETAILS__=function(){
+  const details=window.__MING_CHARACTER_DETAILS__||{};
+  let patched=0;
+  (DATA.characters||[]).forEach(character=>{
+    const extra=details[character&&character.name];
+    if(extra){Object.assign(character,extra);patched++;}
+  });
+  root.dataset.mingCharacterDetails=patched?String(patched):(ready('character-details')?'ready':'idle');
+  return patched;
+};
+
 window.__MING_SEARCH_INDEX_READY=window.__MING_SEARCH_INDEX_READY===true;
 syncDataState();
 markSearch(window.__MING_SEARCH_INDEX_READY?'ready':'idle');
+window.__MING_APPLY_CHARACTER_DETAILS__();
 
-/* 领域脚本自身只负责 Object.assign + 标记 ready。无论它来自动态 append 还是 deep-link
-   document.write，都统一靠这个事件收敛 HTML 状态，避免 deep link 永久停在 loading。 */
+/* 领域脚本自身只负责写数据 + 标记 ready。无论它来自动态 append 还是 deep-link
+   document.write，都统一靠这个事件收敛状态；人物两级块同时在这里收敛补丁。 */
 document.addEventListener('ming:data-chunk',event=>{
   const name=event&&event.detail&&event.detail.name;
+  if(name==='characters'||name==='character-details')window.__MING_APPLY_CHARACTER_DETAILS__();
   syncDataState(name?'chunk:'+name:'chunk');
 });
 
@@ -67,6 +83,7 @@ function loadChunk(name,reason){
     script.dataset.mingDataChunk=name;
     script.onload=()=>{
       if(!ready(name)){reject(new Error('data-'+name+'.js 已加载但未标记 ready'));return;}
+      if(name==='characters'||name==='character-details')window.__MING_APPLY_CHARACTER_DETAILS__();
       syncDataState(reason||('chunk:'+name));
       resolve(name);
     };
@@ -82,6 +99,7 @@ window.__MING_ENSURE_DATA_CHUNKS=function(names,reason){
   root.dataset.mingData='loading';
   root.dataset.mingDataReason=reason||'interaction';
   return Promise.all(wanted.map(name=>loadChunk(name,reason))).then(()=>{
+    window.__MING_APPLY_CHARACTER_DETAILS__();
     syncDataState(reason);
     try{if(typeof window.__MING_AFTER_DATA_CHUNKS==='function')window.__MING_AFTER_DATA_CHUNKS(wanted);}catch(_){}
     return DATA;
@@ -114,6 +132,7 @@ window.__MING_ENSURE_FULL_DATA=function(reason){
   if(window.__MING_FULL_DATA_READY)return Promise.resolve(DATA);
   if(fullPromise)return fullPromise;
   fullPromise=window.__MING_ENSURE_DATA_CHUNKS(ALL_CHUNKS,reason||'full').then(data=>{
+    window.__MING_APPLY_CHARACTER_DETAILS__();
     try{if(typeof window.__MING_AFTER_FULL_DATA==='function')window.__MING_AFTER_FULL_DATA();}catch(_){}
     return data;
   }).catch(err=>{fullPromise=null;throw err;});
@@ -134,8 +153,8 @@ function deepPlan(){
   return [];
 }
 
-/* deep link 必须在 app.js 之前拥有其视图所需的数据。classic parser-blocking script 中
-   document.write 的同源脚本会按顺序执行；每个领域脚本触发 ming:data-chunk 后会同步状态。 */
+/* deep link 必须在 app.js 之前拥有其视图/实体所需数据。人物 deep link 会按顺序写入
+   characters → character-details → events → insight；事件监听仍保证动态并发加载也可收敛。 */
 if(document.readyState==='loading'){
   const plan=uniq(deepPlan()).filter(name=>!ready(name));
   if(plan.length){
